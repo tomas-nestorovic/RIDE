@@ -5,6 +5,7 @@
 	#define DOS_ERR_CANNOT_UNFORMAT		_T("Cannot unformat")
 	#define DOS_ERR_CANNOT_ACCEPT_VALUE	_T("Cannot accept the new value")
 	#define DOS_ERR_CYLINDERS_NOT_EMPTY	_T("Not all cylinders are reported empty.")
+	#define DOS_ERR_BOOT_SECTOR_NOT_FOUND _T("Boot sector not found")
 
 	#define DOS_MSG_CYLINDERS_UNCHANGED	_T("No cylinders have been modified.")
 	#define DOS_MSG_HIT_ESC				_T("Hit Escape to cancel editing.")
@@ -459,7 +460,8 @@
 				} ProcessCommand(WORD cmd);
 		virtual bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const;
 		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap)=0;
-		virtual bool ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const;
+		virtual CString ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const;
+		bool ValidateFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion=nullptr) const;
 		virtual bool ChangeFormat(bool considerBoot,bool considerFat,RCFormat f);
 		void ShowFileProcessingError(PCFile file,LPCTSTR cause) const;
 		void ShowFileProcessingError(PCFile file,TStdWinError cause) const;

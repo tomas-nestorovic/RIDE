@@ -574,19 +574,20 @@
 		}
 	}
 
-	#define ERR_MSG_FORMAT_CYLINDER_RANGE	_T("Given current number of heads, sectors per track, and cluster size, the %simum number of cylinders is limited to %d for this instance of FAT%d. ")
+	#define ERR_MSG_FORMAT_CYLINDER_RANGE	_T("Provided FAT%d is used for current number allocation units, the %simum number of cylinders is %d. %s")
 
-	bool CMSDOS7::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
-		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+	CString CMSDOS7::ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const{
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
 		// - base
-		if (!__super::ValidateFormatChangeAndReportProblem(considerBoot,considerFat,f))
-			return false;
+		CString &&err=__super::ValidateFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
 		// - new CountOfClusters mustn't overflow nor underflow limits of current FAT Type
 		if (considerFat){
 			// the new Format should affect --existing-- FAT
 			const PCBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
-				return false;
+				return DOS_ERR_BOOT_SECTOR_NOT_FOUND;
 			const TCylinder nCylindersMax=(	std::min(	fat.GetMaxCountOfClusters()
 														,
 														(bootSector->__getCountOfSectorsInOneFatCopy__()*bootSector->sectorSize-MSDOS7_DATA_CLUSTER_FIRST)*2/fat.type
@@ -598,10 +599,11 @@
 										)/
 										formatBoot.GetCountOfSectorsPerCylinder();
 			if (f.nCylinders>nCylindersMax){
-				TCHAR buf[512];
-				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT can be changed only by formatting from Cylinder 0."),"max",nCylindersMax,4*fat.type);
-				Utils::Information(buf);
-				return false;
+				err.Format(
+					ERR_MSG_FORMAT_CYLINDER_RANGE,
+					4*fat.type, "max", nCylindersMax, _T("The type of FAT can be changed only by formatting from Cylinder 0")
+				);
+				return err;
 			}
 			const TCylinder nCylindersMin=(	fat.GetMinCountOfClusters()
 											*
@@ -611,14 +613,15 @@
 										)/
 										formatBoot.GetCountOfSectorsPerCylinder();
 			if (f.nCylinders<nCylindersMin){
-				TCHAR buf[512];
-				::wsprintf(buf,ERR_MSG_FORMAT_CYLINDER_RANGE _T("The type of FAT cannot be changed."),"min",nCylindersMin,4*fat.type);
-				Utils::Information(buf);
-				return false;
+				err.Format(
+					ERR_MSG_FORMAT_CYLINDER_RANGE,
+					4*fat.type, "min", nCylindersMin, _T("The type of FAT cannot be changed")
+				);
+				return err;
 			}
 		}//else
 			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
 		// - new Format is acceptable
-		return true;
+		return err;
 	}

@@ -1043,20 +1043,20 @@
 		ap.IncrementProgress();
 	}
 
-	bool CBSDOS308::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
-		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+	CString CBSDOS308::ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const{
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
 		// - base
-		if (!__super::ValidateFormatChangeAndReportProblem(considerBoot,considerFat,f))
-			return false;
+		CString &&err=__super::ValidateFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
 		// - adjusting the size of FAT by either adding extra Sectors to it (if formatting) or removing existing Sectors from it (if unformatting)
 		if (considerFat){
 			// the new Format should affect --existing-- FAT
 			// . BootSector must exist
 			const PBootSector bootSector=boot.GetSectorData();
 			if (!bootSector)
-				return false;
+				return DOS_ERR_BOOT_SECTOR_NOT_FOUND;
 			// . briefly checking the state of FATs
-			#define MSG_MAIN		_T("Can't change disk format")
 			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
 			const TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
 			const CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
@@ -1066,18 +1066,18 @@
 				||
 				!fats[0].AreAllSectorsReadable(this) || !fats[1].AreAllSectorsReadable(this)
 			){
-				Utils::Information(MSG_MAIN,_T("FATs don't seem intact"),MSG_SUGGESTION);
-				return false;
+				err.Format( _T("FATs not intact. %s"), MSG_SUGGESTION );
+				return err;
 			}
 			if (::memcmp( __getHealthyLogicalSectorData__(bootSector->fatStarts[0]), __getHealthyLogicalSectorData__(bootSector->fatStarts[1]), BSDOS_SECTOR_LENGTH_STD )){ // FAT copies are not identical (readability guaranteed by above actions); comparing their first Sectors suffices for this operation
-				Utils::Information(MSG_MAIN,_T("FATs are not identical"),MSG_SUGGESTION);
-				return false;
+				err.Format( _T("FATs not identical. %s"), MSG_SUGGESTION );
+				return err;
 			}
 		}//else
 			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
 		// - new Format is acceptable
-		return true;
+		return err;
 	}
 
 	bool CBSDOS308::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){

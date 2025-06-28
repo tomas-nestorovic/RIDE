@@ -60,7 +60,7 @@
 				fmt.sectorLength=(WORD)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_CLUSTER_SIZE)
 				fmt.clusterSize=(TSector)newValue;
-			if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
+			if (!dos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 				return false;
 			// . accepting the new format
 			if (!dos->ChangeFormat( true, true, fmt ))
@@ -81,15 +81,10 @@
 		const PDos dos=CDos::GetFocused();
 		// - making sure affected Cylinders are Empty
 		const TCylinder nCyl0=dos->formatBoot.nCylinders, cylA=std::min((int)nCyl0,newValue), cylZ=std::max((int)nCyl0,newValue);
-		const THead nHeads=dos->formatBoot.nHeads;
-		if (dos->AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
-			Utils::Information( DOS_ERR_CANNOT_ACCEPT_VALUE, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_HIT_ESC );
-			return false;
-		}
 		// - validating new format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
-		if (!dos->ValidateFormatChangeAndReportProblem(true,true,fmt))
+		if (!dos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 			return false;
 		// - adding to or removing from FAT
 		if (!dos->ChangeFormat( true, true, fmt ))

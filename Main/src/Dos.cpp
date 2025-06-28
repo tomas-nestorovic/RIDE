@@ -97,25 +97,52 @@
 		__writeProfileInt__( entryName, value );
 	}
 
-	bool CDos::ValidateFormatChangeAndReportProblem(bool considerBoot,bool considerFat,RCFormat f) const{
-		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+	CString CDos::ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const{
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
+		CString err;
+		// - mustn't overflow geometry
 		const DWORD nSectorsInTotal=f.GetCountOfAllSectors();
 		const WORD clusterSize=f.clusterSize*( f.sectorLength - properties->dataBeginOffsetInSector - properties->dataEndOffsetInSector );
-		TCHAR buf[200];
 		if (nSectorsInTotal<properties->nSectorsInTotalMin){ // occurs only when fresh formatting a new Image
-			::wsprintf(buf,_T("The minimum total number of sectors for a \"%s\" disk is %d (the new geometry makes up only %d)."),properties->name,properties->nSectorsInTotalMin,nSectorsInTotal);
-reportError:Utils::Information(buf);
-			return false;
-		}else if (clusterSize>properties->clusterSizeMax){
-			::wsprintf(buf,_T("The maximum cluster size for a \"%s\" disk is %d Bytes (it's %d Bytes now)."),properties->name,properties->clusterSizeMax,clusterSize);
-			goto reportError;
-		}else
+			err.Format(
+				_T("The minimum number of sectors for a \"%s\" disk is %d (the new geometry yields only %d)"),
+				properties->name, properties->nSectorsInTotalMin, nSectorsInTotal
+			);
+			return err;
+		}
+		if (clusterSize>properties->clusterSizeMax){
+			err.Format(
+				_T("The maximum cluster size for a \"%s\" disk is %d Bytes (it's %d Bytes now)"),
+				properties->name, properties->clusterSizeMax, clusterSize
+			);
+			return err;
+		}
+		// - making sure excluded Cylinders are Empty
+		if (considerFat){
+			const TCylinder cylA=std::min(formatBoot.nCylinders,f.nCylinders), cylZ=std::max(formatBoot.nCylinders,f.nCylinders);
+			if (AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
+				err.Format(
+					_T("Given disk occupation, the minimum number of cylinders is %d"),
+					GetLastOccupiedStdCylinder()+1
+				);
+				return err;
+			}
+		}
+		return err;
+	}
+
+	bool CDos::ValidateFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion) const{
+		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+		const CString &&err=ValidateFormat( considerBoot, considerFat, f );
+		if (err.IsEmpty())
 			return true;
+		Utils::Information( _T("Invalid disk format"), err, suggestion );
+		return false;
 	}
 
 	bool CDos::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
-		return ValidateFormatChangeAndReportProblem( considerBoot, considerFat, f );
+		return ValidateFormatAndReportProblem( considerBoot, considerFat, f );
 	}
 
 	TCylinder CDos::GetLastOccupiedStdCylinder() const{

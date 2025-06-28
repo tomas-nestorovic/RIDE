@@ -130,7 +130,7 @@
 		if (pDX->m_bSaveAndValidate){
 			// . checking that new format is acceptable
 			const Utils::CVarTempReset<TCylinder> nCyls0( params.format.nCylinders, params.format.nCylinders+1 );
-			if (!dos->ValidateFormatChangeAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )
+			if (!dos->ValidateFormatAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )
 				||
 				!dos->ChangeFormat( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )
 			){

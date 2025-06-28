@@ -249,12 +249,8 @@
 				fmt.mediumType=Medium::FLOPPY_DD_525; // likely 360 rpm in PC
 				fmt.nCylinders=40,fmt.nHeads=1; break;
 		}
-		if (!trdos->ValidateFormatChangeAndReportProblem(true,true,fmt))
+		if (!trdos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 			return false;
-		if (boot->firstFree.track/fmt.nHeads>=fmt.nCylinders){
-			Utils::Information(_T("Cannot modify the format as there are occupied sectors exceeding it."));
-			return false;
-		}
 		// - accepting new Format
 		*pf=fmt;
 		// - adjusting relevant information in the Boot Sector
