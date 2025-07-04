@@ -140,7 +140,7 @@
 				LONG_PTR longValue;
 			};
 			typedef LPCVOID PCValueList;
-			typedef PCValueList (WINAPI *TGetValueList)(PCustomParam,RValueCount);
+			typedef PCValueList (WINAPI *TGetValueList)(PCustomParam,UValue,RValueCount);
 			typedef void (WINAPI *TFreeValueList)(PCustomParam,PCValueList);
 			typedef LPCTSTR (WINAPI *TGetValueDesc)(PCustomParam,UValue,PTCHAR,TSize);
 			typedef LPCSTR (WINAPI *TGetValueDescA)(PCustomParam,UValue,PCHAR,TSize);

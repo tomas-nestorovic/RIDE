@@ -222,9 +222,9 @@
 			static bool WINAPI __pg_createLabel__(PropGrid::PCustomParam,int hyperlinkId,LPCTSTR hyperlinkName);
 			static bool WINAPI __labelModified__(PropGrid::PCustomParam,LPCSTR,short);
 			static void WINAPI __onMediumChanged__(PropGrid::PCustomParam);
-			static PropGrid::Enum::PCValueList WINAPI __getListOfMedia__(PVOID,WORD &rnMedia);
+			static PropGrid::Enum::PCValueList WINAPI ListMedia(PVOID,PropGrid::Enum::UValue,WORD &rnMedia);
 			static LPCTSTR WINAPI __getMediumDescription__(PVOID,PropGrid::Enum::UValue medium,PTCHAR,short);
-			static PropGrid::Enum::PCValueList WINAPI __getListOfMediaTypes__(PVOID,WORD &rnMediumTypes);
+			static PropGrid::Enum::PCValueList WINAPI ListMediaTypes(PVOID,PropGrid::Enum::UValue,WORD &rnMediumTypes);
 			static LPCTSTR WINAPI __getMediumTypeDescription__(PVOID,PropGrid::Enum::UValue mediumType,PTCHAR,short);
 
 			void GetCommonBootParameters(RCommonBootParameters rParam,PSectorData _boot) override;

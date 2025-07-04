@@ -274,7 +274,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		// - successfully changed FileType
 		return true;
 	}
-	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
+	static PropGrid::Enum::PCValueList WINAPI CreateValues(PVOID file,PropGrid::Enum::UValue,WORD &rnValues){
 		// creates and returns the List of possible File "extensions"
 		rnValues=EXTENSION_MAX+1-EXTENSION_MIN;
 		return	(PropGrid::Enum::PCValueList)::memcpy(
@@ -298,7 +298,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		RCFileManagerView &rfm=*CDos::GetFocused()->pFileManager;
 		return CreateStdEditor(
 			de, &( data=de->fileType ),
-			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), CreateValues, __getDescription__, __freeValues__, __onChanged__ )
 		);
 	}
 

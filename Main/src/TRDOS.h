@@ -111,7 +111,7 @@
 		};
 
 		class CTrdosBootView sealed:public CBootView{
-			static PropGrid::Enum::PCValueList WINAPI __getListOfKnownFormats__(PVOID,WORD &rnFormats);
+			static PropGrid::Enum::PCValueList WINAPI ListAvailableFormats(PVOID,PropGrid::Enum::UValue format,WORD &rnFormats);
 			static LPCTSTR WINAPI __getFormatDescription__(PVOID,PropGrid::Enum::UValue format,PTCHAR buf,short bufCapacity);
 			static bool WINAPI __onFormatChanged__(PVOID,PropGrid::Enum::UValue newValue);
 

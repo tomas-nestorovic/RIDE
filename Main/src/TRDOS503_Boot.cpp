@@ -210,11 +210,10 @@
 				rParam.label.fillerByte=' ';*/
 	}
 
-	PropGrid::Enum::PCValueList WINAPI CTRDOS503::CTrdosBootView::__getListOfKnownFormats__(PVOID,WORD &rnFormats){
+	PropGrid::Enum::PCValueList WINAPI CTRDOS503::CTrdosBootView::ListAvailableFormats(PVOID pBoot,PropGrid::Enum::UValue format,WORD &rnFormats){
 		// returns the list of known Formats
 		static constexpr TDiskFormat List[]={ DS80, DS40, SS80, SS40 };
-		rnFormats=4;
-		return (PropGrid::Enum::PCValueList)List;
+		return rnFormats=2, (PropGrid::Enum::PCValueList)(List+2*(format.charValue>=(char)SS80)); // mustn't change # of Heads!
 	}
 	LPCTSTR WINAPI CTRDOS503::CTrdosBootView::__getFormatDescription__(PVOID,PropGrid::Enum::UValue format,PTCHAR buf,short bufCapacity){
 		// populates the Buffer with a description of specified Format and returns the Buffer
@@ -288,7 +287,7 @@
 		// - Geometry category
 		PropGrid::AddProperty(	hPropGrid, hGeometry, _T("Format"),
 								&boot->format,
-								PropGrid::Enum::DefineConstStringListEditor( sizeof(TDiskFormat), __getListOfKnownFormats__, __getFormatDescription__, nullptr, __onFormatChanged__ )
+								PropGrid::Enum::DefineConstStringListEditor( sizeof(TDiskFormat), ListAvailableFormats, __getFormatDescription__, nullptr, __onFormatChanged__ ),
 							);
 		// - Volume category
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"),

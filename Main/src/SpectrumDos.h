@@ -286,7 +286,7 @@
 					STD_AND_HEADERLESS_AND_FRAGMENT
 				};
 			private:
-				static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues);
+				static PropGrid::Enum::PCValueList WINAPI CreateValues(PVOID file,PropGrid::Enum::UValue,WORD &rnValues);
 				static LPCTSTR WINAPI __getDescription__(PVOID file,PropGrid::Enum::UValue stdType,PTCHAR,short);
 
 				mutable BYTE data;

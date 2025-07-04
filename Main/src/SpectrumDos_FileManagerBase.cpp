@@ -129,7 +129,7 @@
 			// the OldName+NewExtension combination is unique
 			return true;
 	}
-	static PropGrid::Enum::PCValueList WINAPI __createValues__(PVOID file,WORD &rnValues){
+	static PropGrid::Enum::PCValueList WINAPI CreateValues(PVOID file,PropGrid::Enum::UValue,WORD &rnValues){
 		// creates and returns the list of File's possible Extensions
 		const PBYTE list=(PBYTE)::malloc( rnValues=EXTENSION_MAX+1-EXTENSION_MIN );
 		for( BYTE p=EXTENSION_MIN,*a=list; p<=EXTENSION_MAX; *a++=p++ );
@@ -151,7 +151,7 @@
 		const CPathString ext=rZxFileManager.DOS->GetFileExt(file);
 		return CreateStdEditor(
 			file, &( data=ext.FirstCharA() ),
-			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, __freeValues__, __onChanged__ )
+			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), CreateValues, __getDescription__, __freeValues__, __onChanged__ )
 		);
 	}
 	void CSpectrumBase::CSpectrumBaseFileManagerView::CSingleCharExtensionEditor::DrawReportModeCell(BYTE extension,LPDRAWITEMSTRUCT pdis,LPCSTR knownExtensions) const{

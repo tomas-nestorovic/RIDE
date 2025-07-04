@@ -74,8 +74,11 @@
 			::GetClientRect(hComboBox,&r);
 		::SetWindowPos( hComboBox,0, 0,0, r.right,8*r.bottom, SWP_NOMOVE ); // "8*" = approximately 8 items
 		// . populating the ComboBox with Values
+		PropGrid::Enum::UValue uValueCurr; // actual Value extracted from the ValueBytes below
+			uValueCurr.longValue=0;
+			::memcpy( &uValueCurr.longValue, value.buffer, valueSize );
 		WORD nValues;
-		const PropGrid::Enum::PCValueList valueList=getValueList( value.param, nValues );
+		const PropGrid::Enum::PCValueList valueList=getValueList( value.param, uValueCurr, nValues );
 			PropGrid::Enum::UValue uValue; // actual Value extracted from the ValueBytes below
 				uValue.longValue=0;
 			for( const BYTE *valueBytes=(PBYTE)valueList; nValues--; valueBytes+=valueSize ){ // let's treat the ValueList as an array of Bytes in the form of [Value1,Value2,...,ValueN} where each Value occupies the same number of Bytes (e.g. 2 Bytes)

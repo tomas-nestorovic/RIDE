@@ -1033,7 +1033,7 @@ drawChecksum:			// checksum
 		return true;
 	}
 
-	PropGrid::Enum::PCValueList WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::__createValues__(PVOID file,WORD &rnValues){
+	PropGrid::Enum::PCValueList WINAPI CSpectrumBase::CSpectrumBaseFileManagerView::CStdTapeHeaderBlockTypeEditor::CreateValues(PVOID file,PropGrid::Enum::UValue,WORD &rnValues){
 		// returns the list of standard File Types
 		static constexpr TZxRom::TFileType List[]={
 			TZxRom::PROGRAM,
@@ -1058,7 +1058,7 @@ drawChecksum:			// checksum
 		types=_types;
 		return CreateStdEditor(
 			file, &( data=type ),
-			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), __createValues__, __getDescription__, nullptr, onChanged )
+			PropGrid::Enum::DefineConstStringListEditor( sizeof(data), CreateValues, __getDescription__, nullptr, onChanged )
 		);
 	}
 

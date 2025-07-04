@@ -419,7 +419,7 @@
 		// - propagating the Medium type that has just been changed in Boot Sector to the inner FormatBoot structure
 		msdos->__adoptMediumFromBootSector__();
 	}
-	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMedia__(PVOID,WORD &rnMedia){
+	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::ListMedia(PVOID,PropGrid::Enum::UValue,WORD &rnMedia){
 		// returns the List of known Media
 		static constexpr TBootSector::TMsdosMedium List[]={
 			TBootSector::DISK_35_1440_DS_18,
@@ -448,7 +448,7 @@
 		}
 	}
 
-	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::__getListOfMediaTypes__(PVOID,WORD &rnMediumTypes){
+	PropGrid::Enum::PCValueList WINAPI CMSDOS7::CMsdos7BootView::ListMediaTypes(PVOID,PropGrid::Enum::UValue,WORD &rnMediumTypes){
 		// returns the List of known Media
 		static constexpr TBootSector::TMsdosMediumType List[]={
 			TBootSector::FLOPPY,
@@ -500,7 +500,7 @@
 			// . Medium
 			PropGrid::AddProperty(	hPropGrid, hGeometryAdvanced, _T("Medium"),
 									&boot->medium,
-									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMedium), __getListOfMedia__, __getMediumDescription__, nullptr, __bootSectorModified__, __onMediumChanged__ )
+									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMedium), ListMedia, __getMediumDescription__, nullptr, __bootSectorModified__, __onMediumChanged__ )
 								);
 			// . number of Sectors on the disk
 			if (fatType==CFat::FAT32 || boot->nSectorsInTotal16==0)
@@ -532,7 +532,7 @@
 			// . MediumType
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("Medium type"),
 									fatType==CFat::FAT32?&boot->fat32.mediumType:&boot->fat1216.mediumType,
-									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMediumType), __getListOfMediaTypes__, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
+									PropGrid::Enum::DefineConstStringListEditor( sizeof(TBootSector::TMsdosMediumType), ListMediaTypes, __getMediumTypeDescription__, nullptr, __bootSectorModified__ )
 								);
 			// . FAT Name
 			PropGrid::AddProperty(	hPropGrid, hVolumeAdvanced, _T("FAT name"),
