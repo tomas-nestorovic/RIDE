@@ -297,6 +297,13 @@
 			return 0;
 		}
 	}
+	TCylinder CTRDOS503::GetLastOccupiedStdCylinder() const{
+		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
+		if (const PCBootSector boot=GetBootSector())
+			return boot->firstFree.track/formatBoot.nHeads;
+		else
+			return __super::GetLastOccupiedStdCylinder();
+	}
 
 
 

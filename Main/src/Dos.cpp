@@ -120,13 +120,15 @@
 		// - making sure excluded Cylinders are Empty
 		if (considerFat){
 			const TCylinder cylA=std::min(formatBoot.nCylinders,f.nCylinders), cylZ=std::max(formatBoot.nCylinders,f.nCylinders);
-			if (AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
-				err.Format(
-					_T("Given disk occupation, the minimum number of cylinders is %d"),
-					GetLastOccupiedStdCylinder()+1
-				);
-				return err;
-			}
+			const TCylinder cylLastOccupied=GetLastOccupiedStdCylinder();
+			if (cylA<=cylLastOccupied)
+				if (AreStdCylindersEmpty(cylA,cylZ-1)!=ERROR_EMPTY){
+					err.Format(
+						_T("Given disk occupation, the minimum number of cylinders is %d"),
+						cylLastOccupied+1
+					);
+					return err;
+				}
 		}
 		return err;
 	}

@@ -409,7 +409,7 @@
 		virtual bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const=0;
 		virtual DWORD GetFreeSpaceInBytes(TStdWinError &rError) const;
 		virtual TCylinder GetFirstCylinderWithEmptySector() const;
-		TCylinder GetLastOccupiedStdCylinder() const;
+		virtual TCylinder GetLastOccupiedStdCylinder() const;
 		TStdWinError GetFirstEmptyHealthySector(bool skipBadSectors,TPhysicalAddress &rOutChs) const;
 		TStdWinError IsStdTrackEmpty(TCylinder cyl,THead head) const;
 		TStdWinError AreStdCylindersEmpty(TCylinder cylA,TCylinder cylZInclusive) const;

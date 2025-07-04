@@ -287,7 +287,7 @@
 		// - Geometry category
 		PropGrid::AddProperty(	hPropGrid, hGeometry, _T("Format"),
 								&boot->format,
-								PropGrid::Enum::DefineConstStringListEditor( sizeof(TDiskFormat), ListAvailableFormats, __getFormatDescription__, nullptr, __onFormatChanged__ ),
+								PropGrid::Enum::DefineConstStringListEditor( sizeof(TDiskFormat), ListAvailableFormats, __getFormatDescription__, nullptr, __onFormatChanged__ )
 							);
 		// - Volume category
 		PropGrid::AddProperty(	hPropGrid, hVolume, _T("Label"),

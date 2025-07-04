@@ -170,6 +170,7 @@
 		bool GetFileFatPath(PCFile file,CFatPath &rFatPath) const override;
 		bool ModifyFileFatPath(PFile file,const CFatPath &rFatPath) const override;
 		DWORD GetFreeSpaceInBytes(TStdWinError &rError) const override;
+		TCylinder GetLastOccupiedStdCylinder() const override;
 		// file system
 		bool GetFileNameOrExt(PCFile file,PPathString pOutName,PPathString pOutExt) const override;
 		TStdWinError ChangeFileNameAndExt(PFile file,RCPathString newName,RCPathString newExt,PFile &rRenamedFile) override;
