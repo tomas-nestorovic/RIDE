@@ -243,7 +243,7 @@ namespace Medium{
 	}
 
 	bool TProperties::IsAcceptableCountOfCells(DWORD nCellsQueried) const{
-		return nCells/100*80<nCellsQueried && nCellsQueried<nCells/100*120;
+		return nCells/100*85<nCellsQueried && nCellsQueried<nCells/100*115; // 20% (or more) is too much - a 360rpm drive is 20% faster than 300rpm drive which would introduce confusion to the rest of app
 	}
 
 	TIwProfile::TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent)

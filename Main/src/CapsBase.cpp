@@ -855,7 +855,7 @@ invalidTrack:
 			// . if blank (not yet formatted) new disk, we are done
 			if (m_strPathName.IsEmpty() && blankMedium)
 				return ERROR_SUCCESS;
-			// . reinterpreting the fluxes
+			// . reinterpreting the fluxes with updated MediumType (now/not recognizing Sectors)
 			if (newMediumTypeDifferent || dos!=nullptr) // A|B, A = Medium different, B = setting final MediumType
 				for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 					for( THead head=0; head<2; head++ )
