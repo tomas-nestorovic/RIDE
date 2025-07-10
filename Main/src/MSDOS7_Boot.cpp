@@ -604,7 +604,7 @@
 			if (f.nCylinders>nCylindersMax){
 				err.Format(
 					ERR_MSG_FORMAT_CYLINDER_RANGE,
-					4*fat.type, "max", nCylindersMax, _T("The type of FAT can be changed only by formatting from Cylinder 0")
+					4*fat.type, "max", nCylindersMax, _T("FAT type can be changed only by formatting from Cylinder 0")
 				);
 				return err;
 			}

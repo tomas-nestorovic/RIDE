@@ -1055,7 +1055,6 @@
 			// . BootSector must exist
 			const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would have returned False
 			// . briefly checking the state of FATs
-			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
 			const TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
 			const CFatPath fats[]={ std::move(CFatPath(this,&deFats[0])), std::move(CFatPath(this,&deFats[1])) };
 			if (fats[0].GetNumberOfItems()!=fats[1].GetNumberOfItems()
@@ -1064,11 +1063,11 @@
 				||
 				!fats[0].AreAllSectorsReadable(this) || !fats[1].AreAllSectorsReadable(this)
 			){
-				err.Format( _T("FATs not intact. %s"), MSG_SUGGESTION );
+				err.Format( _T("FATs not intact. %s"), DOS_MSG_VERIFY_DISK_FIRST );
 				return err;
 			}
 			if (::memcmp( __getHealthyLogicalSectorData__(bootSector->fatStarts[0]), __getHealthyLogicalSectorData__(bootSector->fatStarts[1]), BSDOS_SECTOR_LENGTH_STD )){ // FAT copies are not identical (readability guaranteed by above actions); comparing their first Sectors suffices for this operation
-				err.Format( _T("FATs not identical. %s"), MSG_SUGGESTION );
+				err.Format( _T("FATs not identical. %s"), DOS_MSG_VERIFY_DISK_FIRST );
 				return err;
 			}
 		}//else

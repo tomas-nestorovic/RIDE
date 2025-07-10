@@ -48,9 +48,9 @@
 
 	bool WINAPI CBootView::__confirmCriticalValueInBoot__(PVOID criticalValueId,int newValue){
 		// informs that a critical value in the Boot is about to be changed, and if confirmed, changes it
-		if (Utils::QuestionYesNo(_T("About to modify a critical value in the boot, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
+		if (Utils::QuestionYesNo(_T("About to modify a critical value, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
 			const PDos dos=CDos::GetFocused();
-			// . validating the new format
+			// . validating the new Format
 			TFormat fmt=dos->formatBoot;
 			if (criticalValueId==CRITICAL_VALUE_SIDES_COUNT)
 				fmt.nHeads=(THead)newValue;
@@ -79,9 +79,9 @@
 	bool WINAPI CBootView::__updateFatAfterChangingCylinderCount__(PVOID,int newValue){
 		// updates the FAT after the number of Cylinders in the FAT has been changed
 		const PDos dos=CDos::GetFocused();
-		// - making sure affected Cylinders are Empty
+		// - make sure affected Cylinders are Empty
 		const TCylinder nCyl0=dos->formatBoot.nCylinders, cylA=std::min((int)nCyl0,newValue), cylZ=std::max((int)nCyl0,newValue);
-		// - validating new format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
+		// - validate and adopt new Format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
 		if (!dos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))

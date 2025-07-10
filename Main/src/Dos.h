@@ -5,7 +5,6 @@
 	#define DOS_ERR_CANNOT_UNFORMAT		_T("Cannot unformat")
 	#define DOS_ERR_CANNOT_ACCEPT_VALUE	_T("Cannot accept the new value")
 	#define DOS_ERR_CYLINDERS_NOT_EMPTY	_T("Not all cylinders are reported empty.")
-	#define DOS_ERR_BOOT_SECTOR_NOT_FOUND _T("Boot sector not found")
 
 	#define DOS_MSG_CYLINDERS_UNCHANGED	_T("No cylinders have been modified.")
 	#define DOS_MSG_HIT_ESC				_T("Hit Escape to cancel editing.")
