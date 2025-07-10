@@ -240,6 +240,11 @@
 
 
 
+	RCPhysicalAddress CMDOS2::GetBootSectorAddress() const{
+		// returns the PhysicalAddress of the boot Sector in use, or Invalid
+		return TBootSector::CHS;
+	}
+
 	void CMDOS2::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS)){

@@ -398,6 +398,7 @@
 		virtual ~CDos();
 
 		// boot
+		virtual RCPhysicalAddress GetBootSectorAddress() const;
 		virtual void FlushToBootSector() const=0; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
 		// FAT
 		virtual bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const=0;

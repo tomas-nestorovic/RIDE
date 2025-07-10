@@ -208,6 +208,11 @@
 							);
 	}
 
+	RCPhysicalAddress CBSDOS308::GetBootSectorAddress() const{
+		// returns the PhysicalAddress of the boot Sector in use, or Invalid
+		return TBootSector::CHS;
+	}
+
 	void CBSDOS308::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=TBootSector::GetData(image)){

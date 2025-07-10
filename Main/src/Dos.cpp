@@ -117,6 +117,11 @@
 			);
 			return err;
 		}
+		// - boot Sector must exist
+		if (considerBoot || considerFat)
+			if (const auto &chsBoot=GetBootSectorAddress())
+				if (!image->GetHealthySectorData(chsBoot))
+					return _T("Boot sector not found");
 		// - making sure excluded Cylinders are Empty
 		if (considerFat){
 			const TCylinder cylA=std::min(formatBoot.nCylinders,f.nCylinders), cylZ=std::max(formatBoot.nCylinders,f.nCylinders);
@@ -727,6 +732,11 @@
 
 
 
+
+	RCPhysicalAddress CDos::GetBootSectorAddress() const{
+		// returns the PhysicalAddress of the boot Sector in use, or Invalid
+		return TPhysicalAddress::Invalid;
+	}
 
 	TSectorStatus CDos::GetSectorStatus(RCPhysicalAddress chs) const{
 		// determines and returns the Status of the Sector on the specified PhysicalAddress

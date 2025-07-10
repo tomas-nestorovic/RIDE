@@ -231,6 +231,7 @@
 		CBSDOS308(PImage image,PCFormat pFormatBoot);
 
 		// boot
+		RCPhysicalAddress GetBootSectorAddress() const override;
 		void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)
 		// FAT
 		bool GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const override;

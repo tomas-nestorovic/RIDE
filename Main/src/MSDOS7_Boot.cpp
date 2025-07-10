@@ -562,6 +562,11 @@
 
 
 
+	RCPhysicalAddress CMSDOS7::GetBootSectorAddress() const{
+		// returns the PhysicalAddress of the boot Sector in use, or Invalid
+		return boot.GetPhysicalAddress();
+	}
+
 	void CMSDOS7::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector bootSector=boot.GetSectorData()){
@@ -585,9 +590,7 @@
 		// - new CountOfClusters mustn't overflow nor underflow limits of current FAT Type
 		if (considerFat){
 			// the new Format should affect --existing-- FAT
-			const PCBootSector bootSector=boot.GetSectorData();
-			if (!bootSector)
-				return DOS_ERR_BOOT_SECTOR_NOT_FOUND;
+			const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would have returned False
 			const TCylinder nCylindersMax=(	std::min(	fat.GetMaxCountOfClusters()
 														,
 														(bootSector->__getCountOfSectorsInOneFatCopy__()*bootSector->sectorSize-MSDOS7_DATA_CLUSTER_FIRST)*2/fat.type

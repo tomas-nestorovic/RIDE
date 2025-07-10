@@ -229,11 +229,8 @@
 	bool WINAPI CTRDOS503::CTrdosBootView::__onFormatChanged__(PVOID,PropGrid::Enum::UValue newValue){
 		// disk Format changed through PropertyGrid
 		CTRDOS503 *const trdos=(CTRDOS503 *)CDos::GetFocused();
-		const PBootSector boot=trdos->GetBootSector();
-		if (!boot) return false;
 		// - validating new Format
-		const PFormat pf=&trdos->formatBoot;
-		TFormat fmt=*pf;
+		TFormat fmt=trdos->formatBoot;
 		switch ((TDiskFormat)newValue.charValue){
 			case DS80:
 				fmt.mediumType=Medium::FLOPPY_DD;
@@ -251,7 +248,8 @@
 		if (!trdos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 			return false;
 		// - accepting new Format
-		*pf=fmt;
+		const PBootSector boot=trdos->GetBootSector(); // guaranteed to be found, otherwise 'ValidateFormat' would have returned False
+		trdos->formatBoot=fmt;
 		// - adjusting relevant information in the Boot Sector
 		boot->nFreeSectors-=pf->nCylinders*pf->nHeads*pf->nSectors;
 		boot->nFreeSectors+=fmt.nCylinders*fmt.nHeads*fmt.nSectors;
@@ -336,6 +334,11 @@
 
 
 
+
+	RCPhysicalAddress CTRDOS503::GetBootSectorAddress() const{
+		// returns the PhysicalAddress of the boot Sector in use, or Invalid
+		return boot.GetPhysicalAddress();
+	}
 
 	void CTRDOS503::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data

@@ -1053,9 +1053,7 @@
 		if (considerFat){
 			// the new Format should affect --existing-- FAT
 			// . BootSector must exist
-			const PBootSector bootSector=boot.GetSectorData();
-			if (!bootSector)
-				return DOS_ERR_BOOT_SECTOR_NOT_FOUND;
+			const PCBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would have returned False
 			// . briefly checking the state of FATs
 			#define MSG_SUGGESTION	_T("Run disk verification and try again.")
 			const TDirectoryEntry deFats[]={ TDirectoryEntry(this,bootSector->fatStarts[0]), TDirectoryEntry(this,bootSector->fatStarts[1]) };
@@ -1088,7 +1086,7 @@
 		if (considerFat){
 			// the new Format should affect --existing-- FAT
 			// . collecting information for the upcoming Format change
-			const PBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would return False
+			const PBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would have returned False
 			const auto nNewSectorsTotal=f.GetCountOfAllSectors();
 			const WORD nNewFatSectors=Utils::RoundDivUp( nNewSectorsTotal, (DWORD)BSDOS_FAT_ITEMS_PER_SECTOR );
 			// . adjusting the FAT
