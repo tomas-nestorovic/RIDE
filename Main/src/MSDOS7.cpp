@@ -1088,25 +1088,6 @@
 				// showing/hiding "dotdot" DirectoryEntries
 				__writeProfileBool__( INI_DONT_SHOW_DOTDOT, dontShowDotdotEntries=!dontShowDotdotEntries );
 				return TCmdResult::DONE_REDRAW;			
-			case ID_DOS_FORMAT:
-				// formatting Cylinders
-				if (const TStdWinError err=ShowDialogAndFormatStdCylinders( CFormatDialog(this,nullptr,0) )){
-					Utils::Information( DOS_ERR_CANNOT_FORMAT, err );
-					return TCmdResult::REFUSED;
-				}else
-					return TCmdResult::DONE_REDRAW;
-			case ID_DOS_UNFORMAT:{
-				// unformatting Cylinders
-				const TCylinder cylMin=1+GetLastOccupiedStdCylinder(), cylMax=image->GetCylinderCount()-1;
-				const CUnformatDialog::TStdUnformat stdUnformats[]={
-					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
-				};
-				if (const TStdWinError err=CUnformatDialog(this,stdUnformats,1).ShowModalAndUnformatStdCylinders()){
-					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
-					return TCmdResult::REFUSED;
-				}else
-					return TCmdResult::DONE_REDRAW;
-			}
 			case ID_DOS_TAKEATOUR:
 				// navigating to the online tour on this DOS
 				app.GetMainWindow()->OpenApplicationPresentationWebPage(_T("Tour"),_T("MSDOS71/tour.html"));

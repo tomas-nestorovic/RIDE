@@ -363,7 +363,7 @@
 					Utils::Information( DOS_ERR_CANNOT_FORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 					continue; // show this Dialog once again so the user can amend
 				}else{
-					::SetLastError(err);
+					Utils::Information( DOS_ERR_CANNOT_FORMAT, err );
 					return LOG_ERROR(err);
 				}
 			// . formatted successfully
@@ -1223,6 +1223,23 @@
 	CDos::TCmdResult CDos::ProcessCommand(WORD cmd){
 		// returns the Result of processing a DOS-related command
 		switch (cmd){
+			case ID_DOS_FORMAT:
+				// formatting Cylinders
+				return	ShowDialogAndFormatStdCylinders( CFormatDialog(this,nullptr,0) )==ERROR_SUCCESS
+						? TCmdResult::DONE_REDRAW
+						: TCmdResult::REFUSED;
+			case ID_DOS_UNFORMAT:{
+				// unformatting Cylinders
+				const TCylinder cylMin=1+GetLastOccupiedStdCylinder(), cylMax=image->GetCylinderCount()-1;
+				const CUnformatDialog::TStdUnformat stdUnformats[]={
+					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
+				};
+				if (const TStdWinError err=CUnformatDialog(this,stdUnformats,1).ShowModalAndUnformatStdCylinders()){
+					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
+					return TCmdResult::REFUSED;
+				}else
+					return TCmdResult::DONE_REDRAW;
+			}
 			case ID_DOS_SHELLCOMPLIANTNAMES:
 				// toggles the requirement to produce FAT32-compliant names for exported Files
 				__writeProfileBool__( INI_SHELL_COMPLIANT_EXPORT_NAMES, generateShellCompliantExportNames=!generateShellCompliantExportNames );
