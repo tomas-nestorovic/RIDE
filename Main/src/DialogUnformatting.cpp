@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+	#define DOS_ERR_CANNOT_UNFORMAT		_T("Cannot unformat")
+
 	CUnformatDialog::TParams::TParams(PDos dos,PCHead specificHeadOnly)
 		// ctor
 		: dos(dos) , specificHeadOnly(specificHeadOnly)
@@ -202,7 +204,7 @@
 					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, DOS_ERR_CYLINDERS_NOT_EMPTY, DOS_MSG_CYLINDERS_UNCHANGED );
 					continue; // show this Dialog once again so the user can amend
 				}else{
-					::SetLastError(err);
+					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
 					return LOG_ERROR(err);
 				}
 			break;

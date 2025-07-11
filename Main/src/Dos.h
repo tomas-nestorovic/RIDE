@@ -2,7 +2,6 @@
 #define DOS_H
 
 	#define DOS_ERR_CANNOT_FORMAT		_T("Cannot format")
-	#define DOS_ERR_CANNOT_UNFORMAT		_T("Cannot unformat")
 	#define DOS_ERR_CANNOT_ACCEPT_VALUE	_T("Cannot accept the new value")
 	#define DOS_ERR_CYLINDERS_NOT_EMPTY	_T("Not all cylinders are reported empty.")
 

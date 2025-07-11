@@ -63,11 +63,9 @@
 					{ _T("Trim to 80 cylinders"),	80, cylMax },
 					{ STR_TRIM_TO_MIN_NUMBER_OF_CYLINDERS,	cylMin, cylMax }
 				};
-				if (const TStdWinError err=CUnformatDialog( this, stdUnformats, ARRAYSIZE(stdUnformats) ).ShowModalAndUnformatStdCylinders()){
-					Utils::Information( DOS_ERR_CANNOT_UNFORMAT, err );
-					return TCmdResult::REFUSED;
-				}else
-					return TCmdResult::DONE_REDRAW;
+				return	CUnformatDialog( this, stdUnformats, ARRAYSIZE(stdUnformats) ).ShowModalAndUnformatStdCylinders()==ERROR_SUCCESS
+						? TCmdResult::DONE_REDRAW
+						: TCmdResult::REFUSED;
 			}
 			case ID_FILE_CLOSE:
 			case ID_TAPE_CLOSE:
