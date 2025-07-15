@@ -184,6 +184,7 @@
 		TStdWinError CreateUserInterface(HWND hTdi) override;
 		TCmdResult ProcessCommand(WORD cmd) override;
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
+		CString ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const override;
 	};
 
 

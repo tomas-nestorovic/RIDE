@@ -256,6 +256,24 @@
 		return __bootSectorModified__(nullptr,0);
 	}
 
+	CString CTRDOS503::ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const{
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
+		// - base
+		CString &&err=__super::ValidateFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
+		// - must be one of default Formats
+		auto tmpFmt=f;
+			tmpFmt.nCylinders--; // inclusive!
+		for each( const auto &stdFmt in StdFormats ){
+			tmpFmt.mediumType=stdFmt.params.format.mediumType; // ignore Medium (unreliable for Images)
+			if (stdFmt.params.format==tmpFmt)
+				return err;
+		}
+		// - new Format is acceptable
+		return _T("Format not allowed");
+	}
+
 	#define CYGNUSBOOT_NAME			_T("CygnusBoot 2.2.3")
 	#define CYGNUSBOOT_IMPORT_NAME	_T("boot.B ZXP35000aL10e2S11")
 	#define CYGNUSBOOT_ONLINE_NAME	_T("TRDOS/CygnusBoot/") CYGNUSBOOT_IMPORT_NAME
