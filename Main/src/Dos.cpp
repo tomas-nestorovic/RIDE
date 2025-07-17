@@ -210,7 +210,7 @@
 				case TSectorStatus::SYSTEM:
 				case TSectorStatus::OCCUPIED:
 				case TSectorStatus::RESERVED:
-				case TSectorStatus::SKIPPED:
+				//case TSectorStatus::SKIPPED: // commented out - may unformat Tracks with deleted Files in TR-DOS
 				//case TSectorStatus::UNAVAILABLE:
 					return ERROR_NOT_EMPTY;
 			}
