@@ -50,7 +50,7 @@
 		// informs that a critical value in the Boot is about to be changed, and if confirmed, changes it
 		if (Utils::QuestionYesNo(_T("About to modify a critical value, data at stake if set incorrectly!\n\nContinue?!"),MB_DEFBUTTON2)){
 			const PDos dos=CDos::GetFocused();
-			// . validating the new Format
+			// . composition of the new Format
 			TFormat fmt=dos->formatBoot;
 			if (criticalValueId==CRITICAL_VALUE_SIDES_COUNT)
 				fmt.nHeads=(THead)newValue;
@@ -60,10 +60,8 @@
 				fmt.sectorLength=(WORD)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_CLUSTER_SIZE)
 				fmt.clusterSize=(TSector)newValue;
-			if (!dos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
-				return false;
-			// . accepting the new format
-			if (!dos->ChangeFormat( true, true, fmt ))
+			// . try to accept the new Format
+			if (!dos->ChangeFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 				return false;
 			dos->formatBoot=fmt;
 			dos->FlushToBootSector();
@@ -84,11 +82,9 @@
 		// - validate and adopt new Format (eventually extending existing FAT to accommodate new Cylinders, or shrinking FAT to spare space on the disk)
 		TFormat fmt=dos->formatBoot;
 			fmt.nCylinders=(TCylinder)newValue;
-		if (!dos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
+		if (!dos->ChangeFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
 			return false;
 		// - adding to or removing from FAT
-		if (!dos->ChangeFormat( true, true, fmt ))
-			return false;
 		TCHAR bufMsg[500];
 		if (newValue>nCyl0){
 			// adding Cylinders to FAT

@@ -138,18 +138,36 @@
 		return err;
 	}
 
+	#define STR_INVALID_DISK_FORMAT	_T("Invalid disk format")
+
 	bool CDos::ValidateFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion) const{
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
 		const CString &&err=ValidateFormat( considerBoot, considerFat, f );
 		if (err.IsEmpty())
 			return true;
-		Utils::Information( _T("Invalid disk format"), err, suggestion );
+		Utils::Information( STR_INVALID_DISK_FORMAT, err, suggestion );
 		return false;
 	}
 
-	bool CDos::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+	CString CDos::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
+		// - format validation
+		const CString &&err=ValidateFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
+		// - format acceptance
+		//if (considerBoot)
+			//formatBoot=f; // commented out as mustn't generally overwrite current Format; e.g. formatting 10-sector Cylinder79 into otherwise 9-sector disk structure doesn't mean that the whole disk structure is now 10 Sectors per Track
+		return err;
+	}
+
+	bool CDos::ChangeFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion){
 		// True <=> specified Format is acceptable, otherwise False (and informing on error)
-		return ValidateFormatAndReportProblem( considerBoot, considerFat, f );
+		const CString &&err=ChangeFormat( considerBoot, considerFat, f );
+		if (err.IsEmpty())
+			return true;
+		Utils::Information( STR_INVALID_DISK_FORMAT, err, suggestion );
+		return false;
 	}
 
 	TCylinder CDos::GetLastOccupiedStdCylinder() const{

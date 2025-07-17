@@ -129,11 +129,11 @@
 		DDX_Check( pDX, ID_REPORT	, showReportOnFormatting );
 		if (pDX->m_bSaveAndValidate){
 			// . checking that new format is acceptable
-			const Utils::CVarTempReset<TCylinder> nCyls0( params.format.nCylinders, params.format.nCylinders+1 );
-			if (!dos->ValidateFormatAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )
-				||
-				!dos->ChangeFormat( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format )
-			){
+			const Utils::CVarTempReset<TCylinder> nCyls0(
+				params.format.nCylinders,
+				std::max( (TCylinder)(params.format.nCylinders+1), dos->formatBoot.nCylinders ) // can't only grow (aka. don't modify Format if reformatting Cylinders in the middle of a disk)
+			);
+			if (!dos->ChangeFormatAndReportProblem( updateBoot&&params.cylinder0>0, addTracksToFat&&params.cylinder0>0, params.format, nullptr )){
 				pDX->PrepareEditCtrl(ID_CYLINDER_N);
 				pDX->Fail();
 			}

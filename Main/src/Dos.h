@@ -7,6 +7,7 @@
 
 	#define DOS_MSG_CYLINDERS_UNCHANGED	_T("No cylinders have been modified.")
 	#define DOS_MSG_HIT_ESC				_T("Hit Escape to cancel editing.")
+	#define DOS_MSG_VERIFY_DISK_FIRST	_T("Run disk verification and try again.")
 
 	#define DOS_DIR_ROOT	nullptr
 	#define DOS_DIR_ROOT_ID	0
@@ -461,7 +462,8 @@
 		virtual void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap)=0;
 		virtual CString ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const;
 		bool ValidateFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion=nullptr) const;
-		virtual bool ChangeFormat(bool considerBoot,bool considerFat,RCFormat f);
+		virtual CString ChangeFormat(bool considerBoot,bool considerFat,RCFormat f);
+		bool ChangeFormatAndReportProblem(bool considerBoot,bool considerFat,RCFormat f,LPCTSTR suggestion=DOS_MSG_VERIFY_DISK_FIRST);
 		void ShowFileProcessingError(PCFile file,LPCTSTR cause) const;
 		void ShowFileProcessingError(PCFile file,TStdWinError cause) const;
 		virtual bool CanBeShutDown(CFrameWnd* pFrame) const;

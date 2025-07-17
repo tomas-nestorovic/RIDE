@@ -1077,13 +1077,14 @@
 		return err;
 	}
 
-	bool CBSDOS308::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
-		// True <=> specified Format is acceptable, otherwise False (and informing on error)
+	CString CBSDOS308::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
 		// - base
-		if (!__super::ChangeFormat( considerBoot, considerFat, f ))
-			return false;
+		CString &&err=__super::ChangeFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
+		// - modifying --existing-- FAT
 		if (considerFat){
-			// the new Format should affect --existing-- FAT
 			// . collecting information for the upcoming Format change
 			const PBootSector bootSector=boot.GetSectorData(); // guaranteed to be found, otherwise '__super' would have returned False
 			const auto nNewSectorsTotal=f.GetCountOfAllSectors();
@@ -1101,6 +1102,7 @@
 				}
 			else if (nNewFatSectors>bootSector->nSectorsPerFat){
 				// new FAT is longer than the original one - TRANSACTIONALLY allocating new Sectors to each of FAT copies
+				static const CString MsgCantAllocateFatSectors=_T("Can't allocate necessary FAT sectors");
 				bool allowFileFragmentation=false;
 				CFatPath fats[]={ CFatPath(this,&deFats[0]), CFatPath(this,&deFats[1]) };
 				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ )
@@ -1113,14 +1115,13 @@
 							fats[i].AddItem(&item);
 						}else if (allowFileFragmentation){
 							// no new healthy FAT Sectors can be allocated despite possibility to fragment Files
-							Utils::FatalError( _T("Can't allocate necessary FAT sectors"), ERROR_FILE_SYSTEM_LIMITATION, MSG_SUGGESTION );
-							return false;
+							return MsgCantAllocateFatSectors;
 						}else
 							// no new healthy FAT Sectors can be allocated without fragmenting some Files
-							if (Utils::QuestionYesNo( _T("Can't allocate necessary FAT sectors.\nFragment some files in favor of FAT?"), MB_DEFBUTTON2 ))
+							if (Utils::QuestionYesNo( Utils::SimpleFormat(_T("%s\nFragment some files in favor of FAT?"),MsgCantAllocateFatSectors), MB_DEFBUTTON2 ))
 								allowFileFragmentation=true; // allowing fragmentation and trying again
 							else
-								return false;
+								return MsgCantAllocateFatSectors;
 				for( BYTE i=0; i<BSDOS_FAT_COPIES_MAX; i++ ){
 					for( WORD s=bootSector->nSectorsPerFat; s<nNewFatSectors; s++ )
 						::ZeroMemory(
@@ -1137,8 +1138,8 @@
 		}//else
 			// the new Format shouldn't be officially adopted in FAT (e.g. formatting from scratch a yet empty disk)
 			//nop
-		// - new Format has been adopted
-		return true;
+		// - new Format adopted
+		return err;
 	}
 
 

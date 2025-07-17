@@ -245,15 +245,10 @@
 				fmt.mediumType=Medium::FLOPPY_DD_525; // likely 360 rpm in PC
 				fmt.nCylinders=40,fmt.nHeads=1; break;
 		}
-		if (!trdos->ValidateFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC ))
-			return false;
 		// - accepting new Format
-		const PBootSector boot=trdos->GetBootSector(); // guaranteed to be found, otherwise 'ValidateFormat' would have returned False
-		trdos->formatBoot=fmt;
-		// - adjusting relevant information in the Boot Sector
-		boot->nFreeSectors-=pf->nCylinders*pf->nHeads*pf->nSectors;
-		boot->nFreeSectors+=fmt.nCylinders*fmt.nHeads*fmt.nSectors;
-		return __bootSectorModified__(nullptr,0);
+		return	trdos->ChangeFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC )
+				&&
+				__bootSectorModified__(nullptr,0);
 	}
 
 	CString CTRDOS503::ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const{
@@ -272,6 +267,22 @@
 		}
 		// - new Format is acceptable
 		return _T("Format not allowed");
+	}
+
+	CString CTRDOS503::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
+		// returns reason why specified new Format cannot be accepted, or empty string if Format acceptable
+		// - base
+		CString &&err=__super::ChangeFormat( considerBoot, considerFat, f );
+		if (!err.IsEmpty())
+			return err;
+		// - BootSector modification
+		if (considerBoot){
+			const PBootSector boot=GetBootSector(); // guaranteed to be found, otherwise '__super' would have returned False
+			boot->nFreeSectors+= f.GetCountOfAllSectors() - formatBoot.GetCountOfAllSectors();
+			formatBoot=f;
+		}
+		// - new Format adopted
+		return err;
 	}
 
 	#define CYGNUSBOOT_NAME			_T("CygnusBoot 2.2.3")

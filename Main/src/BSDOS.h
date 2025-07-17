@@ -259,7 +259,7 @@
 		bool UpdateCommandUi(WORD cmd,CCmdUI *pCmdUI) const override;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters,CActionProgress &ap) override;
 		CString ValidateFormat(bool considerBoot,bool considerFat,RCFormat f) const override;
-		bool ChangeFormat(bool considerBoot,bool considerFat,RCFormat f) override;
+		CString ChangeFormat(bool considerBoot,bool considerFat,RCFormat f) override;
 	};
 
 
