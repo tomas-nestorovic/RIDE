@@ -88,9 +88,10 @@
 	#define TRACKINFO		 "Track-Info"
 	#define	TRACKINFO_HEADER TRACKINFO "\r\n"
 
-	bool CDsk5::TTrackInfo::__readAndValidate__(CFile &f){
+	bool CDsk5::TTrackInfo::ReadAndValidate(CFile &f){
 		// True <=> valid TrackInfo read from the given File, otherwise False
 		if (f.Read(this,sizeof(*this))<sizeof(*this)) return false;
+		ASSERT( !reserved1 && !reserved2 ); // these should be zero if not used for extensions, currently not implemented
 		static_assert( sizeof(TRACKINFO)<sizeof(header), "" );
 		if (::strncmp(header,TRACKINFO_HEADER,sizeof(TRACKINFO)-1)) return false;
 		if (nSectors>DSK_TRACKINFO_SECTORS_MAX) return false;
@@ -166,7 +167,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				if (*pOffset256){
 					// . validating the TrackInfo structure
 					TTrackInfo ti;
-					if (!ti.__readAndValidate__(f)) goto formatError;
+					if (!ti.ReadAndValidate(f)) goto formatError;
 					// . validating the Offset
 					const WORD trackLength=__getTrackLength256__(&ti);
 					if (*pOffset256!=(sizeof(ti)+trackLength>>8)) goto formatError;
@@ -180,7 +181,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				for( THead head=diskInfo.nHeads; head--; ppti++ ){
 					// . validating the TrackInfo structure
 					TTrackInfo ti;
-					if (!ti.__readAndValidate__(f)) goto formatError;
+					if (!ti.ReadAndValidate(f)) goto formatError;
 					const TSectorInfo *psi=ti.sectorInfo;
 					for( TSector n=ti.nSectors; n--; psi++ )
 						if (psi->__hasValidSectorLengthCode__() && psi->sectorLengthCode>ti.std_sectorMaxLengthCode) goto formatError;

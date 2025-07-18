@@ -32,7 +32,7 @@
 			BYTE fillerByte;
 			TSectorInfo sectorInfo[DSK_TRACKINFO_SECTORS_MAX];
 
-			bool __readAndValidate__(CFile &f);
+			bool ReadAndValidate(CFile &f);
 		} *PTrackInfo;
 
 		struct TParams sealed{
