@@ -114,7 +114,7 @@
 
 	WORD CDsk5::__getSectorLength__(const TSectorInfo *si) const{
 		// determines and returns Sector length given its LengthCode and/or reported SectorLength
-		return	params.rev5
+		return	params.rev5 && si->rev5_sectorLength // some Rev5 images don't have the 'rev5_sectorLength' filled in, e.g. https://oldcomp.cz/download/file.php?id=21799
 				? si->rev5_sectorLength+0x7f & 0xff80 // rounding up to whole multiples of 128
 				: GetUsableSectorLength(si->sectorLengthCode);
 	}
