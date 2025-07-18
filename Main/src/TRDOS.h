@@ -151,7 +151,7 @@
 		static const CFormatDialog::TStdFormat StdFormats[];
 
 		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
-		static UINT AFX_CDECL __defragmentation_thread__(PVOID _pCancelableAction);
+		static UINT AFX_CDECL Defragmentation_thread(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static UINT AFX_CDECL CrossLinkedFilesVerification_thread(PVOID pCancelableAction);
 

@@ -813,13 +813,13 @@
 			: trdos(trdos) , boot(boot) {
 		}
 	};
-	UINT AFX_CDECL CTRDOS503::__defragmentation_thread__(PVOID _pCancelableAction){
+	UINT AFX_CDECL CTRDOS503::Defragmentation_thread(PVOID _pCancelableAction){
 		// thread to defragment the disk
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 		const TDefragParams dp=*(TDefragParams *)pAction->GetParams();
 		pAction->SetProgressTarget( 1+dp.boot->firstFree.track );
 		// - getting the list of Files
-		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX],*pDeFree=directory;
+		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX+1],*pDeFree=directory;
 		BYTE nFiles=dp.trdos->__getDirectory__(directory);
 		directory[nFiles]=(PDirectoryEntry)dp.boot; // for the case that it's not necessary to defragment the disk
 		// - resetting relevant information in Boot Sector
@@ -859,7 +859,7 @@
 					const DWORD fileExportSize=dp.trdos->ExportFile( de, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 					if (errMsg){
 						dp.trdos->ShowFileProcessingError(de,errMsg);
-						return ERROR_CANCELLED; //TODO: making sure that the disk is in consistent state
+						return pAction->TerminateWithError(ERROR_CANCELLED); //TODO: making sure that the disk is in consistent state
 					}
 					const CPathString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
 					// : importing File data from Buffer to new place in Image
@@ -932,7 +932,7 @@
 				const Utils::CVarTempReset<TGetFileSizeOptions> gfs0( getFileSizeDefaultOption, TGetFileSizeOptions::SizeOnDisk ); // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=GetBootSector())
 						CBackgroundActionCancelable(
-							__defragmentation_thread__,
+							Defragmentation_thread,
 							&TDefragParams( this, boot ),
 							THREAD_PRIORITY_BELOW_NORMAL
 						).Perform();
