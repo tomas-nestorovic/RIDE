@@ -248,9 +248,7 @@
 						pRgn++->status=TSectorStatus::UNAVAILABLE;
 					}
 					pRgn->start = de->first;
-					pRgn++->status=	*(PCBYTE)de!=TDirectoryEntry::DELETED
-									? TSectorStatus::OCCUPIED
-									: TSectorStatus::SKIPPED ;
+					pRgn++->status=	de->IsDeleted() ? TSectorStatus::SKIPPED : TSectorStatus::OCCUPIED;
 					lastRegionStart = pRgn->start = de->first+de->nSectors; // for the case that next DirectoryEntry not found (as Sector not found)
 				}else{
 					// end of Directory, or Directory Sector not found
@@ -325,10 +323,10 @@
 			return true;
 		}
 		// - no FatPath can be retrieved if File is Deleted
-		if (*(PCBYTE)file==TDirectoryEntry::DELETED)
+		const PCDirectoryEntry de=(PCDirectoryEntry)file;
+		if (de->IsDeleted())
 			return false;
 		// - composing the FatPath
-		const PCDirectoryEntry de=(PCDirectoryEntry)file;
 		const div_t B=div( de->first.track, formatBoot.nHeads );
 			item.chs.cylinder = item.chs.sectorId.cylinder = B.quot,
 			item.chs.sectorId.side=GetSideNumber( item.chs.head=B.rem ),
@@ -433,19 +431,19 @@
 		// deletes specified File; returns Windows standard i/o error
 		if (file==ZX_DIR_ROOT)
 			return ERROR_ACCESS_DENIED; // can't delete the root Directory
-		if (*(PCBYTE)file!=TDirectoryEntry::DELETED && *(PCBYTE)file!=TDirectoryEntry::END_OF_DIR) // File mustn't be already Deleted (may happen during moving it in FileManager)
+		const PDirectoryEntry de=(PDirectoryEntry)file;
+		if (de->IsNormal()) // File mustn't be already Deleted (may happen when moving it in FileManager)
 			if (const PBootSector boot=GetBootSector()){
 				PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX];
-				MarkDirectorySectorAsDirty(file);
+				MarkDirectorySectorAsDirty(de);
 				this->boot.MarkSectorAsDirty();
-				if (file!=directory[__getDirectory__(directory)-1]){
+				if (de!=directory[__getDirectory__(directory)-1]){
 					// File is not at the end of Directory
-					*(PBYTE)file=TDirectoryEntry::DELETED;
+					de->MarkDeleted();
 					boot->nFilesDeleted++;
 				}else{
 					// File is at the end of Directory
-					const PDirectoryEntry de=(PDirectoryEntry)file;
-					*(PBYTE)de=TDirectoryEntry::END_OF_DIR;
+					de->MarkEndOfDir();
 					if (!de->__isTemporary__()){ // not a temporary Entry in Directory (see also ImportFile)
 						boot->firstFree=de->first, boot->nFreeSectors+=de->nSectors;
 						if (!importToSysTrack) // saving data in system Track 0 forbidden ...
@@ -535,7 +533,8 @@
 			::ZeroMemory(&tmp,sizeof(tmp));
 			// . name
 			//nop (ChangeFileNameAndExt called below by ImportFile)
-			*tmp.name=TDirectoryEntry::END_OF_DIR;
+			//tmp.MarkEndOfDir(); // see 'ZeroMemory' above
+			static_assert( TDirectoryEntry::END_OF_DIR=='\0', "" );
 			// . Size
 			//nop (set below)
 			// . FirstTrack and -Sector
@@ -571,7 +570,7 @@
 		// - terminating the Directory
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX+1],*p=directory; // "+1" = terminator
 		for( directory[__getDirectory__(directory)]=(PDirectoryEntry)boot; *p!=de; p++ ); // Boot Sector as terminator
-		*(PBYTE)*++p=TDirectoryEntry::END_OF_DIR;
+		(*++p)->MarkEndOfDir();
 		MarkDirectorySectorAsDirty(*p);
 		// - File successfully imported to Image
 		return ERROR_SUCCESS;
@@ -756,13 +755,17 @@
 		// - getting the next DirectoryEntry
 		entry=(PDirectoryEntry)entry+1, nRemainingEntriesInSector--;
 		if (!foundEndOfDirectory && entryType!=TDirectoryTraversal::WARNING)
-			if (*(PCBYTE)entry!=TDirectoryEntry::END_OF_DIR)
-				entryType =	*(PCBYTE)entry!=TDirectoryEntry::DELETED
-							? TDirectoryTraversal::FILE
-							: TDirectoryTraversal::CUSTOM;
-			else{
-				entryType=TDirectoryTraversal::EMPTY;
-				foundEndOfDirectory=true;
+			switch (((PCDirectoryEntry)entry)->special){
+				case TDirectoryEntry::END_OF_DIR:
+					entryType=TDirectoryTraversal::EMPTY;
+					foundEndOfDirectory=true;
+					break;
+				case TDirectoryEntry::DELETED:
+					entryType=TDirectoryTraversal::CUSTOM;
+					break;
+				default:
+					entryType=TDirectoryTraversal::FILE;
+					break;
 			}
 		return true;
 	}
@@ -786,7 +789,7 @@
 	void CTRDOS503::TTrdosDirectoryTraversal::ResetCurrentEntry(BYTE directoryFillerByte){
 		// gets current entry to the state in which it would be just after formatting
 		if (entryType==TDirectoryTraversal::FILE || entryType==TDirectoryTraversal::EMPTY){
-			*(PBYTE)::memset( entry, directoryFillerByte, entrySize )=TDirectoryEntry::DELETED;
+			((PDirectoryEntry)::memset( entry, directoryFillerByte, entrySize ))->MarkDeleted();
 			entryType=TDirectoryTraversal::EMPTY;
 		}
 	}
@@ -832,7 +835,7 @@
 			for( BYTE n=0; n<nFiles && !directory[n]->first.track; n++ ){
 				// keeping a File that starts at zeroth system Track where it is
 				dp.boot->firstFree = directory[n]->first+directory[n]->nSectors;
-				if (*(PCBYTE)directory[n]==TDirectoryEntry::DELETED){
+				if (directory[n]->IsDeleted()){
 					if (dp.boot->firstFree.track){ // if already outside zeroth system Track ...
 						dp.boot->firstFree.track=1, dp.boot->firstFree.sector=0; // ... then we can defragment to first official data Sector
 						break;
@@ -846,8 +849,8 @@
 		// - defragmenting
 		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles; nFiles--; pDe++ ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
-			const PDirectoryEntry de=(PDirectoryEntry)*pDe;
-			if (*(PCBYTE)de!=TDirectoryEntry::DELETED) // an existing (i.e. non-Deleted) File
+			const PDirectoryEntry de=*pDe;
+			if (!de->IsDeleted()) // an existing (i.e. non-Deleted) File
 				if (pDe!=pDeFree){
 					// disk is fragmented
 					// : exporting the File into Buffer
@@ -861,7 +864,7 @@
 					const CPathString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
 					// : importing File data from Buffer to new place in Image
 					PDirectoryEntry deFree=*pDeFree++;
-					*(PBYTE)deFree=TDirectoryEntry::END_OF_DIR; // marking the DirectoryEntry as the end of Directory (and thus Empty)
+					deFree->MarkEndOfDir(); // declare the end of Directory (and thus Empty)
 					dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, (PFile &)deFree );
 					// : marking the DirectorySector from which the File was removed as dirty; Directory Sector where the File was moved to marked as dirty during importing its data
 					dp.trdos->MarkDirectorySectorAsDirty(de);
@@ -873,7 +876,7 @@
 				}
 			pAction->UpdateProgress( dp.boot->firstFree.track );
 		}
-		*(PBYTE)*pDeFree=TDirectoryEntry::END_OF_DIR; // terminating the Directory
+		(*pDeFree)->MarkEndOfDir(); // Directory termination
 		return pAction->TerminateWithSuccess();
 	}
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){

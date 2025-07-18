@@ -74,12 +74,17 @@
 				BASIC_PRG	='B', // Basic
 				DATA_FIELD	='D',
 				BLOCK		='C', // Code
-				PRINT		='#',
-				DELETED		=1,
-				END_OF_DIR	=0
+				PRINT		='#'
 			};
 
-			char name[TRDOS503_FILE_NAME_LENGTH_MAX];
+			union{
+				enum TSpecial:char{
+					END_OF_DIR,
+					DELETED,
+					LAST_SPECIAL
+				} special;
+				char name[TRDOS503_FILE_NAME_LENGTH_MAX];
+			};
 			BYTE extension;
 			WORD parameterA;
 			WORD parameterB;
@@ -90,6 +95,10 @@
 
 			static UINT AFX_CDECL Verification_thread(PVOID pCancelableAction);
 
+			inline bool IsDeleted() const{ return special==DELETED; }
+			inline void MarkDeleted(){ special=DELETED; }
+			inline void MarkEndOfDir(){ special=END_OF_DIR; }
+			inline bool IsNormal() const{ return special>=LAST_SPECIAL; }
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;
 			WORD __getFileSizeOnDisk__() const;
 			void __markTemporary__();
