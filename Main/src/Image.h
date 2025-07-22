@@ -154,6 +154,7 @@
 		WORD sectorLength;
 		WORD clusterSize; // in Sectors
 
+		inline operator bool() const{ return !operator==(Unknown); }
 		bool operator==(const TFormat &fmt2) const;
 		DWORD GetCountOfAllSectors() const;
 		WORD GetCountOfSectorsPerCylinder() const;
