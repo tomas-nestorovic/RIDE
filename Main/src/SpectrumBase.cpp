@@ -141,8 +141,10 @@
 		// - finding and trimming the Extension
 		char zx[1024]; // should suffice for any filename of any Spectrum DOS
 		buf=TZxRom::AsciiToZx( buf.GetAnsi(), zx, nullptr );
-		rOutExt=buf.DetachExtension().Unescape();
-		rOutName=buf.Unescape();
+		rOutExt=buf.DetachExtension();
+		rOutName=buf;
+		if (zxInfo) // not shell-compliant?
+			rOutExt=rOutExt.Unescape(), rOutName=rOutName.Unescape();
 		return zxInfo;
 	}
 

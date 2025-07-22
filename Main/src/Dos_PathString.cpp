@@ -282,7 +282,7 @@
 		TCHAR tmp[32768], *pWritten=tmp;
 		for( int i=0; i<__super::GetLength(); i++ ){
 			const TCHAR c=operator[](i);
-			if (::isprint((BYTE)c) // a candidate for direct output without escaping
+			if (::isprint((BYTE)c) && c!='%' // a candidate for direct output without escaping
 				&&(
 					!escapeShellForbidden // preserve shell forbidden chars?
 					||
