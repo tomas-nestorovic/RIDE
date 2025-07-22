@@ -820,9 +820,10 @@
 		pAction->SetProgressTarget( 1+dp.boot->firstFree.track );
 		// - getting the list of Files
 		PDirectoryEntry directory[TRDOS503_FILE_COUNT_MAX+1],*pDeFree=directory;
-		BYTE nFiles=dp.trdos->__getDirectory__(directory);
+		const BYTE nFiles=dp.trdos->__getDirectory__(directory);
 		directory[nFiles]=(PDirectoryEntry)dp.boot; // for the case that it's not necessary to defragment the disk
 		// - resetting relevant information in Boot Sector
+		Utils::CVarBackup<TBootSector> bs0(*dp.boot); // backup for the case of failure (e.g. File Sector not found)
 		dp.boot->nFiles = dp.boot->nFilesDeleted = 0;
 		if (dp.trdos->importToSysTrack){
 			dp.boot->firstFree.track=0, dp.boot->firstFree.sector=TRDOS503_BOOT_SECTOR_NUMBER;
@@ -845,9 +846,10 @@
 				dp.boot->nFiles++;
 			}
 		}
-		nFiles-=dp.boot->nFiles, pDeFree+=dp.boot->nFiles;
-		// - defragmenting
-		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles; nFiles--; pDe++ ){
+		// - defragmentation
+		const Utils::CVarTempReset<TGetFileSizeOptions> gfs0( dp.trdos->getFileSizeDefaultOption, TGetFileSizeOptions::SizeOnDisk ); // Files may lie about their official length, e.g. copy-protection
+		const Utils::CVarTempReset<bool> sc0( dp.trdos->generateShellCompliantExportNames, false ); // Files may contain special/non-printable chars, e.g. copy-protection
+		for( const PDirectoryEntry *pDe=directory+dp.boot->nFiles,*pDeLast=directory+nFiles; pDe<pDeLast; pDe++ ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
 			const PDirectoryEntry de=*pDe;
 			if (!de->IsDeleted()) // an existing (i.e. non-Deleted) File
@@ -859,14 +861,20 @@
 					const DWORD fileExportSize=dp.trdos->ExportFile( de, &CMemFile(buf,sizeof(buf)), sizeof(buf), &errMsg );
 					if (errMsg){
 						dp.trdos->ShowFileProcessingError(de,errMsg);
-						return pAction->TerminateWithError(ERROR_CANCELLED); //TODO: making sure that the disk is in consistent state
+						return pAction->TerminateWithError(ERROR_CANCELLED);
 					}
 					const CPathString tmpName=dp.trdos->GetFileExportNameAndExt(de,false);
 					// : importing File data from Buffer to new place in Image
-					PDirectoryEntry deFree=*pDeFree++;
+					PDirectoryEntry deFree=*pDeFree;
 					deFree->MarkEndOfDir(); // declare the end of Directory (and thus Empty)
-					dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, (PFile &)deFree );
+					if (const TStdWinError err=dp.trdos->ImportFile( &CMemFile(buf,sizeof(buf)), fileExportSize, tmpName, 0, (PFile &)deFree )){
+						deFree->MarkDeleted();
+						dp.trdos->ShowFileProcessingError(de,err);
+						return pAction->TerminateWithError(err);
+					}
+					(*++pDeFree)->MarkDeleted(); // marked as EndOfDirectory in 'ImportFile'
 					// : marking the DirectorySector from which the File was removed as dirty; Directory Sector where the File was moved to marked as dirty during importing its data
+					de->MarkDeleted();
 					dp.trdos->MarkDirectorySectorAsDirty(de);
 				}else{
 					// disk (so far) not fragmented - keeping the File where it is
@@ -877,6 +885,7 @@
 			pAction->UpdateProgress( dp.boot->firstFree.track );
 		}
 		(*pDeFree)->MarkEndOfDir(); // Directory termination
+		bs0.Invalidate();
 		return pAction->TerminateWithSuccess();
 	}
 	CDos::TCmdResult CTRDOS503::ProcessCommand(WORD cmd){
@@ -929,7 +938,6 @@
 			case ID_DOS_DEFRAGMENT:{
 				// defragmenting the disk
 				if (image->ReportWriteProtection()) return TCmdResult::DONE;
-				const Utils::CVarTempReset<TGetFileSizeOptions> gfs0( getFileSizeDefaultOption, TGetFileSizeOptions::SizeOnDisk ); // during the defragmentation, File size is given by the number of Sectors in FatPath (as some Files lie about its size in their DirectoryEntries as part of copy-protection scheme)
 					if (const PBootSector boot=GetBootSector())
 						CBackgroundActionCancelable(
 							Defragmentation_thread,

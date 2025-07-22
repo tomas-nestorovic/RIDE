@@ -160,14 +160,19 @@ namespace Utils{
 	template<typename T>
 	class CVarBackup{
 		const T value0;
+		bool valid;
 	protected:
 		T &var;
 	public:
 		inline CVarBackup(T &var)
-			: value0(var) , var(var) {
+			: value0(var) , var(var) , valid(true) {
 		}
 		inline ~CVarBackup(){
-			var=value0;
+			if (valid)
+				var=value0;
+		}
+		inline void Invalidate(){
+			valid=false;
 		}
 	};
 
