@@ -499,7 +499,7 @@
 		// - getting import information
 		TStdParameters params;	TUniFileType uts;	DWORD dw;
 		const LPCTSTR pTrdosSpecificInfo=(LPCTSTR)zxInfo+__importFileInformation__(zxInfo,uts,params,dw);
-		const DWORD fileSizeFormal=	pTrdosSpecificInfo>zxInfo // if record on official File size exists in ZxInformation ...
+		const DWORD fileSizeFormal=	pTrdosSpecificInfo>(LPCTSTR)zxInfo // if record on official File size exists in ZxInformation ...
 									? dw // ... use that record
 									: fileSize; // ... otherwise take as the official File size the actual size of imported file
 		// - determining how much space the File will take on disk
