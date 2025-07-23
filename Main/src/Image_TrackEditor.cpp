@@ -631,15 +631,15 @@ using namespace Charting;
 				const CParseEventList peList0( std::move(parseEvents) );
 				for each( const auto &pair in peList0 ){
 					const auto &pe=*pair.second;
-					for each( const TLogTime &t in pe.tArray ){
-						const CBitSequence::PCBit pIw=pIws->Find(t);
-						const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
-						const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
-						if (dist1<dist2)
-							const_cast<TLogTime &>(t)-=dist1;
-						else
-							const_cast<TLogTime &>(t)+=dist2;
-					}
+					for each( const TLogTime &t in pe.tArray )
+						if (const CBitSequence::PCBit pIw=pIws->Find(t)){
+							const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
+							const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
+							if (dist1<dist2)
+								const_cast<TLogTime &>(t)-=dist1;
+							else
+								const_cast<TLogTime &>(t)+=dist2;
+						}
 					parseEvents.Add(pe);
 				}
 			}
