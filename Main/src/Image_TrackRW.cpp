@@ -909,15 +909,15 @@
 	#endif
 	}
 
-	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime tMin) const{
-		// returns the Bit at specified minimum LogicalTime
+	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime t) const{
+		// returns the Bit containing the specified LogicalTime
 		auto it=std::lower_bound(
-			begin(), end(), tMin,
+			begin(), end(), t,
 			[](const TBit &b,TLogTime t){ return b.time<t; }
 		);
 		if (it==end())
 			return nullptr;
-		it-=tMin<it->time; // correct the result of Binary Search (usually finds the next Bit)
+		it-=t<it->time; // unless LogicalTime perfectly aligned with one of Bits, 'lower_bound' finds the immediatelly next Bit - hence going back to the Bit that contains the LogicalTime
 		return it;
 	}
 

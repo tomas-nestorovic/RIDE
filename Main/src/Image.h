@@ -647,7 +647,7 @@
 
 				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
 				inline int GetBitCount() const{ return nBits; }
-				PCBit Find(TLogTime tMin) const;
+				PCBit Find(TLogTime t) const;
 				Utils::CCallocPtr<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;

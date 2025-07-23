@@ -312,7 +312,7 @@ using namespace Charting;
 			}
 
 			PCInspectionWindow GetInspectionWindow(TLogTime logTime) const{
-				// returns the InspectionWindow at specified LogicalTime
+				// returns the InspectionWindow containing the specified LogicalTime
 				ASSERT( inspectionWindows );
 				return inspectionWindows->Find(logTime);
 			}
@@ -321,8 +321,8 @@ using namespace Charting;
 				// searching specified time interval, returns the InspectionWindow with specified UniqueIdentifier
 				ASSERT( inspectionWindows );
 				const auto it=std::lower_bound(
-					inspectionWindows->Find(tRevStart),
-					inspectionWindows->Find(tRevEnd),
+					inspectionWindows->Find(tRevStart),	// incl.
+					inspectionWindows->Find(tRevEnd),	// excl.
 					uid,
 					[](const TInspectionWindow &iw,int uid){
 						return std::abs(iw.uid)<uid;
