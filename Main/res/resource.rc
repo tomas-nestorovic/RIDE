@@ -1491,8 +1491,8 @@ BEGIN
     PUSHBUTTON      "Resolve",IDNO,225,259,63,14
     PUSHBUTTON      "Abort",IDCANCEL,410,259,50,14
     LTEXT           "",ID_ALIGN,7,7,453,243,NOT WS_VISIBLE
-    CONTROL         "Beep &on error",ID_BEEP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,7,262,59,10
+    CONTROL         "Beep &on error (<a>test</a>)",ID_BEEP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,262,103,10
 END
 
 IDR_FDD_ACCESS DIALOGEX 0, 0, 225, 282

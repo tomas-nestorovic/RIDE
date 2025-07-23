@@ -447,6 +447,7 @@
 								// > base
 								__super::PreInitDialog();
 								BeepWhenShowed=false; // no subdialogs to produce a beep when shown
+								ConvertDlgCheckboxToHyperlink( ID_BEEP );
 								// > creating the Splitter
 								const CRect rcSplitter=MapDlgItemClientRect(ID_ALIGN);
 								splitter.reset( new CSplitterWnd );
@@ -781,6 +782,13 @@
 												rp.modification.stdSectorAdded=true;
 												EndDialog(ID_CREATOR);
 												return 0;
+										}
+										break;
+									case WM_NOTIFY:
+										switch (GetClickedHyperlinkId(lParam)){
+											case ID_BEEP: // beep test
+												Utils::StdBeep();
+												break;
 										}
 										break;
 								}
