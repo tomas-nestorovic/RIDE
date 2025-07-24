@@ -837,7 +837,7 @@
 			const TParseEventPtr pe=pair.second;
 			if (pe->IsDataStd()){
 				DWORD nBytes=pe.data->dw;
-				for( auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
+				for( const auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
 				break;
 			}
 		}
@@ -1486,18 +1486,18 @@
 		}
 		// - comparing Data Field's CRC
 		DWORD dw;
-		const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=crc; // no or wrong Data Field CRC
-		if (crcBad){
+		const CFloppyImage::TCrc16 crcReported= ReadBits32(dw) ? Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian() : 0;
+		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents){
 				pOutParseEvents->Add( peData );
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, TimelyFromPrevious, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
 			}
 		}else
 			if (pOutParseEvents){
 				peData.type=TParseEvent::DATA_OK;
 				pOutParseEvents->Add( peData );
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
 			}
 		return result;
 	}
