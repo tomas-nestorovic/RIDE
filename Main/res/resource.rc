@@ -797,9 +797,9 @@ BEGIN
     END
     POPUP "Go to"
     BEGIN
-        MENUITEM "Time...\tCtrl+T",             ID_NAVIGATE_ADDRESS
-        MENUITEM SEPARATOR
         MENUITEM "About shortcuts...\tF1",      ID_INFORMATION
+        MENUITEM SEPARATOR
+        MENUITEM "Time...\tCtrl+T",             ID_NAVIGATE_ADDRESS
         MENUITEM SEPARATOR
         MENUITEM "Previous revolution\tE",      ID_REVOLUTION_PREV
         MENUITEM "Previous window\tLeft",       ID_DOWN
