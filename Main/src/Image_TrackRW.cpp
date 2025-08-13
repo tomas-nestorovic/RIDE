@@ -763,7 +763,8 @@
 							bit++;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
-					TParseEvent peFuzzy( TParseEvent::NONE, bit[-1].time, 0, 0 ); // "[-1]" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
+					const TLogTime tPrevBit= bit==rev.begin()&&pLogTimesInfo->resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
+					TParseEvent peFuzzy( TParseEvent::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
