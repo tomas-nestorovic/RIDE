@@ -710,10 +710,11 @@
 		const TLogTime tTrackEnd=GetIndexTime(nFullRevolutions)-profile.iwTimeMax;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
+			const CBitSequence allBits( *this, 0, CreateResetProfile(), GetTotalTime() );
 			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions; i++ )
 				pRevolutionBits[i].reset(
-					new CBitSequence( *this, GetIndexTime(i), CreateResetProfile(), GetIndexTime(i+1) )
+					new CBitSequence( allBits, GetFullRevolutionTimeInterval(i) )
 				);
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Utils::CCallocPtr<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
@@ -872,7 +873,8 @@
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent)
 		// ctor
 		// - initialization
-		: nBits(0) {
+		: bitBuffer( new Utils::CCallocPtr<TBit> )
+		, nBits(0) {
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
@@ -880,8 +882,8 @@
 		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
-		pBits=bitBuffer+1; // skip that one hidden Bit
+		bitBuffer->Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
+		pBits=(*bitBuffer)+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		TBit *p=pBits;
 		for( TLogTime tOne; tr.GetCurrentTime()<tTo; ){
@@ -907,6 +909,17 @@
 			tPrev=bit.time;
 		}
 	#endif
+	}
+
+	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &base,const TLogTimeInterval &ti)
+		// ctor (subsequence)
+		: bitBuffer(base.bitBuffer)
+		, pBits( const_cast<TBit *>(base.Find(ti.tStart)) )
+		, nBits( base.Find(ti.tEnd)-pBits ) {
+		if (pBits<base.pBits){ // mustn't leave the the range of Base Sequence (e.g. mustn't include hidden Bits)
+			nBits-=base.pBits-pBits;
+			pBits=base.pBits;
+		}
 	}
 
 	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime t) const{
@@ -1029,7 +1042,7 @@
 
 	void CImage::CTrackReader::CBitSequence::OffsetAll(TLogTime dt) const{
 		// offsets each Bit by given constant
-		for each( TBit &p in bitBuffer ) // offset also the padding Bits at the beginning and end
+		for each( TBit &p in *bitBuffer ) // offset also the padding Bits at the beginning and end
 			p.time+=dt;
 	}
 
@@ -1159,6 +1172,7 @@
 
 	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
 		// adds copy of the specified ParseEvent into this List
+		ASSERT( pe.tStart<pe.tEnd );
 		// - creating a copy of the ParseEvent
 		POSITION pos=AddTail( pe, pe.size );
 		TParseEvent &copy=GetPrev(pos);

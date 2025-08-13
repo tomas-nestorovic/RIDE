@@ -639,11 +639,12 @@
 					inline TLogTime GetLength() const{ return this[1].time-time; }
 				} *PCBit;
 			private:
-				Utils::CCallocPtr<TBit> bitBuffer;
+				const std::shared_ptr<Utils::CCallocPtr<TBit>> bitBuffer;
 				TBit *pBits;
 				int nBits;
 			public:
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
+				CBitSequence(const CBitSequence &base,const TLogTimeInterval &ti);
 
 				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
 				inline int GetBitCount() const{ return nBits; }
@@ -719,6 +720,13 @@
 				// navigates back to the first Flux found just after the index pulse
 				profile.Reset();
 				return RewindToIndex( index );
+			}
+
+			inline
+			const TLogTimeInterval &GetFullRevolutionTimeInterval(BYTE rev) const{
+				static_assert( sizeof(TLogTimeInterval)==2*sizeof(*indexPulses), "" );
+				ASSERT( rev<GetIndexCount()-1 );
+				return *(TLogTimeInterval *)(indexPulses+rev);
 			}
 
 			inline

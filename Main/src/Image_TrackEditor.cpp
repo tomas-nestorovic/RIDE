@@ -606,6 +606,10 @@ using namespace Charting;
 				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
+			inline const std::unique_ptr<CBitSequence> &GetInspectionWindowsPtr() const{
+				return inspectionWindows;
+			}
+
 			inline PCInspectionWindow GetInspectionWindows() const{
 				return inspectionWindows.get() ? inspectionWindows->begin() : nullptr;
 			}
@@ -828,6 +832,7 @@ using namespace Charting;
 			const TLogTime tIwOffset=tr.CreateResetProfile().iwTimeDefault/2; // see (7)
 			const auto peList=std::move(tr.ScanAndAnalyze(*pAction));
 			for each( const auto &pair in peList ){
+				ASSERT(pair.second->GetLength()>0);
 				const_cast<PParseEvent>(pair.second)->Offset(tIwOffset);
 			}
 			rte.timeEditor.SetParseEvents(peList);
@@ -843,11 +848,13 @@ using namespace Charting;
 			if (tr.GetIndexCount()<3) // at least two full Revolution must exist ...
 				return pAction->TerminateWithSuccess(); // ... otherwise matching bits can't be linked together
 			pAction->SetProgressTarget(tr.GetTotalTime());
+			const auto &iwList=*te.timeEditor.GetInspectionWindowsPtr();
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
-				TInspectionWindow *iw=const_cast<TInspectionWindow *>(te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i-1) ));
-				const PCInspectionWindow iwRevEnd=te.timeEditor.GetInspectionWindow( tr.GetIndexTime(i) );
+				const CBitSequence iwRev( iwList, tr.GetFullRevolutionTimeInterval(i-1) );
+				TInspectionWindow *iw=const_cast<TInspectionWindow *>(iwRev.begin());
+				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;
 				do{
 					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
