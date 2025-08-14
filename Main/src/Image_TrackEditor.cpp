@@ -66,7 +66,7 @@ using namespace Charting;
 			Utils::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
-			std::unique_ptr<CBitSequence> inspectionWindows;
+			CBitSequence inspectionWindows;
 			CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
@@ -125,8 +125,8 @@ using namespace Charting;
 						// . drawing inspection windows (if any)
 						if (te.IsFeatureShown(TCursorFeatures::INSPECT))
 							if (PCInspectionWindow piw=te.GetInspectionWindow(visible.tStart)){ // Visible part of the Track ?
-								int i=piw-te.GetInspectionWindows();
-								const PCInspectionWindow piwEnd=te.inspectionWindows->end();
+								int i=piw-te.inspectionWindows.begin();
+								const PCInspectionWindow piwEnd=te.inspectionWindows.end();
 								// : drawing visible inspection windows (avoiding the GDI coordinate limitations by moving the viewport origin)
 								RECT rc={ te.timeline.GetClientUnits(piw->time), 1, 0, IW_HEIGHT };
 								do{
@@ -311,24 +311,23 @@ using namespace Charting;
 				SetScrollInfo( SB_HORZ, &si );
 			}
 
-			PCInspectionWindow GetInspectionWindow(TLogTime logTime) const{
+			inline PCInspectionWindow GetInspectionWindow(TLogTime logTime) const{
 				// returns the InspectionWindow containing the specified LogicalTime
-				ASSERT( inspectionWindows );
-				return inspectionWindows->Find(logTime);
+				return inspectionWindows.Find(logTime);
 			}
 
 			PCInspectionWindow GetInspectionWindow(int uid,TLogTime tRevStart,TLogTime tRevEnd) const{
 				// searching specified time interval, returns the InspectionWindow with specified UniqueIdentifier
 				ASSERT( inspectionWindows );
 				const auto it=std::lower_bound(
-					inspectionWindows->Find(tRevStart),	// incl.
-					inspectionWindows->Find(tRevEnd),	// excl.
+					inspectionWindows.Find(tRevStart),	// incl.
+					inspectionWindows.Find(tRevEnd),	// excl.
 					uid,
 					[](const TInspectionWindow &iw,int uid){
 						return std::abs(iw.uid)<uid;
 					}
 				);
-				return	it!=inspectionWindows->end() ? it : nullptr;
+				return	it!=inspectionWindows.end() ? it : nullptr;
 			}
 		private:
 			void PaintCursorFeaturesInverted(bool show){
@@ -606,16 +605,12 @@ using namespace Charting;
 				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
-			inline const std::unique_ptr<CBitSequence> &GetInspectionWindowsPtr() const{
+			inline const CBitSequence &GetInspectionWindows() const{
 				return inspectionWindows;
 			}
 
-			inline PCInspectionWindow GetInspectionWindows() const{
-				return inspectionWindows.get() ? inspectionWindows->begin() : nullptr;
-			}
-
-			inline void SetInspectionWindows(std::unique_ptr<CBitSequence> &&list){
-				inspectionWindows.reset( list.release() );
+			inline void SetInspectionWindows(const CBitSequence &list){
+				inspectionWindows=list;
 			}
 
 			inline const CParseEventList &GetParseEvents() const{
@@ -625,18 +620,17 @@ using namespace Charting;
 			void SetParseEvents(const CParseEventList &list){
 				ASSERT( parseEvents.GetCount()==0 ); // can set only once
 				parseEvents.Add(list);
-				if (inspectionWindows.get()) // can align with InspectionWindows?
+				if (inspectionWindows) // can align with InspectionWindows?
 					AlignParseEvents();
 			}
 
 			void AlignParseEvents(){
-				const auto *const pIws=inspectionWindows.get();
-				ASSERT(pIws); // must have InspectionWindows to align ParseEvents to
+				ASSERT(inspectionWindows); // must have InspectionWindows to align ParseEvents to
 				const CParseEventList peList0( std::move(parseEvents) );
 				for each( const auto &pair in peList0 ){
 					const auto &pe=*pair.second;
 					for each( const TLogTime &t in pe.tArray )
-						if (const CBitSequence::PCBit pIw=pIws->Find(t)){
+						if (const PCInspectionWindow pIw=inspectionWindows.Find(t)){
 							const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
 							const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
 							if (dist1<dist2)
@@ -777,25 +771,23 @@ using namespace Charting;
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
-			if (rte.timeEditor.GetInspectionWindows()!=nullptr) // already set?
+			if (rte.timeEditor.GetInspectionWindows()) // already set?
 				return pAction->TerminateWithSuccess();
 			pAction->SetProgressTarget(3);
 			// - Step 1: recognize all Bits
 			const auto &tr=rte.tr;
 			const auto &&resetProfile=tr.CreateResetProfile();
-			std::unique_ptr<CBitSequence> bits(
-				new CBitSequence( tr.CreateBitSequence(rte.iwInfo.oneOkPercent) )
-			);
-			if (!bits.get())
+			const auto &&bits=tr.CreateBitSequence(rte.iwInfo.oneOkPercent);
+			if (!bits)
 				return pAction->TerminateWithLastError();
 			pAction->IncrementProgress();
 			// - Step 2: offset all Bits, producing InspectionWindows beginnings
-			bits->OffsetAll( -resetProfile.iwTimeDefault/2 );
+			bits.OffsetAll( -resetProfile.iwTimeDefault/2 );
 			pAction->IncrementProgress();
 			// - Step 3: populating the list of BadBlocks, i.e. Bits that are reported as Bad
 			auto &badBlocks=rte.iwInfo.badBlocks;
 			BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
-			for each( auto &bit in *bits.get() ){
+			for each( auto &bit in bits ){
 				if (bit.bad){
 					const TLogTime tBitEnd=(&bit)[1].time;
 					if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
@@ -807,7 +799,7 @@ using namespace Charting;
 				bit.uid=INT_MIN; // Bits across various Revolutions not yet linked
 				iwStatuses = (iwStatuses<<1) | (BYTE)bit.bad;
 			}
-			rte.timeEditor.SetInspectionWindows( std::move(bits) );
+			rte.timeEditor.SetInspectionWindows(bits);
 			if (!app.IsInGodMode()) // normal user?
 				rte.timeEditor.AlignParseEvents(); // automatically align existing ParseEvents with InspectionWindows
 			return pAction->TerminateWithSuccess();
@@ -841,12 +833,12 @@ using namespace Charting;
 			// thread to create list of inspection windows used to recognize data in the Track
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			const CTrackEditor &te=*(const CTrackEditor *)pAction->GetParams();
-			ASSERT( te.timeEditor.GetInspectionWindows()!=nullptr ); // must be set!
+			ASSERT( te.timeEditor.GetInspectionWindows() ); // must be set!
 			const CImage::CTrackReader &tr=te.tr;
 			if (tr.GetIndexCount()<3) // at least two full Revolution must exist ...
 				return pAction->TerminateWithSuccess(); // ... otherwise matching bits can't be linked together
 			pAction->SetProgressTarget(tr.GetTotalTime());
-			const auto &iwList=*te.timeEditor.GetInspectionWindowsPtr();
+			const auto &iwList=te.timeEditor.GetInspectionWindows();
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
@@ -958,10 +950,10 @@ using namespace Charting;
 							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() );
 							return TRUE;
 						case ID_PREV_BAD:
-							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && timeEditor.GetInspectionWindows()!=nullptr && iwInfo.badBlocks.GetCount()>0 && iwInfo.badBlocks.GetHead().tStart<timeEditor.GetCenterTime() );
+							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && timeEditor.GetInspectionWindows() && iwInfo.badBlocks.GetCount()>0 && iwInfo.badBlocks.GetHead().tStart<timeEditor.GetCenterTime() );
 							return TRUE;
 						case ID_NEXT_BAD:
-							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows()!=nullptr && iwInfo.badBlocks.GetCount()>0 && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
+							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows() && iwInfo.badBlocks.GetCount()>0 && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
 							return TRUE;
 						case ID_REVOLUTION_PREV:{
 							const TLogTime tCursor=timeEditor.GetClientCursorTime();
@@ -1038,7 +1030,7 @@ using namespace Charting;
 							#define ACTION_INSPECTION_DESC _T("Inspection")
 							#define ACTION_NAVIGATION_DESC _T("Navigation")
 							if (!timeEditor.IsFeatureShown(TCursorFeatures::INSPECT)) // currently hidden, so want now show the Feature
-								if (timeEditor.GetInspectionWindows()==nullptr) // data to display not yet received
+								if (!timeEditor.GetInspectionWindows()) // data to display not yet received
 									if (timeEditor.GetParseEvents().GetCount()>0){ // has parsing been already made?
 										CBackgroundMultiActionCancelable bmac(THREAD_PRIORITY_LOWEST);
 											bmac.AddAction( CreateInspectionWindowList_thread, this, ACTION_INSPECTION_DESC );
@@ -1324,7 +1316,7 @@ using namespace Charting;
 									iwInfo.oneOkPercent=d.Value;
 									if (timeEditor.IsFeatureShown(TCursorFeatures::INSPECT))
 										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
-									timeEditor.SetInspectionWindows(nullptr); // ... and disposing previous
+									timeEditor.SetInspectionWindows(CBitSequence()); // ... and disposing previous
 									iwInfo.badBlocks.RemoveAll();
 									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
 										return TRUE;

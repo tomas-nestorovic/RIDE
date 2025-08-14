@@ -639,13 +639,15 @@
 					inline TLogTime GetLength() const{ return this[1].time-time; }
 				} *PCBit;
 			private:
-				const std::shared_ptr<Utils::CCallocPtr<TBit>> bitBuffer;
+				std::shared_ptr<Utils::CCallocPtr<TBit>> bitBuffer;
 				TBit *pBits;
 				int nBits;
 			public:
+				CBitSequence();
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
 				CBitSequence(const CBitSequence &base,const TLogTimeInterval &ti);
 
+				inline operator bool() const{ return nBits>0; }
 				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
 				inline int GetBitCount() const{ return nBits; }
 				PCBit Find(TLogTime t) const;

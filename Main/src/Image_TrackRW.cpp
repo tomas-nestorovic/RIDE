@@ -710,17 +710,15 @@
 		const TLogTime tTrackEnd=GetIndexTime(nFullRevolutions)-profile.iwTimeMax;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
-			const CBitSequence &&allBits=CreateBitSequence();
-			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
+			const CBitSequence &&allBits=CreateBitSequence(); // factors in Decoder reset on Indices
+			CBitSequence revolutionBits[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions; i++ )
-				pRevolutionBits[i].reset(
-					new CBitSequence( allBits, GetFullRevolutionTimeInterval(i) )
-				);
+				revolutionBits[i]=CBitSequence( allBits, GetFullRevolutionTimeInterval(i) );
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Utils::CCallocPtr<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
-				const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[++i];
+				const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[++i];
 				auto &ses=shortesEditScripts[i];
 				ses=iRev.GetShortestEditScript( jRev, ap.CreateSubactionProgress(StepGranularity) );
 				if (ap.Cancelled)
@@ -742,7 +740,7 @@
 					// : conversion to dual script
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
-					const CBitSequence &jRev=*pRevolutionBits[i], &iRev=*pRevolutionBits[i-1];
+					const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[i-1];
 					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeCallocPtr<TRegion>(ses.length) );
 					// : inheriting fuzzyness from next Revolution
 					iRev.InheritFlagsFrom( jRev, ses, ses.length );
@@ -751,7 +749,7 @@
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
 			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
-				const CBitSequence &rev=*pRevolutionBits[r];
+				const CBitSequence &rev=revolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
@@ -870,6 +868,11 @@
 
 
 
+
+	CImage::CTrackReader::CBitSequence::CBitSequence()
+		// ctor
+		: nBits(0) {
+	}
 
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent)
 		// ctor
