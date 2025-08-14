@@ -1027,8 +1027,8 @@ invalidTrack:
 		if (ppOutReadTrack) // caller wants to take over ownership?
 			ppOutReadTrack->reset( tmp.release() );
 		// - verification
-		const CTrackReader::CBitSequence writtenBits( trwWritten, trwWritten.GetIndexTime(0), trwWritten.CreateResetProfile(), trwWritten.GetIndexTime(1) );
-		const CTrackReader::CBitSequence readBits( *pitRead, pitRead->GetIndexTime(0), pitRead->CreateResetProfile(), pitRead->GetIndexTime(1) );
+		const auto &&writtenBits=trwWritten.CreateBitSequence( Revolution::R0 );
+		const auto &&readBits=pitRead->CreateBitSequence( Revolution::R0 );
 		const auto &&ses=writtenBits.GetShortestEditScript( // shortest edit script
 			readBits, CActionProgress(cancelled)
 		);

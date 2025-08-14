@@ -784,9 +784,7 @@ using namespace Charting;
 			const auto &tr=rte.tr;
 			const auto &&resetProfile=tr.CreateResetProfile();
 			std::unique_ptr<CBitSequence> bits(
-				new CBitSequence(
-					tr, 0, resetProfile, tr.GetTotalTime(), rte.iwInfo.oneOkPercent
-				)
+				new CBitSequence( tr.CreateBitSequence(rte.iwInfo.oneOkPercent) )
 			);
 			if (!bits.get())
 				return pAction->TerminateWithLastError();

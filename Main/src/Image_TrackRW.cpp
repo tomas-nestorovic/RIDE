@@ -710,7 +710,7 @@
 		const TLogTime tTrackEnd=GetIndexTime(nFullRevolutions)-profile.iwTimeMax;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
-			const CBitSequence allBits( *this, 0, CreateResetProfile(), GetTotalTime() );
+			const CBitSequence &&allBits=CreateBitSequence();
 			std::unique_ptr<CBitSequence> pRevolutionBits[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions; i++ )
 				pRevolutionBits[i].reset(
@@ -1611,6 +1611,21 @@
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return false;
 		}
+	}
+
+	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent) const{
+		// records Decoder processing between the specified TimeInterval into a BitSequence
+		return CBitSequence( *this, ti.tStart, CreateResetProfile(), ti.tEnd, oneOkPercent );
+	}
+
+	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(Revolution::TType rev,BYTE oneOkPercent) const{
+		// records Decoder processing of specified full Revolution into a BitSequence
+		return CreateBitSequence( GetFullRevolutionTimeInterval(rev), oneOkPercent );
+	}
+
+	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(BYTE oneOkPercent) const{
+		// records Decoder processing for the whole Track into a BitSequence
+		return CBitSequence( *this, 0, CreateResetProfile(), GetTotalTime(), oneOkPercent );
 	}
 
 
