@@ -134,11 +134,6 @@
 			return E_INVALIDARG;
 	}
 
-	BYTE CImage::CSectorDataSerializer::GetCurrentSectorIndexOnTrack() const{
-		// returns the zero-based index of current Sector on the Track
-		return sector.indexOnTrack;
-	}
-
 	BYTE CImage::CSectorDataSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
 		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );

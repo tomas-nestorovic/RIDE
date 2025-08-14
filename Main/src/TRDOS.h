@@ -100,7 +100,7 @@
 			inline void MarkEndOfDir(){ special=END_OF_DIR; }
 			inline bool IsNormal() const{ return special>=LAST_SPECIAL; }
 			WORD __getOfficialFileSize__(PBYTE pnBytesReservedAfterData) const;
-			WORD __getFileSizeOnDisk__() const;
+			inline WORD GetFileSizeOnDisk() const{ return nSectors*TRDOS503_SECTOR_LENGTH_STD; }
 			void __markTemporary__();
 			bool __isTemporary__() const;
 		} *PDirectoryEntry;

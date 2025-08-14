@@ -18,11 +18,6 @@
 
 
 
-	LPCVOID CBackgroundAction::GetParams() const{
-		// returns the Parameters which the Worker was launched with
-		return fnParams;
-	}
-
 	void CBackgroundAction::Resume() const{
 		// resumes Worker's activity
 		if (pWorker)

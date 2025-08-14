@@ -1,10 +1,6 @@
 #include "stdafx.h"
 #include "BSDOS.h"
 
-	CBSDOS308::TFatValue::TFatValue(){
-		// ctor
-	}
-
 	CBSDOS308::TFatValue::TFatValue(bool occupied,bool continuous,WORD info)
 		// ctor
 		: info(info) , continuous(continuous) , occupied(occupied) {
@@ -14,10 +10,6 @@
 		// ctor
 		*(PWORD)this=w;
 		//info=w, continuous=(w&0x4000)!=0, occupied=(short)w<0;
-	}
-
-	CBSDOS308::TFatValue::operator WORD() const{
-		return *(PCWORD)this;
 	}
 
 

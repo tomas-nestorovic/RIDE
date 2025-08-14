@@ -241,14 +241,14 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				if (nSectorsAfterRetyping){
 					const TPhysicalAddress &rChs=(pItem+nSectorsAfterRetyping-1)->chs;
 					if (const PGdosSectorData pData=(PGdosSectorData)gdos->image->GetHealthySectorData(rChs)){
-						pData->nextSector.__setEof__();
+						pData->nextSector.SetEof();
 						gdos->image->MarkSectorAsDirty(rChs);
 					}else{
 						err=ERROR_SECTOR_NOT_FOUND;
 						goto error;
 					}
 				}else
-					de->firstSector.__setEof__();
+					de->firstSector.SetEof();
 				for( DWORD w=nSectorsAfterRetyping; w<de->nSectors; de->sectorAllocationBitmap.SetSectorAllocation((pItem+w++)->chs,false) );
 			}else if (nSectorsAfterRetyping>de->nSectors){
 				// File has become longer (by shifting its data "to the right")
@@ -265,7 +265,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 				}else
 					de->firstSector.__setChs__(pItem->chs);
 				const TPhysicalAddress &rChs=(pItem+de->nSectors)->chs;
-				( (PGdosSectorData)gdos->image->GetHealthySectorData(rChs) )->nextSector.__setEof__(); // guaranteed that Sector always readable
+				( (PGdosSectorData)gdos->image->GetHealthySectorData(rChs) )->nextSector.SetEof(); // guaranteed that Sector always readable
 				gdos->image->MarkSectorAsDirty(rChs);
 				de->sectorAllocationBitmap.SetSectorAllocation(rChs,true);
 			}

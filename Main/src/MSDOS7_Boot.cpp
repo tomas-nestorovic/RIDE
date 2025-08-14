@@ -224,11 +224,6 @@
 				__getCountOfPermanentRootDirectorySectors__(); // root Directory
 	}
 
-	DWORD CMSDOS7::TBootSector::__getClusterSizeInBytes__() const{
-		// returns the number of Bytes that a single Cluster can contain
-		return nSectorsInCluster*sectorSize;
-	}
-
 
 
 

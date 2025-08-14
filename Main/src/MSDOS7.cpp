@@ -320,7 +320,7 @@
 			rError=Utils::ErrorByOs( ERROR_VOLMGR_DISK_INVALID, ERROR_UNRECOGNIZED_VOLUME );
 			return 0;
 		}
-		const DWORD nBytesInCluster=bootSector->__getClusterSizeInBytes__();
+		const DWORD nBytesInCluster=bootSector->GetClusterSizeInBytes();
 		if (const PFsInfoSector fsInfoSector=fsInfo.GetSectorData()){
 			// for FAT32, computing the free space quickly from available FS Info Sector
 			if (fsInfoSector->nFreeClusters>__getCountOfClusters__()){
@@ -785,7 +785,7 @@
 					return sizeOnDisk;
 				}else{
 					// File
-					const DWORD clusterSizeInBytes=boot.GetSectorData()->__getClusterSizeInBytes__();
+					const DWORD clusterSizeInBytes=boot.GetSectorData()->GetClusterSizeInBytes();
 					return Utils::RoundUpToMuls( de->shortNameEntry.size, clusterSizeInBytes );
 				}
 			default:

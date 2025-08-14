@@ -489,11 +489,6 @@
 				: nullptr;
 	}
 
-	CSpectrumDos::CTape::PCHeader CSpectrumDos::CTape::TTapeFile::GetHeader() const{
-		// returns this File's Header, or Null if this File is Headerless
-		return const_cast<TTapeFile *>(this)->GetHeader();
-	}
-
 	
 
 	

@@ -1015,8 +1015,6 @@
 			const int iDiffStartPos= nScriptItems>0 ? pScriptItem->iPosA : nBits;
 			int nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
 			while (nIdentical-->0){
-				if (pBits[iMyBit].value!=theirs.pBits[iTheirBit].value)
-					Utils::Information(_T("MRTKI!!!!"));
 				#ifdef _DEBUG
 					const auto &mine=pBits[iMyBit], &their=theirs.pBits[iTheirBit];
 					ASSERT( mine.value==their.value ); // just to be sure; failing here may point at a bug in Diff implementation!
@@ -1223,16 +1221,8 @@
 		return CParseEventListIterator( *this, cend() );
 	}
 
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
-		return	logStarts.Find( tStartMin, typeFrom, typeTo );
-	}
-
 	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType type) const{
 		return	FindByStart( tStartMin, type, type );
-	}
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
-		return	logEnds.Find( tEndMin, typeFrom, typeTo );
 	}
 
 	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const{

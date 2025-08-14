@@ -498,7 +498,7 @@ namespace Utils{
 	public:
 		CByteIdentity();
 
-		operator PCBYTE() const;
+		inline operator PCBYTE() const{ return values; }
 	};
 
 	class CRideTime:public SYSTEMTIME{
@@ -513,10 +513,10 @@ namespace Utils{
 		CRideTime(const FILETIME &t);
 
 		operator FILETIME() const;
-		bool operator==(const FILETIME &t2) const;
-		bool operator!=(const FILETIME &t2) const;
+		inline bool operator==(const FILETIME &t2) const{ return operator-(t2)==0; }
+		inline bool operator!=(const FILETIME &t2) const{ return operator-(t2)!=0; }
 		CRideTime operator-(const FILETIME &t2) const;
-		CRideTime operator-(const CRideTime &t2) const;
+		inline CRideTime operator-(const CRideTime &t2) const{ return operator-( (FILETIME)t2 ); }
 
 		int ToMilliseconds() const;
 		WORD GetDosDate() const;
@@ -723,18 +723,15 @@ namespace Utils{
 		CBigEndianWord(WORD initLittleEndianValue);
 
 		WORD operator=(WORD newValue);
-		operator WORD() const;
-
-		inline WORD GetBigEndian() const{
-			return *(PCWORD)this;
-		}
+		inline operator WORD() const{ return MAKEWORD(lowByte,highByte); }
+		inline WORD GetBigEndian() const{ return *(PCWORD)this; }
 	};
 
 	class CBigEndianDWord sealed{
 		CBigEndianWord highWord,lowWord;
 	public:
 		DWORD operator=(DWORD newValue);
-		operator DWORD() const;
+		inline operator DWORD() const{ return MAKELONG(lowWord,highWord); }
 	};
 
 

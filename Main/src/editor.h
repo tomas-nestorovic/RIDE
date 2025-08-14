@@ -9,7 +9,7 @@
 	class CRideApp sealed:public CWinApp{
 		DECLARE_MESSAGE_MAP()
 	private:
-		bool godMode;
+		bool godMode; // launched with "--godmode" param ?
 		ATOM propGridWndClass;
 	public:
 		class CRecentFileListEx sealed:public CRecentFileList{
@@ -41,9 +41,9 @@
 		bool GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault=false);
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
 		void OnFileOpen(); // public wrapper
-		CRecentFileListEx *GetRecentFileList() const;
+		inline CRecentFileListEx *GetRecentFileList() const{ return (CRecentFileListEx *)m_pRecentFileList; }
 		HWND GetEnabledActiveWindow() const;
-		bool IsInGodMode() const;
+		inline bool IsInGodMode() const{ return godMode; }
 		inline LPCTSTR GetPropGridWndClass() const{ return (LPCTSTR)propGridWndClass; }
 		inline CMainWindow *GetMainWindow() const{ return (CMainWindow *)m_pMainWnd; }
 		#if _MFC_VER>=0x0A00

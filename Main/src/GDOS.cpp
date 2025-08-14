@@ -5,10 +5,6 @@
 
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
-	CGDOS::TSectorInfo::TSectorInfo(){
-		// ctor
-	}
-
 	CGDOS::TSectorInfo::TSectorInfo(BYTE cyl,BYTE head,BYTE sector)
 		// ctor
 		: track((head!=0)<<7|cyl) , sector(sector) {
@@ -43,11 +39,6 @@
 		track=(chs.head!=0)<<7|chs.cylinder, sector=chs.sectorId.sector;
 	}
 
-	void CGDOS::TSectorInfo::__setEof__(){
-		// marks this Sector as the last Sector of a File
-		::ZeroMemory( this, sizeof(*this) );
-	}
-
 
 
 
@@ -69,13 +60,13 @@
 
 	bool CGDOS::TDirectoryEntry::TSectorAllocationBitmap::IsSectorAllocated(RCPhysicalAddress chs) const{
 		// True <=> Sector with the given PhysicalAddress is Occupied, otherwise False
-		const div_t d=div(__sectorChs2sectorId__(chs),8); // 8 = number of bits in a Byte
+		const div_t d=div(__sectorChs2sectorId__(chs),CHAR_BIT);
 		return ( allocated[d.quot]&(1<<d.rem) )!=0;
 	}
 
 	void CGDOS::TDirectoryEntry::TSectorAllocationBitmap::SetSectorAllocation(RCPhysicalAddress chs,bool isOccupied){
 		// for Sector with given PhysicalAddress sets it's Occupation bit in the Table
-		const div_t d=div(__sectorChs2sectorId__(chs),8); // 8 = number of bits in a Byte
+		const div_t d=div(__sectorChs2sectorId__(chs),CHAR_BIT);
 		if (isOccupied)
 			allocated[d.quot]|=1<<d.rem;
 		else
@@ -163,7 +154,7 @@
 			de->sectorAllocationBitmap.SetSectorAllocation(pItem->chs,true);
 			psi=&((PGdosSectorData)image->GetHealthySectorData(pItem++->chs))->nextSector;
 		}
-		psi->__setEof__();
+		psi->SetEof();
 		MarkDirectorySectorAsDirty(de);
 		return true;
 	}

@@ -71,10 +71,6 @@
 
 
 
-	CDos::CFatPath::operator bool() const{
-		return !error;
-	}
-
 	bool CDos::CFatPath::AddItem(PCItem pItem){
 		// True <=> FatPath extended with given Item is valid, otherwise False
 		// - VALIDATION: FatPath must be acyclic (detected by wanting to exceed the expected number of Items)

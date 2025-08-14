@@ -216,7 +216,7 @@
 			CFatPath(const CDos *dos,RCPhysicalAddress chs); // ctor for editing a Sector (e.g. Boot Sector)
 			CFatPath(CFatPath &&r);
 
-			operator bool() const;
+			inline operator bool() const{ return !error; }
 			bool AddItem(PCItem pItem);
 			PCItem PopItem();
 			LPCTSTR GetItems(PCItem &rBuffer,DWORD &rnItems) const;
@@ -321,7 +321,10 @@
 		static const TSide StdSidesMap[];
 
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
-		static BYTE XorChecksum(LPCVOID bytes,WORD nBytes);
+
+		inline static BYTE XorChecksum(LPCVOID bytes,WORD nBytes){
+			return Yahel::Checksum::ComputeXor( bytes, nBytes );
+		}
 
 		template <typename T,size_t N>
 		inline static BYTE XorChecksum(const T (&bytes)[N]){

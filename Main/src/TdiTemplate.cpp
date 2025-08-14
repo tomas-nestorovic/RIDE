@@ -30,11 +30,6 @@
 
 
 
-	CDocument *CMainWindow::CTdiTemplate::__getDocument__() const{
-		// returns the main Image (usually a disk)
-		return m_pOnlyDoc;
-	}
-
 	bool CMainWindow::CTdiTemplate::__closeDocument__(){
 		// closes the main Image (usually a disk)
 		if (m_pOnlyDoc){

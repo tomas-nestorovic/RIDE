@@ -766,10 +766,6 @@ namespace Utils{
 		for( BYTE i=0; (values[i]=i)<(BYTE)-1; i++ );
 	}
 
-	CByteIdentity::operator PCBYTE() const{
-		return values;
-	}
-
 
 
 
@@ -806,14 +802,6 @@ namespace Utils{
 		return tmp;
 	}
 
-	bool CRideTime::operator==(const FILETIME &t2) const{
-		return	operator-(t2)==0;
-	}
-
-	bool CRideTime::operator!=(const FILETIME &t2) const{
-		return	!operator==(t2);
-	}
-
 	CRideTime CRideTime::operator-(const time_t &t2) const{
 		return	(time_t)*this-t2;
 	}
@@ -821,10 +809,6 @@ namespace Utils{
 	CRideTime CRideTime::operator-(const FILETIME &t2) const{
 		static_assert( sizeof(FILETIME)==sizeof(time_t), "" );
 		return	operator-( *(const time_t *)&t2 );
-	}
-
-	CRideTime CRideTime::operator-(const CRideTime &t2) const{
-		return	operator-( (FILETIME)t2 );
 	}
 
 	int CRideTime::ToMilliseconds() const{
@@ -1402,11 +1386,6 @@ namespace Utils{
 		return newValue;
 	}
 
-	CBigEndianWord::operator WORD() const{
-		// "getter"
-		return MAKEWORD(lowByte,highByte);
-	}
-
 
 
 
@@ -1418,11 +1397,6 @@ namespace Utils{
 		// "setter"
 		highWord=HIWORD(newValue), lowWord=LOWORD(newValue);
 		return newValue;
-	}
-
-	CBigEndianDWord::operator DWORD() const{
-		// "getter"
-		return MAKELONG(lowWord,highWord);
 	}
 
 
@@ -2029,7 +2003,7 @@ namespace Utils{
 			CreateIndirect( dt.m_hTemplate );
 		}
 
-		operator bool() const{
+		inline operator bool() const{
 			return m_hWnd!=0;
 		}
 	};

@@ -368,7 +368,7 @@
 				BYTE data[1];
 
 				PHeader GetHeader();
-				PCHeader GetHeader() const;
+				inline PCHeader GetHeader() const{ return const_cast<TTapeFile *>(this)->GetHeader(); }
 			} *PTapeFile,**PPTapeFile;
 			typedef const TTapeFile *PCTapeFile;
 

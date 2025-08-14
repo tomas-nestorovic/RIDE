@@ -1366,7 +1366,7 @@ using namespace Charting;
 											);
 										visible=peList.GetCount()>0;
 									}
-									TIndex GetItemCount() const{
+									TIndex GetItemCount() const override{
 										// returns the number of available items
 										return peList.GetCount();
 									}

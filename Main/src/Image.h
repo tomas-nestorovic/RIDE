@@ -175,7 +175,7 @@
 		BYTE lengthCode;
 
 		bool operator==(const TSectorId &id2) const;
-		bool operator!=(const TSectorId &id2) const;
+		inline bool operator!=(const TSectorId &id2) const{ return !operator==(id2); }
 		TSectorId &operator=(const FD_ID_HEADER &rih);
 		TSectorId &operator=(const FD_TIMED_ID_HEADER &rtih);
 
@@ -195,7 +195,7 @@
 
 		inline operator bool() const{ return *this!=Invalid; }
 		bool operator==(const TPhysicalAddress &chs2) const;
-		bool operator!=(const TPhysicalAddress &chs2) const;
+		inline bool operator!=(const TPhysicalAddress &chs2) const{ return !operator==(chs2); }
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
 		CString GetTrackIdDesc(THead nHeads=0) const;
@@ -258,7 +258,7 @@
 		WORD GetSeverity(WORD mask=-1) const;
 		inline void ExtendWith(const WORD st){ w|=st; }
 		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;
-		bool IsWithoutError() const;
+		inline bool IsWithoutError() const{ static_assert(sizeof(*this)==sizeof(WORD),""); return *(PCWORD)this==0; } // True <=> Registers don't describe any error, otherwise False
 		bool DescribesIdFieldCrcError() const;
 		void CancelIdFieldCrcError();
 		bool DescribesDataFieldCrcError() const;
@@ -596,9 +596,9 @@
 				inline DWORD GetCount() const{ return logStarts.size(); }
 				inline CIteratorByStart GetFirstByStart() const{ return GetIterator(); }
 				CIteratorByStart GetLastByStart() const;
-				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const;
+				inline CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const{ return logStarts.Find( tStartMin, typeFrom, typeTo ); }
 				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType type) const;
-				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const;
+				inline CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const{ return logEnds.Find( tEndMin, typeFrom, typeTo ); }
 				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const;
 				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
 				bool IntersectsWith(const TLogTimeInterval &ti) const;
@@ -837,7 +837,7 @@
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override sealed;
 
 			// other
-			BYTE GetCurrentSectorIndexOnTrack() const;
+			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;

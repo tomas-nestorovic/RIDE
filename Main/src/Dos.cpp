@@ -70,11 +70,6 @@
 		__warnOnChangingCriticaSetting__(  ::lstrcat( ::lstrcpy(verb,_T("turned ")), b?_T("on"):_T("off") )  );
 	}
 
-	BYTE CDos::XorChecksum(LPCVOID bytes,WORD nBytes){
-		// computes and returns the result of Bytes xor-ed
-		return Yahel::Checksum::ComputeXor( bytes, nBytes );
-	}
-
 	int CDos::__getProfileInt__(LPCTSTR entryName,int defaultValue) const{
 		// returns the value of specified Entry in this DOS'es profile; returns the DefaultValue if Entry isn't found
 		TCHAR sectionName[80];

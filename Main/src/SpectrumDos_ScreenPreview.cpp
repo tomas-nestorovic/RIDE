@@ -204,7 +204,7 @@
 		zxOffset.w=0;
 		for( BYTE microRow=SCREEN_HEIGHT,*dibPixel=dib.data,*zxAttributes=buf+6144; microRow--; ){
 			// . converting the MicroRow (32 ZX characters)
-			for( BYTE z=32,*pZxByte=buf+zxOffset.w,*pZxAttr=zxAttributes; z--; pZxByte++,pZxAttr++ ){
+			for( BYTE z=SCREEN_WIDTH/8,*pZxByte=buf+zxOffset.w,*pZxAttr=zxAttributes; z--; pZxByte++,pZxAttr++ ){
 				// : converting one ZX Byte to eight DIB pixels
 				BYTE b=8, zxByte=*pZxByte, zxAttr=*pZxAttr;
 				if (zxAttr&128) // Attributes with flashing on

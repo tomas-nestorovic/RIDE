@@ -59,7 +59,7 @@
 			CTdiTemplate();
 			~CTdiTemplate();
 
-			CDocument *__getDocument__() const;
+			inline CDocument *GetDocument() const{ return m_pOnlyDoc; } // returns the main Image (usually a disk)
 			bool __closeDocument__();
 
 			#if _MFC_VER>=0x0A00

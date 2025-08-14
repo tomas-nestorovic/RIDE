@@ -441,11 +441,6 @@
 		file.dataLength=BSDOS_SECTOR_LENGTH_STD*dummy.GetNumberOfItems(); // estimated DataLength computed from FAT
 	}
 
-	BYTE CBSDOS308::TDirectoryEntry::GetDirNameChecksum() const{
-		// computes and returns the Name Checksum
-		return XorChecksum(dir.name);
-	}
-
 	CBSDOS308::TDirectoryEntry::CTraversal::CTraversal(const CBSDOS308 *bsdos,PCFile slot)
 		// ctor
 		// - base

@@ -16,14 +16,14 @@
 		struct TSectorInfo sealed{
 			BYTE track,sector;
 
-			TSectorInfo();
+			inline TSectorInfo(){}
 			TSectorInfo(BYTE cyl,BYTE head,BYTE sector);
 
 			bool operator<(const TSectorInfo &rsi2) const;
 			bool __isValid__() const;
 			TPhysicalAddress __getChs__() const;
 			void __setChs__(RCPhysicalAddress chs);
-			void __setEof__();
+			inline void SetEof(){ static_assert(sizeof(*this)==sizeof(WORD),""); *(PWORD)this=0; } // marks this Sector as the last Sector of a File
 		};
 
 		#pragma pack(1)

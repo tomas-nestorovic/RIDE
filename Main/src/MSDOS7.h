@@ -137,7 +137,7 @@
 			TLogSector32 __getRootDirectoryFirstSector__() const;
 			TLogSector16 __getCountOfPermanentRootDirectorySectors__() const;
 			DWORD __getCountOfNondataSectors__() const;
-			DWORD __getClusterSizeInBytes__() const;
+			inline DWORD GetClusterSizeInBytes() const{ return nSectorsInCluster*sectorSize; }
 		} *PBootSector;
 		typedef const TBootSector *PCBootSector;
 

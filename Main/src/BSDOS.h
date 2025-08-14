@@ -94,11 +94,11 @@
 				};
 			};
 
-			TFatValue();
-			inline TFatValue(bool occupied,bool continuous,WORD info);
-			inline TFatValue(WORD w);
+			inline TFatValue(){}
+			TFatValue(bool occupied,bool continuous,WORD info);
+			TFatValue(WORD w);
 
-			inline operator WORD() const;
+			inline operator WORD() const{ return *(PCWORD)this; }
 		} *PFatValue;
 		typedef const TFatValue *PCFatValue;
 
@@ -143,7 +143,7 @@
 
 			TDirectoryEntry(const CBSDOS308 *bsdos,TLogSector firstSector);
 
-			BYTE GetDirNameChecksum() const;
+			inline BYTE GetDirNameChecksum() const{ return XorChecksum(dir.name); }
 		} *PDirectoryEntry;
 		typedef const TDirectoryEntry *PCDirectoryEntry;
 

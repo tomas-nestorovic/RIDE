@@ -75,10 +75,6 @@
 				&&
 				lengthCode==id2.lengthCode;
 	}
-	bool TSectorId::operator!=(const TSectorId &id2) const{
-		// True <=> Identifiers are not equal, otherwise False
-		return !operator==(id2);
-	}
 
 	TSectorId &TSectorId::operator=(const FD_ID_HEADER &rih){
 		// assigns Simon Owen's definition of ID to this ID and returns it
@@ -108,10 +104,6 @@
 				head==chs2.head
 				&&
 				sectorId==chs2.sectorId;
-	}
-	bool TPhysicalAddress::operator!=(const TPhysicalAddress &chs2) const{
-		// True <=> PhysicalAddresses are NOT equal, otherwise False
-		return !operator==(chs2);
 	}
 	TTrack TPhysicalAddress::GetTrackNumber() const{
 		// determines and returns the Track number based on DOS's current Format
@@ -182,11 +174,6 @@
 		if (reg2 & FDC_ST2_CRC_ERROR_IN_DATA)	*pDescriptions++=_T("Data field CRC error");
 		if (reg2 & FDC_ST2_NOT_DAM)				*pDescriptions++=_T("no Data field found");
 		*pDescriptions++=nullptr; // end of Descriptions of set bits in Register2
-	}
-
-	bool TFdcStatus::IsWithoutError() const{
-		// True <=> Registers don't describe any error, otherwise False
-		return (reg1|reg2)==0;
 	}
 
 	bool TFdcStatus::DescribesIdFieldCrcError() const{
@@ -530,7 +517,7 @@ namespace Medium{
 
 	PImage CImage::GetActive(){
 		// returns active document
-		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->__getDocument__();
+		return (PImage)CMainWindow::CTdiTemplate::pSingleInstance->GetDocument();
 	}
 
 	DWORD CImage::GetCurrentDiskFreeSpace(){

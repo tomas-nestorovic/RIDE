@@ -295,10 +295,10 @@
 									// > showing the Dialog and processing its result
 									const WORD resolution =	rConflictedSiblingResolution&0xff00 // previously wanted to apply the decision to all subsequent archived Boot Sectors?
 															? rConflictedSiblingResolution&0xff00
-															: d.DoModal()<<8;
+															: d.DoModal()<<CHAR_BIT;
 									if (d.checkBoxTicked) // want to apply the decision to all subsequent D_0 files?
 										rConflictedSiblingResolution|=resolution;
-									switch (resolution>>8){
+									switch (resolution>>CHAR_BIT){
 										case IDYES:
 											// importing archived Boot Sector and injecting to it actual geometry
 											if (const PBootSector boot=(PBootSector)IMAGE->GetHealthySectorData(TBootSector::CHS)){

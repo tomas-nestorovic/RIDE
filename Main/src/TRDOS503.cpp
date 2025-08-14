@@ -37,13 +37,8 @@
 				return parameterB;
 			default:
 				if (pnBytesReservedAfterData) *pnBytesReservedAfterData=0;
-				return __getFileSizeOnDisk__();
+				return GetFileSizeOnDisk();
 		}
-	}
-
-	WORD CTRDOS503::TDirectoryEntry::__getFileSizeOnDisk__() const{
-		// determines and returns the number of Bytes this File occupies on the disk (i.e. including eventual parameter "after" official data)
-		return nSectors*TRDOS503_SECTOR_LENGTH_STD;
 	}
 
 	void CTRDOS503::TDirectoryEntry::__markTemporary__(){
@@ -420,7 +415,7 @@
 				case TGetFileSizeOptions::OfficialDataLength:
 					return de->__getOfficialFileSize__(pnBytesReservedAfterData);
 				case TGetFileSizeOptions::SizeOnDisk:
-					return de->__getFileSizeOnDisk__();
+					return de->GetFileSizeOnDisk();
 				default:
 					ASSERT(FALSE);
 					return 0;

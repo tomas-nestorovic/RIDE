@@ -4,13 +4,13 @@
 	typedef const class CBackgroundAction{
 	protected:
 		std::unique_ptr<CWinThread> pWorker;
-		LPCVOID fnParams;
+		LPCVOID fnParams; // Parameters which the Worker was launched with
 	public:
 		CBackgroundAction();
 		CBackgroundAction(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);
 		virtual ~CBackgroundAction(); // virtual in order for the keyword "this" to work in AfxBeginThread when constructing a descendant
 
-		LPCVOID GetParams() const;
+		inline LPCVOID GetParams() const{ return fnParams; }
 		void Resume() const;
 		void Suspend() const;
 		void BeginAnother(AFX_THREADPROC fnAction,LPCVOID actionParams,int actionThreadPriority);

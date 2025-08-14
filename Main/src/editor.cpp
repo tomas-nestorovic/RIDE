@@ -305,11 +305,6 @@
 		return GetProfileInt( sectionName, keyName, bDefault )!=0;
 	}
 
-	bool CRideApp::IsInGodMode() const{
-		// True <=> the application has been launched with the "--godmode" parameter, otherwise False
-		return godMode;
-	}
-
 	afx_msg void CRideApp::CreateNewImage(){
 		// initiates creation of new Image
 		OnFileNew(); // to close any previous Image
@@ -770,11 +765,6 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			const TStdWinError err=::GetLastError();
 			Utils::FatalError( _T("Can't open the file"), err?err:MK_E_INVALIDEXTENSION );
 		}
-	}
-
-	CRideApp::CRecentFileListEx *CRideApp::GetRecentFileList() const{
-		// public getter of RecentFileList
-		return (CRecentFileListEx *)m_pRecentFileList;
 	}
 
 	HWND CRideApp::GetEnabledActiveWindow() const{
