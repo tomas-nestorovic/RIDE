@@ -858,9 +858,11 @@ using namespace Charting;
 				int uid=1;
 				do{
 					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
-					const TLogTimeInterval &tiFuzzy= it ? it->second->Add(-iwTimeTolerance) : TLogTimeInterval::Invalid;
+					const TLogTimeInterval tiFuzzy= it ? it->second->Add(-iwTimeTolerance) : TLogTimeInterval::Invalid;
+					const auto uid0=uid;
 					while (iw<iwRevEnd && iw->time<tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
+					uid-=uid==uid0; // if no common bits between two consecutive Fuzzy events, continue for current Fuzzy event with the UniqueIdentifier used for the previous Fuzzy event
 					while (iw<iwRevEnd && iw->time<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
 						iw++->uid=-uid;
 					uid++;
