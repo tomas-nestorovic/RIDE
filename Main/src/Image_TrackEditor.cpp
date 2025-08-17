@@ -1318,10 +1318,7 @@ using namespace Charting;
 										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
 									timeEditor.SetInspectionWindows(CBitSequence()); // ... and disposing previous
 									iwInfo.badBlocks.RemoveAll();
-									if (CBackgroundActionCancelable( CreateInspectionWindowList_thread, this, THREAD_PRIORITY_LOWEST ).Perform()!=ERROR_SUCCESS)
-										return TRUE;
-									timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
-									timeEditor.Invalidate();
+									SendMessage( WM_COMMAND, ID_RECOGNIZE );
 								}
 							return TRUE;
 						case ID_CHART:{
