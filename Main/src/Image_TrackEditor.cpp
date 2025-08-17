@@ -25,12 +25,14 @@ using namespace Charting;
 	typedef CImage::CTrackReader::PCRegion PCRegion;
 
 	#define MSG_FUZZY_NAVIGATION	_T("This fuzzy bit has no counterpart in any revolution")
+	#define MSG_INSPECTION_APPROXIMATE _T("Inspection just approximate and doesn't consider ID/Data fields")
 
 	#define INI_SECTION	_T("imgte")
 	#define INI_DECADIC	_T("dec")
 	#define INI_EXPORT_CONTENT	_T("ecnt")
 	#define INI_EXPORT_RANGE	_T("erng")
 	#define INI_EXPORT_SEPARATOR _T("esep")
+	#define INI_INSPECTION_APPROX _T("insa")
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
 		const CImage::CTrackReader &tr;
@@ -1042,6 +1044,7 @@ using namespace Charting;
 											return TRUE;
 							timeEditor.ToggleFeature(TCursorFeatures::INSPECT);
 							timeEditor.Invalidate();
+							Utils::InformationWithCheckableShowNoMore( MSG_INSPECTION_APPROXIMATE, INI_SECTION, INI_INSPECTION_APPROX );
 							return TRUE;
 						case ID_INTERLEAVE:
 							timeEditor.ToggleFeature(TCursorFeatures::REGIONS);
@@ -1068,8 +1071,10 @@ using namespace Charting;
 								bmac.AddAction( CreateInspectionWindowList_thread, this, ACTION_INSPECTION_DESC );
 								bmac.AddAction( CreateParseEventsList_thread, this, ACTION_PARSING_DESC );
 								bmac.AddAction( CreateMatchingBitsInfo_thread, this, ACTION_NAVIGATION_DESC );
-							if (bmac.Perform()==ERROR_SUCCESS)
+							if (bmac.Perform()==ERROR_SUCCESS){
 								timeEditor.ShowAllFeatures();
+								Utils::InformationWithCheckableShowNoMore( MSG_INSPECTION_APPROXIMATE, INI_SECTION, INI_INSPECTION_APPROX );
+							}
 							return TRUE;
 						}
 						case ID_NAVIGATE_ADDRESS:{
