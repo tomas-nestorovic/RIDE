@@ -298,18 +298,18 @@ using namespace Charting;
 		public:
 			void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override{
 				// request to refresh the display of content
-				const auto page=timeline.GetScrollPos(
-					timeline.GetValueFromPixel( Utils::TClientRect(m_hWnd).Width() )
-				);
+				const auto iScrollMax=timeline.GetScrollMax(); // also derives ScrollFactor from current ZoomFactor
 				SetScrollSizes(
 					MM_TEXT,
-					CSize( timeline.GetScrollMax(), 0 ), // total
+					CSize( iScrollMax, 0 ), // total
 					sizeDefault, // page (see comment below)
-					CSize( std::max(timeline.GetUnitCount(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
+					CSize( std::max(timeline.GetScrollPos(tr.GetCurrentProfile().iwTimeDefault),1), 0 ) // line
 				);
 				SCROLLINFO si;
 				GetScrollInfo( SB_HORZ, &si );
-				si.nPage = m_pageDev.cx = page; // no matter what input above, this value is reset in an undesired way by MFC
+				si.nPage = m_pageDev.cx = timeline.GetScrollPos(  // no matter what input above, this value is reset in an undesired way by MFC
+					timeline.GetValueFromPixel( Utils::TClientRect(m_hWnd).Width() )
+				);
 				SetScrollInfo( SB_HORZ, &si );
 			}
 
@@ -468,7 +468,7 @@ using namespace Charting;
 
 			BOOL OnScroll(UINT nScrollCode,UINT nPos,BOOL bDoScroll=TRUE) override{
 				// scrolls the View's content in given way
-				SCROLLINFO si={ sizeof(si) };
+				SCROLLINFO si;
 				// . horizontal ScrollBar
 				GetScrollInfo( SB_HORZ, &si, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
 				switch (LOBYTE(nScrollCode)){

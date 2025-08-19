@@ -1268,7 +1268,7 @@ namespace Utils{
 
 	CAxis::TScrollPos CAxis::GetScrollMax(){
 		TScrollPos scrollMax;
-		for( scrollFactor=zoomFactor; ( scrollMax=GetUnitCount(logLength,scrollFactor)+1 )>SHRT_MAX; scrollFactor++ );
+		for( scrollFactor=zoomFactor; ( scrollMax=GetUnitCount(logLength,scrollFactor) )>=SHRT_MAX; scrollFactor++ );
 		return scrollMax;
 	}
 
