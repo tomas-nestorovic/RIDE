@@ -166,7 +166,7 @@
 			}
 		public:
 			CPreviewDialog()
-				: CAssemblerPreview( *CDos::GetFocused()->pFileManager, 0x8000 ) { // the address to which the Boot Sector is loaded in MB-02
+				: CAssemblerPreview( *CDos::GetFocused()->pFileManager, nullptr, 0x8000 ) { // the address to which the Boot Sector is loaded in MB-02
 			}
 		} preview;
 		app.m_pMainWnd->BeginModalState();

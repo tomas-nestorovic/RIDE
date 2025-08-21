@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::pSingleInstance;
+	CSpectrumBase::CFilePreview *CSpectrumBase::CAssemblerPreview::pSingleInstance;
 
 	#define PREVIEW_WIDTH_DEFAULT	750
 	#define PREVIEW_HEIGHT_DEFAULT	300
@@ -8,10 +8,10 @@
 	#define INI_FEATURES		_T("feats")
 	#define INI_NUMBER_FORMAT	_T("numfmt")
 
-	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR caption,LPCTSTR iniSection)
+	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,CFilePreview **ppSingleManagedInstance,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR caption,LPCTSTR iniSection)
 		// ctor
 		// - base
-		: CFilePreview(	&contentView, caption, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId )
+		: CFilePreview(	&contentView, caption, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId, ppSingleManagedInstance )
 		, orgAddress(orgAddress) , canRebase(canRebase)
 		, tmpFileName( Utils::GenerateTemporaryFileName() )
 		, contentView(_T(""))
@@ -28,10 +28,9 @@
 
 	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &rFileManager){
 		// creates and returns a new instance
-		ASSERT( pSingleInstance==nullptr );
-		pSingleInstance=new CAssemblerPreview( rFileManager, 0, true );
-		pSingleInstance->__showNextFile__();
-		return pSingleInstance;
+		CAssemblerPreview *const p=new CAssemblerPreview( rFileManager, &pSingleInstance, 0, true );
+		p->__showNextFile__();
+		return p;
 	}
 
 	CSpectrumBase::CAssemblerPreview::~CAssemblerPreview(){

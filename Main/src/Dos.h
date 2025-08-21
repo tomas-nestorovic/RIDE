@@ -295,17 +295,18 @@
 		static UINT AFX_CDECL FormatTracksEx_thread(PVOID pCancelableAction);
 
 		TStdWinError IsTrackEmpty(TCylinder cyl,THead head,TSector nSectors,PCSectorId sectors) const;
-	protected:
+	public:
 		class CFilePreview:public CFrameWnd{
 			const CWnd *const pView;
 			const PFile directory;
+			CFilePreview **ppSingleManagedInstance;
 		protected:
 			const LPCTSTR caption;
 			const LPCTSTR iniSection;
 			const short initialClientWidth,initialClientHeight;
 			std::unique_ptr<CDos::TDirectoryTraversal> pdt;
 
-			CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId);
+			CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance);
 
 			void UpdateCaption();
 			void __showNextFile__();
@@ -317,7 +318,7 @@
 		public:
 			const CFileManagerView &rFileManager;
 		};
-
+	protected:
 		static const TSide StdSidesMap[];
 
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
@@ -356,7 +357,7 @@
 		class CHexaPreview sealed:public CFilePreview{
 			void RefreshPreview() override;
 		public:
-			static CHexaPreview *pSingleInstance; // only single file can be previewed at a time
+			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
 
 			class CHexaEditorView sealed:public CFileReaderWriter::CHexaEditor{
 				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;

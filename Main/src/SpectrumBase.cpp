@@ -295,14 +295,10 @@
 				return TCmdResult::DONE;
 			case ID_ZX_PREVIEWASBASIC:
 				// previewing File(s) as BASIC program(s)
-				if (CBasicPreview::pSingleInstance)
-					CBasicPreview::pSingleInstance->DestroyWindow();
 				new CBasicPreview( CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
 			case ID_ZX_PREVIEWASASSEMBLER:
 				// previewing File as Z80 assembler
-				if (CAssemblerPreview::pSingleInstance)
-					CAssemblerPreview::pSingleInstance->DestroyWindow();
 				CAssemblerPreview::CreateInstance( CFileManagerView::pCurrentlyShown ? *CFileManagerView::pCurrentlyShown : *CDos::GetFocused()->pFileManager );
 				return TCmdResult::DONE;
 		}

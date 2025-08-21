@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CBasicPreview::pOffsetsByFileType;
-	CSpectrumBase::CBasicPreview *CSpectrumBase::CBasicPreview::pSingleInstance;
+	CSpectrumBase::CFilePreview *CSpectrumBase::CBasicPreview::pSingleInstance;
 
 	#define PREVIEW_LABEL	_T("BASIC listing")
 
@@ -14,7 +14,7 @@
 	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CAssemblerPreview( rFileManager, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
+		: CAssemblerPreview( rFileManager, &pSingleInstance, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, dataAfterBasic( app.GetProfileEnum(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( app.GetProfileEnum(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {

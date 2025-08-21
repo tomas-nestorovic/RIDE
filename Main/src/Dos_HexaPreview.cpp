@@ -10,12 +10,12 @@
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
 
-	CDos::CHexaPreview *CDos::CHexaPreview::pSingleInstance;
+	CDos::CFilePreview *CDos::CHexaPreview::pSingleInstance;
 
 	CDos::CHexaPreview::CHexaPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0 )
+		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0, &pSingleInstance )
 		// - initialization
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;

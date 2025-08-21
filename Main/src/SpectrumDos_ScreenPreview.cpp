@@ -60,7 +60,7 @@
 				RECT r;
 				GetClientRect(&r);
 				const CPaintDC dc(this);
-				if (pSingleInstance->pdt->entry){
+				if (pdt->entry){
 					// drawing the Spectrum screen stored in a Device Independed Bitmap (DIB)
 					// . DIB drawn across the whole Preview canvas; commented out as substituted by suitable StretchDIBits parameters
 					/*::SetMapMode( dc, MM_ISOTROPIC );	// custom conversion of logical coordinates to device coordinates (Y axis points down)
@@ -73,8 +73,8 @@
 									0,0, r.right,r.bottom,
 									0,0,
 									SCREEN_WIDTH,SCREEN_HEIGHT,
-									pSingleInstance->dib.data,
-									&pSingleInstance->dib.bmi, DIB_RGB_COLORS, SRCCOPY
+									dib.data,
+									&dib.bmi, DIB_RGB_COLORS, SRCCOPY
 								);
 				}else{
 					// no screen File to draw
@@ -94,11 +94,12 @@
 	void CALLBACK CSpectrumBase::CScreenPreview::__flash__(HWND hPreview,UINT nMsg,UINT nTimerID,DWORD dwTime){
 		// swapping Colors of all FlashCombinations (Ink vs Paper) and redrawing the Preview
 		// - ignore this flash request if flashing disabled
-		if (!pSingleInstance->showFlashing)
+		auto *const psi=static_cast<CScreenPreview *>(pSingleInstance);
+		if (!psi->showFlashing)
 			return;
 		// - swapping Colors
-		RGBQUAD *bk=pSingleInstance->dib.flashCombinations, *colors=pSingleInstance->dib.colors;
-		if ( pSingleInstance->paperFlash=!pSingleInstance->paperFlash )
+		RGBQUAD *bk=psi->dib.flashCombinations, *colors=psi->dib.colors;
+		if ( psi->paperFlash=!psi->paperFlash )
 			for( BYTE b=0; b<128; b++ )
 				*bk++=colors[b>>3];
 		else
@@ -120,20 +121,16 @@
 	#define LABEL	_T("Screen$")
 
 	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CScreenPreview::pOffsetsByFileType;
-	CSpectrumBase::CScreenPreview *CSpectrumBase::CScreenPreview::pSingleInstance;
+	CDos::CFilePreview *CSpectrumBase::CScreenPreview::pSingleInstance;
 
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
 		// ctor
 		// - base
-		: CFilePreview( nullptr, LABEL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN )
+		: CFilePreview( nullptr, LABEL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN, &pSingleInstance )
 		// - initialization
 		, offset(USHRT_MAX)
 		, showPixels(true) , showAttributes(true) , showFlashing(true)
 		, paperFlash(false) {
-		// - disposing any previous instance
-		if (pSingleInstance)
-			pSingleInstance->DestroyWindow();
-		pSingleInstance=this;
 		// - creating the Device Independent Bitmap (DIB)
 		dib.bmi.bmiHeader.biSize=sizeof(dib.bmi);
 		dib.bmi.bmiHeader.biWidth=SCREEN_WIDTH, dib.bmi.bmiHeader.biHeight=-SCREEN_HEIGHT; // negative height = a top-down DIB (otherwise bottom-up)
@@ -158,7 +155,6 @@
 		// - freeing resources
 		::KillTimer(m_hWnd,ID_FLASH);
 		::DeleteObject(dib.handle);
-		pSingleInstance=nullptr;
 		pOffsetsByFileType=nullptr; // client's responsibility to free the array
 	}
 

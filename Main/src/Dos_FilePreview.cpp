@@ -5,18 +5,25 @@
 	#define IMAGE	rFileManager.tab.image
 	#define DOS		IMAGE->dos
 
-	static constexpr RECT defaultRect={ 0, 0, 0, 0 };
+	static constexpr RECT defaultRect={};
 
-	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId)
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance)
 		// ctor
 		// - initialization
-		: pView(pView)
+		: pView(pView) , ppSingleManagedInstance(ppSingleManagedInstance)
 		, caption(caption) , iniSection(iniSection) , rFileManager(rFileManager)
 		, initialClientWidth( keepAspectRatio?initialClientWidth:-initialClientWidth )
 		, initialClientHeight( keepAspectRatio?initialClientHeight:-initialClientHeight )
 		, directory(DOS->currentDir)
 		, pdt( DOS->BeginDirectoryTraversal(DOS->currentDir) ) {
 		m_bAutoMenuEnable=FALSE; // we are not set up for that
+		// - manage this instance
+		if (ppSingleManagedInstance){
+			CFilePreview *&psmi=*ppSingleManagedInstance;
+			if (psmi)
+				psmi->DestroyWindow();
+			psmi=this;
+		}
 		// - creating the Preview FrameWindow
 		Create(	nullptr, nullptr,
 				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
@@ -248,8 +255,11 @@
 				break;
 			case WM_NCDESTROY:{
 				// window is about to be destroyed
-				// - saving current position on the Screen for next time
-				WINDOWPLACEMENT wp={ sizeof(wp) };
+				// - manage this instance
+				if (ppSingleManagedInstance)
+					*ppSingleManagedInstance=nullptr;
+				// - save current position for the next time
+				WINDOWPLACEMENT wp;
 				GetWindowPlacement(&wp);
 				for( BYTE b=4; b; ((PINT)&wp.rcNormalPosition)[--b]/=Utils::LogicalUnitScaleFactor );
 				TCHAR buf[80];

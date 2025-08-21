@@ -463,8 +463,6 @@
 				static constexpr TFilePreviewOffsetByFileType Offsets[]={
 					{ TDirectoryEntry::SNAPSHOT, 128, true }
 				};
-				if (CScreenPreview::pSingleInstance)
-					CScreenPreview::pSingleInstance->DestroyWindow();
 				CScreenPreview::pOffsetsByFileType=Offsets;
 				break; // call base
 			}
@@ -473,8 +471,6 @@
 				static constexpr TFilePreviewOffsetByFileType Offsets[]={
 					{ TDirectoryEntry::SNAPSHOT, 7499, true }
 				};
-				if (CBasicPreview::pSingleInstance)
-					CBasicPreview::pSingleInstance->DestroyWindow();
 				CBasicPreview::pOffsetsByFileType=Offsets;
 				break; // call base
 			}

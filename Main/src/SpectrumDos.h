@@ -54,7 +54,7 @@
 		public:
 			static PCFilePreviewOffsetByFileType pOffsetsByFileType; // client's responsibility to allocate and free the array
 
-			static CScreenPreview *pSingleInstance;
+			static CFilePreview *pSingleInstance;
 
 			CScreenPreview(const CFileManagerView &rFileManager);
 			~CScreenPreview();			
@@ -87,13 +87,13 @@
 			const CString tmpFileName; // file to store HTML-formatted content in
 			CWebPageView contentView;
 
-			CAssemblerPreview(const CFileManagerView &rFileManager,WORD orgAddress=0,bool canRebase=false,DWORD resourceId=IDR_SPECTRUM_PREVIEW_ASSEMBLER,LPCTSTR caption=_T("Z80 assembler listing"),LPCTSTR iniSection=_T("ZxZ80"));
+			CAssemblerPreview(const CFileManagerView &rFileManager,CFilePreview **ppSingleManagedInstance,WORD orgAddress=0,bool canRebase=false,DWORD resourceId=IDR_SPECTRUM_PREVIEW_ASSEMBLER,LPCTSTR caption=_T("Z80 assembler listing"),LPCTSTR iniSection=_T("ZxZ80"));
 
 			void ParseZ80BinaryFileAndGenerateHtmlFormattedContent(CFile &fIn,WORD orgAddress,CFile &f,bool smallerHeading=false) const;
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
-			static CAssemblerPreview *pSingleInstance; // only single file can be previewed at a time
+			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
 
 			static CAssemblerPreview *CreateInstance(const CFileManagerView &rFileManager);
 
@@ -128,7 +128,7 @@
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
-			static CBasicPreview *pSingleInstance; // only single file can be previewed at a time
+			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
 			static PCFilePreviewOffsetByFileType pOffsetsByFileType; // client's responsibility to allocate and free the array
 
 			CBasicPreview(const CFileManagerView &rFileManager);
