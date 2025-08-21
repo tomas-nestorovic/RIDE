@@ -258,15 +258,19 @@
 		if (!err.IsEmpty())
 			return err;
 		// - must be one of default Formats
-		auto tmpFmt=f;
-			tmpFmt.nCylinders--; // inclusive!
-		for each( const auto &stdFmt in StdFormats ){
-			tmpFmt.mediumType=stdFmt.params.format.mediumType; // ignore Medium (unreliable for Images)
-			if (stdFmt.params.format==tmpFmt)
-				return err;
-		}
+		if (considerBoot || considerFat){
+			auto tmpFmt=f;
+				tmpFmt.nCylinders--; // inclusive!
+			for each( const auto &stdFmt in StdFormats ){
+				tmpFmt.mediumType=stdFmt.params.format.mediumType; // ignore Medium (unreliable for Images)
+				if (stdFmt.params.format==tmpFmt)
+					return err;
+			}
+			return _T("Format not allowed");
+		}//else
+			//nop (allow for eventual plain Cylinder format/unformat); TRD Images may end preliminary if sectors up to the end contain no data, e.g. Prince of Persia
 		// - new Format is acceptable
-		return _T("Format not allowed");
+		return err;
 	}
 
 	CString CTRDOS503::ChangeFormat(bool considerBoot,bool considerFat,RCFormat f){
