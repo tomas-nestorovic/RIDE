@@ -1266,7 +1266,7 @@
 			case ID_DOS_PREVIEWASBINARY:
 				// previewing File in hexa mode
 				if (CHexaPreview::pSingleInstance)
-					delete CHexaPreview::pSingleInstance;
+					CHexaPreview::pSingleInstance->DestroyWindow();
 				new CHexaPreview(*pFileManager);
 				return TCmdResult::DONE;
 		}
