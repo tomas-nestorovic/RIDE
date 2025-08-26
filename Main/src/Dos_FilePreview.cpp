@@ -140,12 +140,6 @@
 		return TRUE;
 	}
 
-	void CDos::CFilePreview::DestroyWindowSafe(PCFileManagerView pFileManager){
-		if (this)
-			if (!pFileManager || pFileManager==&fileManager)
-				DestroyWindow();
-	}
-
 	LRESULT CDos::CFilePreview::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (msg){
