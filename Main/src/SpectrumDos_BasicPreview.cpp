@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CBasicPreview::pOffsetsByFileType;
-	CSpectrumBase::CFilePreview *CSpectrumBase::CBasicPreview::pSingleInstance;
+	static CDos::CFilePreview *pSingleInstance; // only single File can be previewed at a time
 
 	#define PREVIEW_LABEL	_T("BASIC listing")
 

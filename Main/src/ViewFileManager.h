@@ -105,6 +105,7 @@
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
 		Utils::CPtrList<const CMainWindow::CTdiView::TTab *> ownedTabs;
+		Utils::CPtrList<CWnd *> ownedWindows;
 		CFileList previousDirectories;
 
 		void __updateSummaryInStatusBar__() const;
@@ -287,6 +288,8 @@
 		void SwitchToDirectory(CDos::PFile directory);
 		afx_msg void RefreshDisplay();
 		BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext=nullptr) override;
+		inline void SetOwnership(CWnd *pWnd){ ASSERT(!ownedWindows.Contains(pWnd)); ownedWindows.AddTail(pWnd); }
+		inline void RevokeOwnership(CWnd *pWnd){ ownedWindows.Remove(pWnd); }
 	};
 
 #endif // FILEMANAGERVIEW_H

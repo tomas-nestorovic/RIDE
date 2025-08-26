@@ -54,8 +54,6 @@
 		public:
 			static PCFilePreviewOffsetByFileType pOffsetsByFileType; // client's responsibility to allocate and free the array
 
-			static CFilePreview *pSingleInstance;
-
 			CScreenPreview(const CFileManagerView &fileManager);
 			~CScreenPreview();			
 		};
@@ -93,8 +91,6 @@
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
-			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
-
 			static CAssemblerPreview *CreateInstance(const CFileManagerView &fileManager);
 
 			~CAssemblerPreview();
@@ -128,7 +124,6 @@
 			void RefreshPreview() override;
 			BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override;
 		public:
-			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
 			static PCFilePreviewOffsetByFileType pOffsetsByFileType; // client's responsibility to allocate and free the array
 
 			CBasicPreview(const CFileManagerView &fileManager);
@@ -318,7 +313,6 @@
 		TSide sideMap[2]; // 2 = only one- or two-sided floppies are considered to be used with any ZX Spectrum derivate
 
 		CSpectrumBase(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
-		~CSpectrumBase();
 	public:
 		CPathString GetFilePresentationNameAndExt(PCFile file) const override;
 		CPathString GetFileExportNameAndExt(PCFile file,bool shellCompliant) const override;

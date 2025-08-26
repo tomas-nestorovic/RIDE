@@ -94,9 +94,12 @@
 			::OleSetClipboard(nullptr);
 			delete ownedDataSource;
 		}
-		if (*app.m_pMainWnd) // app NOT closing
+		if (*app.m_pMainWnd){ // app NOT closing
 			while (ownedTabs.GetCount())
 				CTdiCtrl::RemoveTab( TDI_HWND, ownedTabs.RemoveHead() );
+			while (ownedWindows.GetCount())
+				ownedWindows.RemoveHead()->DestroyWindow();
+		}
 	}
 
 

@@ -217,16 +217,6 @@
 		::memcpy( sideMap, StdSidesMap, sizeof(sideMap) ); // mapping Head numbers to Side numbers as the IBM norm dictates
 	}
 
-	CSpectrumBase::~CSpectrumBase(){
-		// dtor
-		if (CScreenPreview::pSingleInstance && &CScreenPreview::pSingleInstance->fileManager==pFileManager)
-			CScreenPreview::pSingleInstance->DestroyWindow();
-		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->fileManager==pFileManager)
-			CBasicPreview::pSingleInstance->DestroyWindow();
-		if (CAssemblerPreview::pSingleInstance && &CAssemblerPreview::pSingleInstance->fileManager==pFileManager)
-			CAssemblerPreview::pSingleInstance->DestroyWindow();
-	}
-
 
 
 

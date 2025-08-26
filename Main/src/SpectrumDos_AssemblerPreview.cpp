@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-	CSpectrumBase::CFilePreview *CSpectrumBase::CAssemblerPreview::pSingleInstance;
-
 	#define PREVIEW_WIDTH_DEFAULT	750
 	#define PREVIEW_HEIGHT_DEFAULT	300
 
@@ -28,6 +26,7 @@
 
 	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &fileManager){
 		// creates and returns a new instance
+		static CDos::CFilePreview *pSingleInstance; // only single File can be previewed at a time
 		CAssemblerPreview *const p=new CAssemblerPreview( fileManager, &pSingleInstance, 0, true );
 		p->__showNextFile__();
 		return p;
@@ -40,8 +39,6 @@
 		app.WriteProfileInt( iniSection, INI_NUMBER_FORMAT, numberFormat );
 		// - uninitialization
 		::DeleteFile(tmpFileName);
-		if (pSingleInstance==this) // NOT a derived class ...
-			pSingleInstance=nullptr; // ... thus managing the SingleInstance
 	}
 
 

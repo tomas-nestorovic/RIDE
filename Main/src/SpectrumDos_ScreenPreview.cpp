@@ -10,6 +10,8 @@
 
 	#define ID_FLASH	0
 
+	static CDos::CFilePreview *pSingleInstance; // only single File can be previewed at a time
+
 	LRESULT CSpectrumBase::CScreenPreview::WindowProc(UINT uMsg,WPARAM wParam,LPARAM lParam){
 		// window procedure
 		switch (uMsg){
@@ -121,7 +123,6 @@
 	#define LABEL	_T("Screen$")
 
 	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CScreenPreview::pOffsetsByFileType;
-	CDos::CFilePreview *CSpectrumBase::CScreenPreview::pSingleInstance;
 
 	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &fileManager)
 		// ctor

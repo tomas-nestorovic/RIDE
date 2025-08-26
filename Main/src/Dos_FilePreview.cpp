@@ -24,6 +24,7 @@
 				psmi->DestroyWindow();
 			psmi=this;
 		}
+		const_cast<CFileManagerView &>(fileManager).SetOwnership(this);
 		// - creating the Preview FrameWindow
 		Create(	nullptr, nullptr,
 				WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_VISIBLE,
@@ -264,6 +265,7 @@
 				// - manage this instance
 				if (ppSingleManagedInstance)
 					*ppSingleManagedInstance=nullptr;
+				const_cast<CFileManagerView &>(fileManager).RevokeOwnership(this);
 				// - save current position for the next time
 				WINDOWPLACEMENT wp;
 				GetWindowPlacement(&wp);
