@@ -93,7 +93,7 @@ using namespace Yahel;
 	void CFileManagerView::CFileComparisonDialog::OnCancel(){
 		// closes the FileComparisonDialog
 		// - saving window's current position for next time
-		WINDOWPLACEMENT wp={ sizeof(wp) };
+		WINDOWPLACEMENT wp;
 		GetWindowPlacement(&wp);
 		TCHAR buf[50];
 		::wsprintf(buf,_T("%d,%d,%d,%d,%d"),wp.rcNormalPosition,wp.showCmd);

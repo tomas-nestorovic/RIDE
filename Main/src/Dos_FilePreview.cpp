@@ -261,7 +261,7 @@
 				// - save current position for the next time
 				WINDOWPLACEMENT wp;
 				GetWindowPlacement(&wp);
-				for( BYTE b=4; b; ((PINT)&wp.rcNormalPosition)[--b]/=Utils::LogicalUnitScaleFactor );
+				for( BYTE b=4; b; ((PLONG)&wp.rcNormalPosition)[--b]/=Utils::LogicalUnitScaleFactor );
 				TCHAR buf[80];
 				::wsprintf(buf,_T("%d,%d,%d,%d,%d"),wp.rcNormalPosition,wp.showCmd);
 				app.WriteProfileString(iniSection,INI_POSITION,buf);

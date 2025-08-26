@@ -320,7 +320,7 @@
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Contains( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
@@ -471,7 +471,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Contains( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:
@@ -546,7 +546,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					while (const CDos::PFile subfile=pdt->GetNextFileOrSubdir())
 						switch (pdt->entryType){
 							case CDos::TDirectoryTraversal::SUBDIR:
-								if (visitedDirectories.Find( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )!=nullptr) // the Subdirectory has already been processed
+								if (visitedDirectories.Contains( (CDos::PFile)vp.dos->GetDirectoryUid(subfile) )) // the Subdirectory has already been processed
 									continue; // not processing it again
 								//fallthrough
 							case CDos::TDirectoryTraversal::FILE:

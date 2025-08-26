@@ -71,7 +71,7 @@
 			~COleVirtualFileDataSource();
 
 			CDos::PFile __getFile__(int id) const;
-			bool __isInList__(CDos::PCFile file) const;
+			inline bool Contains(CDos::PCFile file) const{ return listOfFiles.Contains((PVOID)file); }
 		};
 
 		class CNameConflictResolutionDialog sealed:public ::Utils::CCommandDialog{

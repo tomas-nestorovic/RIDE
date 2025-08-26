@@ -88,6 +88,7 @@ namespace Utils{
 	public:
 		inline POSITION AddHead(Ptr newElement){ return __super::AddHead((PVOID)newElement); }
 		inline POSITION AddTail(Ptr newElement){ return __super::AddTail((PVOID)newElement); }
+		inline bool Contains(Ptr element) const{ return Find(element)!=nullptr; }
 		inline Ptr &GetNext(POSITION &rPosition){ return (Ptr &)__super::GetNext(rPosition); }
 		inline Ptr GetNext(POSITION &rPosition) const{ return (Ptr)__super::GetNext(rPosition); }
 		inline Ptr &GetPrev(POSITION &rPosition){ return (Ptr &)__super::GetPrev(rPosition); }

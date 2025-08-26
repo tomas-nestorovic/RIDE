@@ -105,12 +105,7 @@
 
 	CDos::PFile CFileManagerView::COleVirtualFileDataSource::__getFile__(int id) const{
 		// returns a File with the specified order number; assumed that the order number is always within range
-		return (CDos::PFile)listOfFiles.GetAt( listOfFiles.FindIndex(id) );
-	}
-
-	bool CFileManagerView::COleVirtualFileDataSource::__isInList__(CDos::PCFile file) const{
-		// True <=> specified File is in the list of Files to transfer, otherwise False
-		return listOfFiles.Find((PVOID)file)!=nullptr;
+		return listOfFiles.GetAt( listOfFiles.FindIndex(id) );
 	}
 
 	BOOL CFileManagerView::COleVirtualFileDataSource::OnRenderData(LPFORMATETC lpFormatEtc,LPSTGMEDIUM lpStgMedium){
@@ -229,7 +224,7 @@
 		if (ownedDataSource){ // this FileManager's own objects (dragging initiated in this FileManager)
 			if (!directoryUnderCursor) // no DirectoryUnderCursor that potentially could be the destination - assuming the current Directory (identical with SourceDirectory)
 				return DROPEFFECT_NONE;
-			if (ownedDataSource->__isInList__(directoryUnderCursor)) // destination DirectoryUnderCursor is identical with one of dragged Directories
+			if (ownedDataSource->Contains(directoryUnderCursor)) // destination DirectoryUnderCursor is identical with one of dragged Directories
 				return DROPEFFECT_NONE;
 		}
 		// - highlighting the DirectoryUnderCursor as current destination of Drop

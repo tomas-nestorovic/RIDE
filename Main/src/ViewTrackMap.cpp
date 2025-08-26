@@ -164,7 +164,7 @@
 
 	BOOL CTrackMapView::OnScroll(UINT nScrollCode, UINT nPos, BOOL bDoScroll){
 		// scrolls the View's content in given way
-		SCROLLINFO si={ sizeof(si) };
+		SCROLLINFO si;
 		// - horizontal ScrollBar
 		GetScrollInfo( SB_HORZ, &si, SIF_POS|SIF_TRACKPOS|SIF_RANGE|SIF_PAGE );
 		int iScroll0=si.nPos;
