@@ -219,11 +219,11 @@
 
 	CSpectrumBase::~CSpectrumBase(){
 		// dtor
-		if (CScreenPreview::pSingleInstance && &CScreenPreview::pSingleInstance->rFileManager==pFileManager)
+		if (CScreenPreview::pSingleInstance && &CScreenPreview::pSingleInstance->fileManager==pFileManager)
 			CScreenPreview::pSingleInstance->DestroyWindow();
-		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->rFileManager==pFileManager)
+		if (CBasicPreview::pSingleInstance && &CBasicPreview::pSingleInstance->fileManager==pFileManager)
 			CBasicPreview::pSingleInstance->DestroyWindow();
-		if (CAssemblerPreview::pSingleInstance && &CAssemblerPreview::pSingleInstance->rFileManager==pFileManager)
+		if (CAssemblerPreview::pSingleInstance && &CAssemblerPreview::pSingleInstance->fileManager==pFileManager)
 			CAssemblerPreview::pSingleInstance->DestroyWindow();
 	}
 

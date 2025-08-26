@@ -306,7 +306,7 @@
 			const short initialClientWidth,initialClientHeight;
 			std::unique_ptr<CDos::TDirectoryTraversal> pdt;
 
-			CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance);
+			CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &fileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance);
 
 			void UpdateCaption();
 			void __showNextFile__();
@@ -316,7 +316,7 @@
 			BOOL PreCreateWindow(CREATESTRUCT &cs) override;
 			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
 		public:
-			const CFileManagerView &rFileManager;
+			const CFileManagerView &fileManager;
 		};
 	protected:
 		static const TSide StdSidesMap[];
@@ -365,7 +365,7 @@
 				CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview);
 			} hexaEditor;
 
-			CHexaPreview(const CFileManagerView &rFileManager);
+			CHexaPreview(const CFileManagerView &fileManager);
 			~CHexaPreview();
 		};
 

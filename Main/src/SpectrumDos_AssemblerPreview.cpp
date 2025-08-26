@@ -8,10 +8,10 @@
 	#define INI_FEATURES		_T("feats")
 	#define INI_NUMBER_FORMAT	_T("numfmt")
 
-	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &rFileManager,CFilePreview **ppSingleManagedInstance,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR caption,LPCTSTR iniSection)
+	CSpectrumBase::CAssemblerPreview::CAssemblerPreview(const CFileManagerView &fileManager,CFilePreview **ppSingleManagedInstance,WORD orgAddress,bool canRebase,DWORD resourceId,LPCTSTR caption,LPCTSTR iniSection)
 		// ctor
 		// - base
-		: CFilePreview(	&contentView, caption, iniSection, rFileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId, ppSingleManagedInstance )
+		: CFilePreview(	&contentView, caption, iniSection, fileManager, PREVIEW_WIDTH_DEFAULT, PREVIEW_HEIGHT_DEFAULT, false, resourceId, ppSingleManagedInstance )
 		, orgAddress(orgAddress) , canRebase(canRebase)
 		, tmpFileName( Utils::GenerateTemporaryFileName() )
 		, contentView(_T(""))
@@ -26,9 +26,9 @@
 		contentView.OnInitialUpdate();
 	}
 
-	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &rFileManager){
+	CSpectrumBase::CAssemblerPreview *CSpectrumBase::CAssemblerPreview::CreateInstance(const CFileManagerView &fileManager){
 		// creates and returns a new instance
-		CAssemblerPreview *const p=new CAssemblerPreview( rFileManager, &pSingleInstance, 0, true );
+		CAssemblerPreview *const p=new CAssemblerPreview( fileManager, &pSingleInstance, 0, true );
 		p->__showNextFile__();
 		return p;
 	}
@@ -50,7 +50,7 @@
 
 
 
-	#define IMAGE	rFileManager.tab.image
+	#define IMAGE	fileManager.tab.image
 	#define DOS		IMAGE->dos
 
 	#define Z80_INST_ADC	_T("adc")

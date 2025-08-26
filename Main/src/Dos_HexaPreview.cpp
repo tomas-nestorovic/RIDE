@@ -7,15 +7,15 @@
 	#define HEXA_WIDTH	650
 	#define HEXA_HEIGHT	250
 
-	#define IMAGE	rFileManager.tab.image
+	#define IMAGE	fileManager.tab.image
 	#define DOS		IMAGE->dos
 
 	CDos::CFilePreview *CDos::CHexaPreview::pSingleInstance;
 
-	CDos::CHexaPreview::CHexaPreview(const CFileManagerView &rFileManager)
+	CDos::CHexaPreview::CHexaPreview(const CFileManagerView &fileManager)
 		// ctor
 		// - base
-		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, rFileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0, &pSingleInstance )
+		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, fileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0, &pSingleInstance )
 		// - initialization
 		, hexaEditor(DOS,this) {
 		pSingleInstance=this;

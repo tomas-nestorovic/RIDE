@@ -115,7 +115,7 @@
 
 
 
-	#define IMAGE	rFileManager.tab.image
+	#define IMAGE	fileManager.tab.image
 	#define DOS		IMAGE->dos
 
 	#define LABEL	_T("Screen$")
@@ -123,10 +123,10 @@
 	CSpectrumBase::PCFilePreviewOffsetByFileType CSpectrumBase::CScreenPreview::pOffsetsByFileType;
 	CDos::CFilePreview *CSpectrumBase::CScreenPreview::pSingleInstance;
 
-	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &rFileManager)
+	CSpectrumBase::CScreenPreview::CScreenPreview(const CFileManagerView &fileManager)
 		// ctor
 		// - base
-		: CFilePreview( nullptr, LABEL, INI_PREVIEW, rFileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN, &pSingleInstance )
+		: CFilePreview( nullptr, LABEL, INI_PREVIEW, fileManager, SCREEN_WIDTH, SCREEN_HEIGHT, true, IDR_SPECTRUM_PREVIEW_SCREEN, &pSingleInstance )
 		// - initialization
 		, offset(USHRT_MAX)
 		, showPixels(true) , showAttributes(true) , showFlashing(true)
@@ -178,9 +178,9 @@
 		CDos::CFileReaderWriter frw( DOS, file );
 		if (offset==USHRT_MAX){ // initial Offset? (i.e. NOT set manually)
 			offset=0;
-			rFileManager.tab.image->dos->GetFileSize( file, (PBYTE)&offset, nullptr );
+			DOS->GetFileSize( file, (PBYTE)&offset, nullptr );
 			offset=pOffsetsByFileType->FindOffset(
-				rFileManager.tab.image->dos->GetFileExt(file)
+				DOS->GetFileExt(file)
 			);
 		}
 		frw.Seek( offset, CFile::begin );

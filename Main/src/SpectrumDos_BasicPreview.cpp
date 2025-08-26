@@ -11,10 +11,10 @@
 	#define INI_SHOW_INTERNAL_BINARY	_T("bin")
 	#define INI_INTERPRET_PAST_BASIC	_T("past")
 
-	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &rFileManager)
+	CSpectrumBase::CBasicPreview::CBasicPreview(const CFileManagerView &fileManager)
 		// ctor
 		// - base
-		: CAssemblerPreview( rFileManager, &pSingleInstance, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
+		: CAssemblerPreview( fileManager, &pSingleInstance, 0, false, IDR_SPECTRUM_PREVIEW_BASIC, PREVIEW_LABEL, INI_PREVIEW )
 		, machineCodeMenu(IDR_SPECTRUM_PREVIEW_ASSEMBLER)
 		, dataAfterBasic( app.GetProfileEnum(INI_PREVIEW,INI_INTERPRET_PAST_BASIC,TDataAfterBasic::SHOW_AS_VARIABLES) )
 		, binaryAfter0x14( app.GetProfileEnum(INI_PREVIEW,INI_SHOW_INTERNAL_BINARY,TBinaryAfter0x14::DONT_SHOW) ) {
@@ -43,7 +43,7 @@
 
 
 
-	#define IMAGE	rFileManager.tab.image
+	#define IMAGE	fileManager.tab.image
 	#define DOS		IMAGE->dos
 
 	void CSpectrumBase::CBasicPreview::ParseBasicFileAndGenerateHtmlFormattedContent(PCFile file) const{
@@ -59,7 +59,7 @@
 		#endif
 		frw.SetLength( MinLength(frw.GetLength(),a+fileOfficialSize) ); // ignoring appended custom data (e.g. as in TR-DOS)
 		const auto offsetInFile=pOffsetsByFileType->FindOffset(
-			rFileManager.tab.image->dos->GetFileExt(file)
+			DOS->GetFileExt(file)
 		);
 		frw.Seek( a+offsetInFile, CFile::begin ); // ignoring prepended custom data (e.g. as in GDOS)
 		// - opening the temporary HTML file for writing

@@ -2,16 +2,16 @@
 
 	#define INI_POSITION	_T("pos")
 
-	#define IMAGE	rFileManager.tab.image
+	#define IMAGE	fileManager.tab.image
 	#define DOS		IMAGE->dos
 
 	static constexpr RECT defaultRect={};
 
-	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &rFileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance)
+	CDos::CFilePreview::CFilePreview(const CWnd *pView,LPCTSTR caption,LPCTSTR iniSection,const CFileManagerView &fileManager,short initialClientWidth,short initialClientHeight,bool keepAspectRatio,DWORD resourceId,CFilePreview **ppSingleManagedInstance)
 		// ctor
 		// - initialization
 		: pView(pView) , ppSingleManagedInstance(ppSingleManagedInstance)
-		, caption(caption) , iniSection(iniSection) , rFileManager(rFileManager)
+		, caption(caption) , iniSection(iniSection) , fileManager(fileManager)
 		, initialClientWidth( keepAspectRatio?initialClientWidth:-initialClientWidth )
 		, initialClientHeight( keepAspectRatio?initialClientHeight:-initialClientHeight )
 		, directory(DOS->currentDir)
@@ -60,14 +60,14 @@
 	void CDos::CFilePreview::__showNextFile__(){
 		// shows next File
 		if (!pdt) return;
-		if (POSITION pos=rFileManager.GetFirstSelectedFilePosition()){
+		if (POSITION pos=fileManager.GetFirstSelectedFilePosition()){
 			// next File selected in the FileManager
 			while (pos)
-				if (rFileManager.GetNextSelectedFile(pos)==pdt->entry)
+				if (fileManager.GetNextSelectedFile(pos)==pdt->entry)
 					break;
 			if (!pos)
-				pos=rFileManager.GetFirstSelectedFilePosition();
-			pdt->entry=rFileManager.GetNextSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
+				pos=fileManager.GetFirstSelectedFilePosition();
+			pdt->entry=fileManager.GetNextSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
 		}else{
 			// next File (any)
 			PFile next=nullptr;
@@ -92,14 +92,14 @@
 	void CDos::CFilePreview::__showPreviousFile__(){
 		// shows previous File
 		if (!pdt) return;
-		if (POSITION pos=rFileManager.GetLastSelectedFilePosition()){
+		if (POSITION pos=fileManager.GetLastSelectedFilePosition()){
 			// previous File selected in the FileManager
 			while (pos)
-				if (rFileManager.GetPreviousSelectedFile(pos)==pdt->entry)
+				if (fileManager.GetPreviousSelectedFile(pos)==pdt->entry)
 					break;
 			if (!pos)
-				pos=rFileManager.GetLastSelectedFilePosition();
-			pdt->entry=rFileManager.GetPreviousSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
+				pos=fileManager.GetLastSelectedFilePosition();
+			pdt->entry=fileManager.GetPreviousSelectedFile(pos), pdt->entryType=TDirectoryTraversal::CUSTOM;
 		}else{
 			// previous File (any)
 			PFile prev=nullptr;
@@ -137,6 +137,12 @@
 		if (!__super::PreCreateWindow(cs)) return FALSE;
 		cs.dwExStyle&=~WS_EX_CLIENTEDGE;
 		return TRUE;
+	}
+
+	void CDos::CFilePreview::DestroyWindowSafe(PCFileManagerView pFileManager){
+		if (this)
+			if (!pFileManager || pFileManager==&fileManager)
+				DestroyWindow();
 	}
 
 	LRESULT CDos::CFilePreview::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){

@@ -40,7 +40,7 @@
 	CDos::~CDos(){
 		// dtor
 		// - destroying HexaPreview of File's content associated with current FileManager
-		if (CHexaPreview::pSingleInstance && &CHexaPreview::pSingleInstance->rFileManager==pFileManager)
+		if (CHexaPreview::pSingleInstance && &CHexaPreview::pSingleInstance->fileManager==pFileManager)
 			CHexaPreview::pSingleInstance->DestroyWindow();
 		// - hiding DOS Menu
 		menu.Hide();
