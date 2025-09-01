@@ -22,27 +22,6 @@
 	class CCapsBase abstract:public CFloppyImage{
 		Medium::TType forcedMediumType;
 	protected:
-		class CBitReader sealed{
-		// this class is deprecated and should not be used in new code - use CTrackReaderWriter instead!
-			PUBYTE pCurrByte;
-			UBYTE currBitMask;
-			UDWORD nRemainingBits;
-		public:
-			const UDWORD Count;
-
-			CBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags);
-			CBitReader(const CBitReader &rBitReader,UDWORD position);
-
-			inline operator bool() const;
-
-			bool ReadBit();
-			bool ReadBits16(WORD &rOut);
-			bool ReadBits32(DWORD &rOut);
-			UDWORD GetPosition() const;
-			void SeekTo(UDWORD pos);
-			void SeekToBegin();
-		};
-
 		typedef struct TInternalSector sealed{
 			TSectorId id;
 			struct{

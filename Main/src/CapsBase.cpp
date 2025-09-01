@@ -67,82 +67,36 @@
 
 
 
-	CCapsBase::CBitReader::CBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags)
-		// ctor to iterate over bits on all available disk revolutions
-		: pCurrByte(cti.trackbuf-1) , currBitMask(0) // pointing "before" the first valid bit
-		, nRemainingBits( lockFlags&DI_LOCK_TRKBIT ? cti.tracklen : cti.tracklen*CHAR_BIT )
-		, Count(nRemainingBits) {
-	}
-
-	CCapsBase::CBitReader::CBitReader(const CBitReader &rBitReader,UDWORD position)
-		// copy ctor
-		: pCurrByte(rBitReader.pCurrByte) , currBitMask(rBitReader.currBitMask)
-		, nRemainingBits(rBitReader.nRemainingBits)
-		, Count(rBitReader.Count) {
-		SeekTo(position);
-	}
-
-	inline
-	CCapsBase::CBitReader::operator bool() const{
-		// True <=> not all bits yet read, otherwise False
-		return nRemainingBits>0;
-	}
-
-	bool CCapsBase::CBitReader::ReadBit(){
-		// returns first bit not yet read
-		#ifdef _DEBUG
-			if (!*this)
-				ASSERT(FALSE); // this method mustn't be called when there's nothing actually to be read!
-		#endif
-		if ((currBitMask>>=1)==0)
-			pCurrByte++, currBitMask=0x80;
-		nRemainingBits--;
-		return (*pCurrByte&currBitMask)!=0;
-	}
-
-	bool CCapsBase::CBitReader::ReadBits16(WORD &rOut){
-		// True <=> at least 16 bits have not yet been read, otherwise False
-		if (nRemainingBits<16)
-			return false;
-		for( BYTE n=16; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() );
-		return true;
-	}
-
-	bool CCapsBase::CBitReader::ReadBits32(DWORD &rOut){
-		// True <=> at least 32 bits have not yet been read, otherwise False
-		if (nRemainingBits<32)
-			return false;
-		for( BYTE n=32; n-->0; rOut=(rOut<<1)|(BYTE)ReadBit() );
-		return true;
-	}
-
-	inline
-	UDWORD CCapsBase::CBitReader::GetPosition() const{
-		// returns the number of bits already read, applicable only to THIS BitReader!
-		return Count-nRemainingBits;
-	}
-
-	void CCapsBase::CBitReader::SeekTo(UDWORD pos){
-		// sets current position returned earlier from the GetPosition method
-		int diff=pos-GetPosition();
-		if (diff>0){
-			for( BYTE nBits=diff&7; nBits-->0; ReadBit() );
-			pCurrByte+=diff>>3;
-		}else if (diff<0){
-			diff=-diff;
-			for( BYTE nBits=diff&7; nBits-->0; )
-				if ((currBitMask<<=1)==0)
-					pCurrByte--, currBitMask=0x01;
-			pCurrByte-=diff>>3;
+	class CCapsBitReader sealed{
+		const UBYTE *pBits;
+		UDWORD nBits,iCurrBit;
+		const UDWORD *pByteTimes;
+		UDWORD nByteTimes;
+	public:
+		CCapsBitReader()
+			// ctor (set up to always fail)
+			: iCurrBit(nBits) {
 		}
-		nRemainingBits=Count-pos;
-	}
+		CCapsBitReader(const CapsTrackInfoT2 &cti,UDWORD lockFlags)
+			// ctor
+			: pBits(cti.trackbuf)
+			, nBits( lockFlags&DI_LOCK_TRKBIT ? cti.tracklen : cti.tracklen*CHAR_BIT )
+			, pByteTimes(cti.timebuf)
+			, nByteTimes(cti.timelen)
+			, iCurrBit(0) {
+		}
 
-	inline
-	void CCapsBase::CBitReader::SeekToBegin(){
-		// sets current position to the beginning of the bit stream
-		SeekTo(0);
-	}
+		inline operator bool() const{ return iCurrBit<nBits; }
+		inline UDWORD GetCount() const{ return nBits; }
+
+		bool ReadBit(UDWORD &outByteTime){
+			ASSERT(*this);
+			const div_t d=div( iCurrBit++, CHAR_BIT );
+			outByteTime = d.quot<nByteTimes ? pByteTimes[d.quot] : 0;
+			ASSERT(outByteTime<INT_MAX);
+			return ( pBits[d.quot]&(0x80>>d.rem) )!=0;
+		}
+	};
 
 
 
@@ -198,9 +152,10 @@
 			return nullptr;
 		// - reconstructing flux information over all Revolutions of the disk
 		nRevs=std::min( nRevs, (BYTE)CAPS_MTRS ); // just to be sure we don't overrun the buffers
-		UDWORD nBitsPerTrack[CAPS_MTRS], nBitsTotally=0;
-		for( BYTE rev=0; rev<nRevs; rev++ )
-			nBitsTotally += nBitsPerTrack[rev] = CBitReader(ctiRevs[rev],lockFlags).Count;
+		CCapsBitReader revs[CAPS_MTRS];
+		UDWORD nBitsTotally=0;
+		for( BYTE r=0; r<nRevs; r++ )
+			nBitsTotally+=(  revs[r]=CCapsBitReader( ctiRevs[r], lockFlags )  ).GetCount();
 		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
 				// Medium already known and the CAPS Track does NOT contain explicit timing information
@@ -222,19 +177,19 @@
 			}
 		trw.AddIndexTime(0);
 		TLogTime currentTime=0, *pFluxTime=trw.GetBuffer();
-		for( BYTE rev=0; rev<nRevs; ){
-			const CapsTrackInfoT2 &cti=ctiRevs[rev++];
-			// . creating fluxes for this Revolution
-			for( CBitReader br(cti,lockFlags); br; ){
-				const UDWORD i=br.GetPosition()>>3;
-				if (i<cti.timelen)
-					currentTime+= trw.GetCurrentProfile().iwTimeDefault * cti.timebuf[i]/1000;
+		for( BYTE r=0; r<nRevs; r++ ){
+			// . add fluxes
+			auto rev=revs[r];
+			for( UDWORD byteTime; rev; ){
+				const bool bit=rev.ReadBit(byteTime);
+				if (byteTime) // timing available?
+					currentTime+= ::MulDiv( trw.GetCurrentProfile().iwTimeDefault, byteTime, 1000 );
 				else
 					currentTime+= trw.GetCurrentProfile().iwTimeDefault;
-				if (br.ReadBit())
+				if (bit)
 					*pFluxTime++=currentTime;
 			}
-			// . adding new index
+			// . finish Revolution with an Index
 			trw.AddIndexTime( currentTime );
 		}
 		trw.AddTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
