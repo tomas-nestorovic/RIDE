@@ -932,10 +932,14 @@
 			begin(), end(), t,
 			[](const TBit &b,TLogTime t){ return b.time<t; }
 		);
-		if (it==end())
-			return nullptr;
 		it-=t<it->time; // unless LogicalTime perfectly aligned with one of Bits, 'lower_bound' finds the immediatelly next Bit - hence going back to the Bit that contains the LogicalTime
 		return it;
+	}
+
+	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::FindOrNull(TLogTime t) const{
+		// returns the Bit containing the specified LogicalTime
+		const auto it=Find(t);
+		return	it!=end() ? it : nullptr;
 	}
 
 	Utils::CCallocPtr<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{

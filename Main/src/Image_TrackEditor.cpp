@@ -315,7 +315,7 @@ using namespace Charting;
 
 			inline PCInspectionWindow GetInspectionWindow(TLogTime logTime) const{
 				// returns the InspectionWindow containing the specified LogicalTime
-				return inspectionWindows.Find(logTime);
+				return inspectionWindows.FindOrNull(logTime);
 			}
 
 			PCInspectionWindow GetInspectionWindow(int uid,TLogTime tRevStart,TLogTime tRevEnd) const{
@@ -632,7 +632,7 @@ using namespace Charting;
 				for each( const auto &pair in peList0 ){
 					const auto &pe=*pair.second;
 					for each( const TLogTime &t in pe.tArray )
-						if (const PCInspectionWindow pIw=inspectionWindows.Find(t)){
+						if (const PCInspectionWindow pIw=inspectionWindows.FindOrNull(t)){
 							const TLogTime dist1=t-pIw->time; // distance towards containing InspectionWindow
 							const TLogTime dist2=pIw[1].time-t; // distance towards next InspectionWindow
 							if (dist1<dist2)
