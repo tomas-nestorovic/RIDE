@@ -680,7 +680,7 @@ namespace Medium{
 
 	CString CImage::CUnsupportedFeaturesMessageBar::CreateListItemIfUnsupported(TCylinder nCyls,TCylinder nCylsMax){
 		CString item;
-		if (nCyls>=nCylsMax) // # of Cylinders exceeds supported limit
+		if (nCyls>nCylsMax) // # of Cylinders exceeds supported limit
 			item.Format( _T("- disk contains %d cylinders, ") _T(APP_ABBREVIATION) _T(" shows just first %d of them\n"), nCyls, nCylsMax );
 		return item;
 	}
