@@ -289,7 +289,7 @@
 		afx_msg void RefreshDisplay();
 		BOOL Create(LPCTSTR lpszClassName,LPCTSTR lpszWindowName,DWORD dwStyle,const RECT &rect,CWnd *pParentWnd,UINT nID,CCreateContext *pContext=nullptr) override;
 		inline void SetOwnership(CWnd *pWnd){ ASSERT(!ownedWindows.Contains(pWnd)); ownedWindows.AddTail(pWnd); }
-		inline void RevokeOwnership(CWnd *pWnd){ ownedWindows.Remove(pWnd); }
+		inline void RevokeOwnership(CWnd *pWnd){ ownedWindows.RemoveAt(ownedWindows.Find(pWnd)); }
 	};
 
 #endif // FILEMANAGERVIEW_H
