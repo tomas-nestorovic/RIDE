@@ -1208,7 +1208,7 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
 	}
 
-	CImage::CTrackReader CImage::ReadTrack(TCylinder cyl,THead head) const{
+	const CImage::CTrackReader &CImage::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		return CTrackReaderWriter::Invalid; // not supported (TrackReader invalid right from its creation)
 	}

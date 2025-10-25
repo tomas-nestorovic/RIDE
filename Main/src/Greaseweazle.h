@@ -119,7 +119,7 @@
 		bool EditSettings(bool initialEditing) override;
 		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
-		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
+		const CTrackReader &ReadTrack(TCylinder cyl,THead head) const override;
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 	};
 

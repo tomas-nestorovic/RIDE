@@ -153,11 +153,11 @@
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CTrackReader CKryoFluxStreams::ReadTrack(TCylinder cyl,THead head) const{
+	const CImage::CTrackReader &CKryoFluxStreams::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if Track already read before, returning the result from before
-		if (const auto tr=ReadExistingTrack(cyl,head))
+		if (const auto &tr=ReadExistingTrack(cyl,head))
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)

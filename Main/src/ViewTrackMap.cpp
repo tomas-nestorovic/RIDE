@@ -675,7 +675,7 @@
 			}
 			case ID_HEAD:
 				// display low-level Track timing
-				if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
+				if (const auto &tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
 					tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
 			case ID_IDFIELD:

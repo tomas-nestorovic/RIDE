@@ -196,11 +196,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return header.ListUnsupportedFeatures() + __super::ListUnsupportedFeatures();
 	}
 
-	CImage::CTrackReader CHFE::ReadTrack(TCylinder cyl,THead head) const{
+	const CImage::CTrackReader &CHFE::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if Track already read before, returning the result from before
-		if (const auto tr=ReadExistingTrack(cyl,head))
+		if (const auto &tr=ReadExistingTrack(cyl,head))
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
