@@ -37,7 +37,7 @@ using namespace Yahel;
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath->GetItems(item,n)){
-			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
+			auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
 			for( WORD w; n--; item++ ){
@@ -67,7 +67,7 @@ using namespace Yahel;
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
 		if (!fatPath->GetItems(item,n)){
-			div_t d=div((int)position,(int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector);
+			auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			bool writtenWithoutCrcError=true;
 			for( WORD w; n--; item++ ){
@@ -125,7 +125,7 @@ using namespace Yahel;
 
 	const TPhysicalAddress &CDos::CFileReaderWriter::GetCurrentPhysicalAddress() const{
 		// returns the PhysicalAddress currently seeked to
-		const div_t d=div( (int)position, (int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
+		const auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 		if (const CDos::CFatPath::PCItem p=fatPath->GetItem(d.quot)) // Sector exists
 			return p->chs;
 		else
@@ -134,7 +134,7 @@ using namespace Yahel;
 
 	WORD CDos::CFileReaderWriter::GetPositionInCurrentSector() const{
 		//
-		const div_t d=div( (int)position, (int)sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
+		const auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 		return dataBeginOffsetInSector+d.rem;
 	}
 
@@ -173,7 +173,7 @@ using namespace Yahel;
 
 	TRow CDos::CFileReaderWriter::LogicalPositionToRow(TPosition logPos,WORD nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
-		const auto d=div( logPos, (TPosition)recordLength );
+		const auto d=div( logPos, recordLength );
 		const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( recordLength, nBytesInRow );
 		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;// + (d.rem+nBytesInRow-1)/nBytesInRow;
 	}
@@ -181,13 +181,13 @@ using namespace Yahel;
 	TPosition CDos::CFileReaderWriter::RowToLogicalPosition(TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 		const TRow nRowsPerRecord=Utils::RoundDivUp<TPosition>( recordLength, nBytesInRow );
-		const auto d=div( row, nRowsPerRecord );
+		const auto d=::div( row, nRowsPerRecord );
 		return d.quot*recordLength + d.rem*nBytesInRow;
 	}
 
 	LPCWSTR CDos::CFileReaderWriter::GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
 		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-		const auto d=div( logPos, (TPosition)recordLength );
+		const auto d=div( logPos, recordLength );
 		if (!d.rem){
 			CDos::CFatPath::PCItem pItem; DWORD nItems;
 			#ifdef UNICODE

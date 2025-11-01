@@ -1310,15 +1310,14 @@ using namespace Charting;
 							timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 							return TRUE;
 						}
-						case ID_INDICATOR_REC:
-							if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
-									_T("Decoding evaluation"),
-									_T("Window bad if '1' off center more than [%]:"),
-									PropGrid::Integer::TUpDownLimits::Percent, iwInfo.oneOkPercent, false, this
+						case ID_INDICATOR_REC:{
+							const auto org=iwInfo.oneOkPercent;
+							if (Utils::QuerySinglePercent(
+									_T("Decoding evaluation"), _T("Window bad if '1' off center more than [%]:"),
+									iwInfo.oneOkPercent
 								)
 							)
-								if (iwInfo.oneOkPercent!=d.Value || !timeEditor.GetInspectionWindows()){
-									iwInfo.oneOkPercent=d.Value;
+								if (iwInfo.oneOkPercent!=org || !timeEditor.GetInspectionWindows()){
 									if (timeEditor.IsFeatureShown(TCursorFeatures::INSPECT))
 										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
 									timeEditor.SetInspectionWindows(CBitSequence()); // ... and disposing previous
@@ -1326,6 +1325,7 @@ using namespace Charting;
 									SendMessage( WM_COMMAND, ID_RECOGNIZE );
 								}
 							return TRUE;
+						}
 						case ID_CHART:{
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;

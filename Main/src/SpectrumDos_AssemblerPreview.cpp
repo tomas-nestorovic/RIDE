@@ -942,18 +942,14 @@
 						numberFormat=(TNumberFormat)(nID-ID_DEFAULT1);
 						RefreshPreview();
 						return TRUE;
-					case ID_BOOT:{
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog(
-								_T("Rebase"),
-								_T("New base (0=default)"),
-								PropGrid::Integer::TUpDownLimits::Word, orgAddress, numberFormat!=TNumberFormat::Decadic, this
+					case ID_BOOT:
+						if (Utils::QuerySingleInt(
+								_T("Rebase"), _T("New base (0=default)"),
+								Yahel::Word, orgAddress, numberFormat!=TNumberFormat::Decadic
 							)
-						){
-							orgAddress=d.Value;
+						)
 							RefreshPreview();
-						}
 						return TRUE;
-					}
 				}
 				break;
 		}

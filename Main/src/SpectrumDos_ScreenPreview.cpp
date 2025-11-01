@@ -262,14 +262,14 @@
 						showFlashing=!showFlashing;
 						RefreshPreview();
 						return TRUE;
-					case ID_ALIGN:{
-						const PropGrid::Integer::TUpDownLimits limits={ 0, DOS->GetFileSize(pdt->entry)-1 };
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Offset"), _T("Screen data begin at (0=default)"), limits, offset, false, this )){
-							offset=d.Value;
+					case ID_ALIGN:
+						if (Utils::QuerySingleInt(
+								_T("Offset"), _T("Screen data begin at (0=default)"),
+								Yahel::TPosInterval(0,DOS->GetFileSize(pdt->entry)), offset, false
+							)
+						)
 							RefreshPreview();
-						}
 						return TRUE;
-					}
 					case ID_FILE_SHIFT_UP:
 						offset++;
 						RefreshPreview();

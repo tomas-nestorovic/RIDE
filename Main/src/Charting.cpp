@@ -505,10 +505,12 @@ namespace Screenshot
 						SetPercentile( MenuItemToStdPercentile(nID) );
 						cv.Invalidate();
 						return true;
-					case ID_NUMBER:
-						if (const Utils::CSingleNumberDialog &&d=Utils::CSingleNumberDialog( _T("Set"), _T("Percentile"), PropGrid::Integer::TUpDownLimits::PositivePercent, GetPercentile()/100, false, CWnd::FromHandle(app.GetEnabledActiveWindow()) ))
-							SetPercentile(d.Value*100), cv.Invalidate();
+					case ID_NUMBER:{
+						BYTE tmp=GetPercentile()/100;
+						if (Utils::QuerySinglePercent( _T("Set"), _T("Percentile"), tmp, Yahel::TPosInterval(1,100) ))
+							SetPercentile(tmp*100), cv.Invalidate();
 						return true;
+					}
 				}
 				break;
 		}

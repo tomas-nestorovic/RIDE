@@ -79,14 +79,14 @@
 		inline void SetEditable(bool editable) const{ return instance->SetEditable(editable); }
 		inline bool IsEditable() const{ return instance->IsEditable(); }
 		inline void ShowColumns(BYTE columns) const{ return instance->ShowColumns(columns); }
-		inline CComPtr<IStream> GetCurrentStream() const{ CComPtr<IStream> s; s.Attach(instance->GetCurrentStream()); return s; }
+		inline const CComPtr<IStream> &GetCurrentStream() const{ return instance->GetCurrentStream(); }
 		inline void Update(IStream *s,Yahel::Stream::IAdvisor *sa) const{ instance->Update(s,sa); }
 		inline void Update(IStream *s,Yahel::Stream::IAdvisor *sa,const Yahel::TPosInterval &fileLogicalSizeLimits) const{ instance->Update(s,sa,fileLogicalSizeLimits); }
 		inline void Reset(IStream *s,Yahel::Stream::IAdvisor *sa,const Yahel::TPosInterval &fileLogicalSizeLimits) const{ instance->Reset( s, sa, fileLogicalSizeLimits ); }
 		inline bool SetLogicalSizeLimits(const Yahel::TPosInterval &limits) const{ return instance->SetStreamLogicalSizeLimits(limits); }
 		inline void SetLogicalSize(Yahel::TPosition logicalSize) const{ return instance->SetStreamLogicalSize(logicalSize); }
 		inline Yahel::TPosition GetCaretPosition() const{ return instance->GetCaretPosition(); }
-		inline Yahel::TPosInterval GetSelectionAsc() const{ return instance->GetSelectionAsc(); }
+		inline const Yahel::TPosInterval &GetSelectionAsc() const{ return instance->GetSelectionAsc(); }
 		inline void SetSelection(Yahel::TPosition selStart,Yahel::TPosition selEnd) const{ return instance->SetSelection(selStart,selEnd); }
 		inline Yahel::TPosInterval GetVisiblePart() const{ return instance->GetVisiblePart(); }
 		inline void ScrollTo(Yahel::TPosition pos,bool moveAlsoCaret=false) const{ return instance->ScrollTo(pos,moveAlsoCaret); }

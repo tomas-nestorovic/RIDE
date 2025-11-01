@@ -1628,7 +1628,7 @@ Utils::Information(buf);}
 				if (tmp)
 					DDX_Text( pDX,	ID_NUMBER,	tmp=params.calibrationStepDuringFormatting );
 				else
-					SetDlgItemInt(ID_NUMBER,4,FALSE);
+					SetDlgItemInt(ID_NUMBER,4);
 				params.calibrationStepDuringFormatting=tmp;
 				// . NumberOfSecondsToTurnMotorOff
 				DDX_CBIndex( pDX, ID_ROTATION,	params.nSecondsToTurnMotorOff );

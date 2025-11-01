@@ -28,6 +28,18 @@ namespace Utils{
 
 
 
+#ifdef RELEASE_MFC42
+#pragma optimize("",off) // optimizations off for RoundDivUp ('_alldvrm' routine may not be found for 'long long' arguments, must use '_alldiv' and '_allrem' instead)
+	template<>
+	Yahel::TPosition RoundDivUp(const Yahel::TPosition value,const Yahel::TPosition denominator){
+		return value/denominator + (value%denominator!=0);
+	}
+#pragma optimize("",on) // optimization back to '/O' compiler settings
+#endif
+
+
+
+
 	CExclusivelyLocked::CExclusivelyLocked(CSyncObject &syncObj)
 		// ctor
 		: syncObj(syncObj) {
@@ -1717,6 +1729,10 @@ namespace Utils{
 		showMessageBox( text, L"Warning", MB_ICONINFORMATION );
 	}
 
+	bool QuerySinglePercent(LPCTSTR caption,LPCTSTR label,BYTE &inOutValue,const Yahel::TPosInterval &range){
+		return QuerySingleInt( caption, label, range, inOutValue, false );
+	}
+
 
 
 
@@ -2247,116 +2263,6 @@ namespace Utils{
 			pWnd->SetFocus();
 		else
 			GetPane(row,col)->SetFocus();
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-	CSingleNumberDialog::CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,bool hexa,CWnd *pParent)
-		// ctor
-		: CRideDialog( IDR_SINGLE_NUMBER, pParent )
-		, caption(caption) , label(label) , range(range) , hexa(hexa*BST_CHECKED)
-		, Value(initValue) {
-	}
-
-	void CSingleNumberDialog::PreInitDialog(){
-		// dialog initialization
-		__super::PreInitDialog();
-		SetWindowText(caption);
-		if (!EnableDlgItem( ID_FORMAT, (range.iMin|range.iMax)>=0 ))
-			CheckDlgButton( ID_FORMAT, BST_UNCHECKED );
-		TCHAR buf[200], strMin[16], strMax[16];
-		if (hexa!=BST_UNCHECKED){
-			TCHAR format[16];
-			::wsprintf( format, _T("0x%%0%dX"), ::lstrlen(_itot(range.iMin|range.iMax,strMax,16)) );
-			::wsprintf( strMin, format, range.iMin );
-			::wsprintf( strMax, format, range.iMax );
-		}else{
-			_itot( range.iMin, strMin, 10 );
-			_itot( range.iMax, strMax, 10 );
-		}
-		const int nLabelChars=::lstrlen(label);
-		if (label[nLabelChars-1]==')'){ // Label finishes with text enclosed in brackets
-			::wsprintf( ::lstrcpy(buf,label)+nLabelChars-1, _T("; %s - %s):"), strMin, strMax );
-		}else
-			::wsprintf( buf, _T("%s (%s - %s):"), label, strMin, strMax );
-		SetDlgItemText( ID_INFORMATION, buf );
-	}
-
-	bool CSingleNumberDialog::GetCurrentValue(int &outValue) const{
-		// True <=> input value successfully parsed, otherwise False
-		TCHAR buf[16], *p=buf;
-		auto nChars=GetDlgItemText( ID_NUMBER, buf );
-		if (hexa!=BST_UNCHECKED){
-			if (nChars>2 && *buf=='0' && buf[1]=='x')
-				p+=2, nChars-=2;
-			else if (nChars>1 && (*buf=='$'||*buf=='#'||*buf=='%'))
-				p++, nChars--;
-			if (nChars>sizeof(Value)*2)
-				return false;
-			return	_stscanf( ::CharLower(p), _T("%x"), &outValue )>0;
-		}else{
-			if (nChars>11) // e.g. "-1234567890"
-				return false;
-			return	_stscanf( p, _T("%d"), &outValue )>0;
-		}
-	}
-
-	void CSingleNumberDialog::DoDataExchange(CDataExchange *pDX){
-		// exchange of data from and to controls
-		__super::DoDataExchange(pDX);
-		const HWND hValue=GetDlgItemHwnd(ID_NUMBER);
-		if (pDX->m_bSaveAndValidate){
-			#if _MFC_VER>=0x0A00
-				pDX->m_idLastControl=ID_NUMBER;
-			#else
-				pDX->m_hWndLastControl=hValue;
-			#endif
-			int v;
-			if (!GetCurrentValue(v))
-				pDX->Fail();
-			DDV_MinMaxInt( pDX, v, range.iMin, range.iMax );
-			Value=v;
-		}else
-			if (hexa!=BST_UNCHECKED){
-				ModifyDlgItemStyle( ID_NUMBER, 0, ES_NUMBER );
-				SetDlgItemFormattedText( ID_NUMBER, _T("0x%X"), Value );
-			}else{
-				ModifyDlgItemStyle( ID_NUMBER, ES_NUMBER );
-				DDX_Text( pDX, ID_NUMBER, Value );
-			}
-		DDX_Check( pDX, ID_FORMAT, hexa );
-	}
-
-	LRESULT CSingleNumberDialog::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
-		// window procedure
-		if (msg==WM_COMMAND && wParam==MAKELONG(ID_FORMAT,BN_CLICKED)){
-			int v;
-			if (GetCurrentValue(v) && range.Contains(v))
-				Value=v;
-			hexa=IsDlgButtonChecked(ID_FORMAT);
-			PreInitDialog();
-			DoDataExchange( &CDataExchange(this,FALSE) );
-			FocusDlgItem( ID_NUMBER );
-			Edit_SetSel( GetDlgItemHwnd(ID_NUMBER), 0, -1 ); // selecting full content
-		}
-		return __super::WindowProc(msg,wParam,lParam);
-	}
-
-	CSingleNumberDialog::operator bool() const{
-		// True <=> showed dialog confirmed, otherwise False
-		const auto result=const_cast<CSingleNumberDialog *>(this)->DoModal();
-		if (m_pParentWnd)
-			::SetFocus( *m_pParentWnd );
-		return result==IDOK;
 	}
 
 

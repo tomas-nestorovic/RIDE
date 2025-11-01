@@ -379,16 +379,16 @@ using namespace Yahel;
 		if (d.DoModal()==IDOK)
 			switch (d.iRadioSel){
 				case 0:
-					outRsp.type=TResetSelectionParams::Byte, outRsp.byteValue=d.directoryDefaultByte;
+					outRsp.type=TResetSelectionParams::VALUE, outRsp.value=d.directoryDefaultByte;
 					return true;
 				case 1:
-					outRsp.type=TResetSelectionParams::Byte, outRsp.byteValue=d.dataDefaultByte;
+					outRsp.type=TResetSelectionParams::VALUE, outRsp.value=d.dataDefaultByte;
 					return true;
 				case 2:
-					outRsp.type=TResetSelectionParams::GaussianNoise;
+					outRsp.type=TResetSelectionParams::NOISE_GAUSSIAN;
 					return true;
 				case 3:
-					outRsp.type=TResetSelectionParams::Byte, outRsp.byteValue=d.value;
+					outRsp.type=TResetSelectionParams::VALUE, outRsp.value=d.value;
 					return true;
 				default:
 					ASSERT(FALSE);
@@ -488,7 +488,7 @@ using namespace Yahel;
 			const LPCWSTR msg=GetDefaultEnglishMessage(id);
 		#else
 			char msg[800];
-			::WideCharToMultiByte( CP_ACP, 0, GetDefaultEnglishMessage(id),-1, msg,ARRAYSIZE(msg), nullptr,nullptr );
+			::WideCharToMultiByte( CP_ACP, 0, Gui::GetDefaultEnglishMessage(id),-1, msg,ARRAYSIZE(msg), nullptr,nullptr );
 		#endif
 		if (errorCode!=ERROR_SUCCESS)
 			Utils::FatalError( msg, errorCode );
@@ -506,7 +506,7 @@ using namespace Yahel;
 			const LPCWSTR msg=GetDefaultEnglishMessage(id);
 		#else
 			char msg[800];
-			::WideCharToMultiByte( CP_ACP, 0, GetDefaultEnglishMessage(id),-1, msg,ARRAYSIZE(msg), nullptr,nullptr );
+			::WideCharToMultiByte( CP_ACP, 0, Gui::GetDefaultEnglishMessage(id),-1, msg,ARRAYSIZE(msg), nullptr,nullptr );
 		#endif
 		return Utils::QuestionYesNo( msg, defaultButton );
 	}

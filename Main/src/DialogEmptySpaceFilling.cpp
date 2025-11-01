@@ -50,9 +50,9 @@
 
 	afx_msg void CFillEmptySpaceDialog::__setDefaultFillerByteForGeneralSectors__(){
 		// adopts default SectorFillerByte from DOS properties
-		SetDlgItemInt( ID_NUMBER, dosProps->sectorFillerByte, FALSE );
+		SetDlgItemInt( ID_NUMBER, dosProps->sectorFillerByte );
 	}
 	afx_msg void CFillEmptySpaceDialog::__setDefaultFillerByteForDirectorySectors__(){
 		// adopts default DirectoryFillerByte from DOS properties
-		SetDlgItemInt( ID_NUMBER2, dosProps->directoryFillerByte, FALSE );
+		SetDlgItemInt( ID_NUMBER2, dosProps->directoryFillerByte );
 	}

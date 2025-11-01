@@ -196,6 +196,10 @@ namespace Utils{
 		//return (value+denominator-1)/denominator; // this may cause range overrun, e.g. when rounding 1.5 second up to whole seconds (1,500,000,000 + 1,000,000,000 doesn't fit into 'int')
 		return value/denominator + (value%denominator!=0);
 	}
+#ifdef RELEASE_MFC42
+	template<>
+	Yahel::TPosition RoundDivUp(const Yahel::TPosition value,const Yahel::TPosition denominator);
+#endif
 
 	template<typename T>
 	T RoundUpToMuls(const T value,const T mul){
@@ -373,6 +377,8 @@ namespace Utils{
 		HWND GetDlgItemHwnd(WORD id) const;
 		int GetDlgItemTextLength(WORD id) const;
 		void SetDlgItemText(WORD id,LPCTSTR text) const;
+		inline int GetDlgItemInt(WORD id) const{ return Yahel::Gui::GetDlgItemInt( m_hWnd, id ); }
+		void SetDlgItemInt(WORD id,Yahel::TPosition value) const{ Yahel::Gui::SetDlgItemInt( m_hWnd, id, value ); }
 		bool IsDlgItemShown(WORD id) const;
 		bool CheckDlgItem(WORD id,bool checked=true) const;
 		bool IsDlgItemChecked(WORD id) const;
@@ -440,23 +446,6 @@ namespace Utils{
 		int GetDlgItemTextW(WORD id,WCHAR (&buffer)[N]) const{
 			return ::GetDlgItemTextW( m_hWnd, id, buffer, N );
 		}
-	};
-
-	class CSingleNumberDialog sealed:public CRideDialog{
-		const LPCTSTR caption,label;
-		const PropGrid::Integer::TUpDownLimits &range;
-		int hexa;
-	protected:
-		bool GetCurrentValue(int &outValue) const;
-		void PreInitDialog() override;
-		void DoDataExchange(CDataExchange *pDX) override;
-		LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-	public:
-		int Value;
-
-		CSingleNumberDialog(LPCTSTR caption,LPCTSTR label,const PropGrid::Integer::TUpDownLimits &range,int initValue,bool hexa,CWnd *pParent);
-
-		operator bool() const;
 	};
 
 	class CCommandDialog:public CRideDialog{
@@ -735,6 +724,10 @@ namespace Utils{
 		inline operator DWORD() const{ return MAKELONG(lowWord,highWord); }
 	};
 
+	template <typename T>
+	bool QuerySingleInt(LPCTSTR caption,LPCTSTR label,const Yahel::TPosInterval &range,T &inOutValue,bool hexa){
+		return Yahel::Gui::QuerySingleInt<T>( caption, label, range, inOutValue, (Yahel::Gui::TNotation)hexa, app.GetEnabledActiveWindow() );
+	}
 
 	bool IsVistaOrNewer();
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
@@ -775,6 +768,7 @@ namespace Utils{
 	BYTE CancelRetryContinue(LPCTSTR text,UINT defaultButton);
 	BYTE CancelRetryContinue(LPCTSTR text,TStdWinError causeOfError,UINT defaultButton,LPCTSTR consequence=nullptr);
 	void Warning(LPCTSTR text);
+	bool QuerySinglePercent(LPCTSTR caption,LPCTSTR label,BYTE &inOutValue,const Yahel::TPosInterval &range=Yahel::Percent);
 	CString BytesToHigherUnits(DWORD bytes);
 	CString BytesToHexaText(PCBYTE bytes,BYTE nBytes,bool lastDelimitedWithAnd);
 	CString BytesToHexaText(const char *chars,BYTE nChars,bool lastDelimitedWithAnd);

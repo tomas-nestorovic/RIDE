@@ -41,7 +41,6 @@
 #define IDR_RAW_SETTINGS                196
 #define IDR_MISC                        201
 #define IDR_SCATTERPLOT                 202
-#define IDR_SINGLE_NUMBER               204
 #define IDR_DISKBROWSER                 205
 #define IDR_DISKBROWSER_GOTOSECTOR      206
 #define IDR_DIRECTORYBROWSER            207

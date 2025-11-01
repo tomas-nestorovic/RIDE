@@ -806,10 +806,10 @@ trackNotFound:
 
 			void __getPhysicalAddress__(int logPos,TTrack &rOutTrack,BYTE &rOutSectorIndex,PWORD pOutOffset) const{
 				// determines the PhysicalAddress that contains the specified LogicalPosition
-				const div_t s=div( (int)position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
+				const auto s=div( position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
 				if (pOutOffset)
 					*pOutOffset=s.rem;
-				const div_t t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
+				const auto t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
 				rOutTrack=t.quot;
 				rOutSectorIndex=t.rem;
 			}
@@ -837,7 +837,7 @@ trackNotFound:
 			}
 			TPhysicalAddress GetCurrentPhysicalAddress() const override{
 				// returns the current Sector's PhysicalAddress
-				const div_t h=div( currTrack, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
+				const div_t h=::div( currTrack, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
 				const TPhysicalAddress result={	h.quot, h.rem,
 												{ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sector.indexOnTrack, image->sectorLengthCode }
 											};
@@ -859,14 +859,14 @@ trackNotFound:
 			// Yahel::Stream::IAdvisor methods
 			TRow LogicalPositionToRow(TPosition logPos,WORD nBytesInRow) override{
 				// computes and returns the row containing the specified LogicalPosition
-				const auto d=div( logPos, (TPosition)image->sectorLength );
+				const auto d=div( logPos, image->sectorLength );
 				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
 				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 			}
 			TPosition RowToLogicalPosition(TRow row,WORD nBytesInRow) override{
 				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
-				const auto d=div( row, nRowsPerRecord );
+				const auto d=::div( row, nRowsPerRecord );
 				return d.quot*image->sectorLength + d.rem*nBytesInRow;
 			}
 			void GetRecordInfo(TPosition logPos,PPosition pOutRecordStartLogPos,PPosition pOutRecordLength,bool *pOutDataReady) override{
@@ -883,7 +883,7 @@ trackNotFound:
 				if (logPos%image->sectorLength==0){
 					TTrack track; BYTE sectorIndex;
 					__getPhysicalAddress__( logPos, track, sectorIndex, nullptr );
-					const div_t h=div( track, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
+					const div_t h=::div( track, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
 					const TSectorId tmp={ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sectorIndex, image->sectorLengthCode };
 					#ifdef UNICODE
 						return ::lstrcpyn( labelBuffer, tmp.ToString(), labelBufferCharsMax );
