@@ -894,7 +894,7 @@
 		else{
 			BYTE nBytesReservedBeforeData;
 			DWORD nDataBytesToExport=std::min( GetFileSize(file,&nBytesReservedBeforeData,nullptr), nMaxDataBytesToExport );
-			div_t d=div((int)nBytesReservedBeforeData,(int)formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
+			div_t d=div((int)nBytesReservedBeforeData,formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector);
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read thanks to the NumberOfBytesReservedBeforeData
 			for( const Utils::CByteIdentity sectorIdAndPositionIdentity; n; ){
 				// . determining which of nearest Sectors are on the same Track

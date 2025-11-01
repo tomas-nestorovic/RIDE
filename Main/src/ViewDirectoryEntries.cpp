@@ -162,7 +162,7 @@ using namespace Yahel;
 						f->Seek( dirEntryStart, CFile::begin );
 						BYTE rstDirEntry[4096]; // should suffice to accommodate DirectoryEntry of *any* DOS
 						f->Read( rstDirEntry, pdt->entrySize );
-						::memcpy( orgDirEntry+sel.a-dirEntryStart, rstDirEntry+sel.a-dirEntryStart, std::min<TPosition>(sel.GetLength(),pdt->entrySize) );
+						::memcpy( orgDirEntry+sel.a-dirEntryStart, rstDirEntry+sel.a-dirEntryStart, std::min(sel.GetLength(),(TPosition)pdt->entrySize) );
 						f->Seek( dirEntryStart, CFile::begin );
 						f->Write( orgDirEntry, pdt->entrySize );
 						sel.a=std::min( dirEntryStart+pdt->entrySize, sel.z );

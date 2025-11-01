@@ -732,6 +732,7 @@ namespace Utils{
 	bool IsVistaOrNewer();
 	TStdWinError ErrorByOs(TStdWinError vistaOrNewer,TStdWinError xpOrOlder);
 #ifdef UNICODE
+	static_assert( false, "Unicode support not implemented" );
 #else
 	inline LPCSTR ToStringA(LPCTSTR s){ return s; }
 	inline LPCTSTR ToStringT(LPCSTR s){ return s; }

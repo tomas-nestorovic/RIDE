@@ -355,7 +355,7 @@ using namespace Yahel;
 				if (!thisFile || !otherFile) break; // if one of Files doesn't exist, we can't test their equality
 				// . determining visible portion of ThisFile
 				auto L=thisFile->GetLength();
-				const auto visible=GetVisiblePart();
+				const auto &&visible=GetVisiblePart();
 				auto a=visible.a, z=visible.z;
 				if (a>=L) break; // it's being scrolled "behind" ThisFile (e.g. because the OtherFile is longer)
 				if (z>L) z=L;
@@ -363,7 +363,7 @@ using namespace Yahel;
 				L=otherFile->GetLength();
 				if (a>=L){ AddHighlight(a,z); break; } // ThisFile is longer than the OtherFile
 				if (z>L){ AddHighlight(L,z); z=L; } // ThisFile is longer than the OtherFile
-				int diffBegin=z; // Z = there's no difference between the Files
+				auto diffBegin=z; // Z = there's no difference between the Files
 				for( thisFile->Seek(a,CFile::begin),otherFile->Seek(a,CFile::begin); a<z; a++ ){
 					BYTE b1,b2;
 					thisFile->Read(&b1,1), otherFile->Read(&b2,1);
