@@ -1075,11 +1075,11 @@ invalidTrack:
 		return ERROR_DISK_CORRUPT;
 	}
 
-	const CImage::CTrackReader &CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
+	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if Track already read before, returning the result from before
-		if (const auto &tr=ReadExistingTrack(cyl,head))
+		if (const auto &tr=ReadExistingTrackUnsafe(cyl,head))
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
@@ -1122,9 +1122,9 @@ invalidTrack:
 		return *rit;
 	}
 
-	const CImage::CTrackReader &CCapsBase::ReadExistingTrack(TCylinder cyl,THead head) const{
+	const CImage::CTrackReader &CCapsBase::ReadExistingTrackUnsafe(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
-		EXCLUSIVELY_LOCK_THIS_IMAGE();
+		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // the reason why "unsafe" - up to the caller to lock the Image
 		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head)){
 			pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)

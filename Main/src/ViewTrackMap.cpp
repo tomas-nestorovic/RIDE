@@ -598,7 +598,7 @@
 			case TCursorPos::TRACK:
 				// clicked on a Track
 				if (app.IsInGodMode())
-					if (const auto tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
+					if (const auto &&tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
 						tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
 			case TCursorPos::SECTOR:
@@ -675,7 +675,7 @@
 			}
 			case ID_HEAD:
 				// display low-level Track timing
-				if (const auto &tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
+				if (const auto &&tr=IMAGE->ReadTrack( chs.cylinder, chs.head ))
 					tr.ShowModal( chs.GetTrackIdDesc(scanner.params.nHeads) );
 				break;
 			case ID_IDFIELD:

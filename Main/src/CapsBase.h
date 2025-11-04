@@ -196,8 +196,8 @@
 		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const override;
-		const CTrackReader &ReadTrack(TCylinder cyl,THead head) const override;
-		const CTrackReader &ReadExistingTrack(TCylinder cyl,THead head) const;
+		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
+		const CTrackReader &ReadExistingTrackUnsafe(TCylinder cyl,THead head) const;
 		TStdWinError WriteTrack(TCylinder cyl,THead head,CTrackReader tr) override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		bool RequiresFormattedTracksVerification() const override sealed;

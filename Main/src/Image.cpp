@@ -807,7 +807,7 @@ namespace Medium{
 	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev){
 		// displays modal dialog showing low-level timing for specified position on the Track
 		const CString msg=Utils::SimpleFormat( _T("Can't determine timing for sector with %s"), chs.sectorId.ToString() );
-		if (CImage::CTrackReader tr=ReadTrack( chs.cylinder, chs.head )){
+		if (CImage::CTrackReader &&tr=ReadTrack( chs.cylinder, chs.head )){
 			TLogTime tDataStart;
 			if (GetSectorData( chs, nSectorsToSkip, rev, nullptr, nullptr, &tDataStart )!=nullptr){
 				const auto peList=tr.ScanAndAnalyze( CActionProgress::None, false );
@@ -1208,7 +1208,7 @@ namespace Medium{
 		return ERROR_NOT_SUPPORTED; // individual Track saving is not supported for this kind of Image (OnSaveDocument must be called instead)
 	}
 
-	const CImage::CTrackReader &CImage::ReadTrack(TCylinder cyl,THead head) const{
+	CImage::CTrackReader CImage::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		return CTrackReaderWriter::Invalid; // not supported (TrackReader invalid right from its creation)
 	}

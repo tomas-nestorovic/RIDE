@@ -111,7 +111,7 @@
 		//TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		bool EditSettings(bool initialEditing) override;
 		TStdWinError Reset() override;
-		const CTrackReader &ReadTrack(TCylinder cyl,THead head) const override;
+		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 	};
 

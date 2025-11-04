@@ -302,7 +302,7 @@
 					}
 				}
 				// . reading Source Track
-				CImage::CTrackReader trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
+				CImage::CTrackReader &&trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				const bool trackWriteable0 = p.trackWriteable = trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
 				if (trSrc && dp.fullTrackAnalysis){
