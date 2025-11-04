@@ -1227,19 +1227,19 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,45,
                     32,129,10
     LTEXT           "with &value",IDC_STATIC,7,47,33,8,NOT WS_GROUP
-    EDITTEXT        ID_NUMBER,45,46,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+    EDITTEXT        ID_NUMBER,45,46,45,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
                     WS_BORDER,WS_EX_STATICEDGE
-    PUSHBUTTON      "System default",ID_DEFAULT1,90,46,56,13
+    PUSHBUTTON      "System default",ID_DEFAULT1,94,46,56,13
     LTEXT           "Fill all",IDC_STATIC,7,69,18,8,NOT WS_GROUP
     CONTROL         "empty current &directory entries",ID_DIRECTORY,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,45,69,110,10
     CONTROL         "and r&ecurrently for subdirectory entries",
                     ID_SUBDIRECTORY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
                     WS_TABSTOP,45,81,135,10
-    LTEXT           "with &value",IDC_STATIC,7,96,33,8,NOT WS_GROUP
-    EDITTEXT        ID_NUMBER2,45,96,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+    LTEXT           "&with value",IDC_STATIC,7,96,33,8,NOT WS_GROUP
+    EDITTEXT        ID_NUMBER2,45,96,45,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
                     WS_BORDER,WS_EX_STATICEDGE
-    PUSHBUTTON      "System default",ID_DEFAULT2,90,96,56,13
+    PUSHBUTTON      "System default",ID_DEFAULT2,94,96,56,13
 END
 
 IDR_DOS_UNKNOWN DIALOGEX 0, 0, 207, 102
@@ -1718,16 +1718,16 @@ CAPTION "Reset selection"
 BEGIN
     LTEXT           "Enter Byte to reset selection with:",IDC_STATIC,7,7,106,
                     8,NOT WS_GROUP
-    CONTROL         "Directory &sector default",ID_DIRECTORY,"Button",
+    CONTROL         "Directory &sector default",ID_DEFAULT1,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,7,23,134,10
-    CONTROL         "&Data sector default",ID_DATA,"Button",
+    CONTROL         "&Data sector default",ID_DEFAULT2,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,7,35,134,10
-    CONTROL         "&Gaussian noise",ID_DATAFIELD,"Button",
-                    BS_AUTORADIOBUTTON,7,48,64,10
-    CONTROL         "Custom &value:",ID_NUMBER2,"Button",BS_AUTORADIOBUTTON | 
+    CONTROL         "&Gaussian noise",ID_DEFAULT3,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,48,134,10
+    CONTROL         "Custom &value:",ID_DEFAULT4,"Button",BS_AUTORADIOBUTTON | 
                     WS_TABSTOP,7,61,59,10
-    EDITTEXT        ID_NUMBER,69,61,40,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
-                    WS_BORDER
+    EDITTEXT        ID_NUMBER,69,61,26,12,ES_AUTOHSCROLL | ES_NUMBER | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
     DEFPUSHBUTTON   "OK",IDOK,38,85,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,91,85,50,14
 END

@@ -347,21 +347,23 @@ using namespace Yahel;
 		class CResetDialog sealed:public Utils::CRideDialog{
 			BOOL OnInitDialog() override{
 				TCHAR buf[80];
-				::wsprintf( buf+GetDlgItemText(ID_DIRECTORY,buf), _T(" (0x%02X)"), directoryDefaultByte );
-				SetDlgItemText( ID_DIRECTORY, buf );
-				::wsprintf( buf+GetDlgItemText(ID_DATA,buf), _T(" (0x%02X)"), dataDefaultByte );
-				SetDlgItemText( ID_DATA, buf );
+				::wsprintf( buf+GetDlgItemText(ID_DEFAULT1,buf), _T(" (0x%02X)"), directoryDefaultByte );
+				SetDlgItemText( ID_DEFAULT1, buf );
+				::wsprintf( buf+GetDlgItemText(ID_DEFAULT2,buf), _T(" (0x%02X)"), dataDefaultByte );
+				SetDlgItemText( ID_DEFAULT2, buf );
+				Yahel::Gui::SetDlgItemIntBuddyW( m_hWnd, ID_NUMBER, 0, Yahel::Gui::Hexa, true );
 				return __super::OnInitDialog();
 			}
 			void DoDataExchange(CDataExchange *pDX) override{
-				DDX_Radio( pDX, ID_DIRECTORY, iRadioSel );
+				DDX_Radio( pDX, ID_DEFAULT1, iRadioSel );
 				if (!pDX->m_bSaveAndValidate || iRadioSel==3)
 					DDX_Text( pDX, ID_NUMBER, value );
 			}
-			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override{
-				if (msg==WM_COMMAND)
-					EnableDlgItem( ID_NUMBER, IsDlgItemChecked(ID_NUMBER2) );
-				return __super::WindowProc(msg,wParam,lParam);
+			BOOL OnCommand(WPARAM wParam,LPARAM lParam) override{
+				if (wParam==MAKELONG(ID_NUMBER,EN_SETFOCUS)){
+					CheckRadioButton( ID_DEFAULT1, ID_DEFAULT4, ID_DEFAULT4 );
+				}
+				return __super::OnCommand( wParam, lParam );
 			}
 		public:
 			const BYTE directoryDefaultByte, dataDefaultByte;

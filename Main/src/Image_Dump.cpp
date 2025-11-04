@@ -1038,6 +1038,7 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 					SetDlgItemText( ID_FILE, ELLIPSIS );
 					PopulateComboBoxWithCompatibleMedia( hMedium, 0, nullptr ); // if FileName not set, Medium cannot be determined
 					PopulateComboBoxWithCompatibleCodecs( GetDlgItemHwnd(ID_CODEC), 0, nullptr ); // if FileName not set, Codec cannot be determined
+					Yahel::Gui::SetDlgItemIntBuddyW( m_hWnd, ID_NUMBER, 0, Yahel::Gui::Hexa, false );
 				}
 				const Medium::PCProperties mp=	targetImageProperties // ComboBox populated with compatible Media and one of them selected
 												? Medium::GetProperties( dumpParams.mediumType=(Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) )

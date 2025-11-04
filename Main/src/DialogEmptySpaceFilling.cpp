@@ -38,6 +38,10 @@
 		DDX_Check( pDX, ID_SUBDIRECTORY,fillEmptySubdirectoryEntries );
 		DDX_Text( pDX, ID_NUMBER, sectorFillerByte );
 		DDX_Text( pDX, ID_NUMBER2, directoryFillerByte );
+		if (!pDX->m_bSaveAndValidate){
+			Yahel::Gui::SetDlgItemIntBuddyW( *this, ID_NUMBER, sectorFillerByte, Yahel::Gui::Hexa, false );
+			Yahel::Gui::SetDlgItemIntBuddyW( *this, ID_NUMBER2, directoryFillerByte, Yahel::Gui::Hexa, false );
+		}
 	}
 
 	afx_msg void CFillEmptySpaceDialog::__enableOkButton__(UINT id){
