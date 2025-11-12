@@ -512,6 +512,7 @@
 				DWORD size; // length of this ParseEvent in Bytes
 				union{
 					BYTE b;
+					WORD w;
 					DWORD dw;
 					int i;
 					char lpszMetaString[sizeof(DWORD)]; // textual description of a ParseEvent event
@@ -535,20 +536,22 @@
 			} *PCMetaStringParseEvent;
 
 			typedef const struct TDataParseEvent:public TParseEvent{
-				typedef const struct TByteInfo sealed{
-					BYTE value;
+				struct TByteInfo{
 					TLogTime dtStart; // offset against ParseEvent's start
-				} *PCByteInfo;
+				};
 
 				TSectorId sectorId; // or TSectorId::Invalid
-				TByteInfo byteInfos[(WORD)-1]; // derive from this ParseEvent if buffer not sufficient
+				TByteInfo *byteInfos;
+				union{
+					struct:TByteInfo{ BYTE v; } dummy[USHRT_MAX];
+					BYTE bytes[1];
+				};
 
 				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
-				void Finalize(TLogTime tEnd,DWORD nBytes,TType type=DATA_BAD);
-				inline TLogTime GetByteTime(DWORD iByte) const{ return tStart+byteInfos[iByte].dtStart; }
-				inline DWORD GetByteCount() const{ return dw; }
-				inline bool HasByteInfo() const{ return size>sizeof(TParseEvent); }
+				void Finalize(TLogTime tEnd,WORD nBytes,TType type=DATA_BAD);
+				inline TLogTime GetByteTime(WORD iByte) const{ return tStart+byteInfos[iByte].dtStart; }
+				inline WORD GetByteCount() const{ return w; }
 			} *PCDataParseEvent;
 
 			struct TParseEventPtr sealed{

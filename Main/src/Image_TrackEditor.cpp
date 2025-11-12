@@ -173,13 +173,13 @@ using namespace Charting;
 											break;
 										if (showByteInfo && pe->IsDataAny()){
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
-											const auto &bis=pe.data->byteInfos;
-											int i=0;
-											for( const TLogTime dt=ti.tStart-pe.data->tStart; bis[i].dtStart<dt; i++ ); // skip invisible part
+											const auto *const pis=pe.data->byteInfos;
+											WORD i=0;
+											for( const TLogTime dt=ti.tStart-pe.data->tStart; pis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
 											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
-											while (continuePainting && i<pe->i){ // draw visible part
-												const auto &bi=bis[i];
+											while (continuePainting && i<pe.data->GetByteCount()){ // draw visible part
+												const auto &bi=pis[i];
 												const TLogTime tByteStart=pe.data->GetByteTime(i);
 												if (ti.tEnd<tByteStart) // past the visible part?
 													break;
@@ -191,14 +191,15 @@ using namespace Charting;
 															break;
 														case BI_FULL:{
 															rcLabel.left=2+g.PerpLine( tByteStart, 0, fullBiLineHeight );
+															const BYTE b=pe.data->bytes[i];
 															::DrawText(
 																dc,
-																label,	::wsprintf( label, byteInfoFormat, ::isprint(bi.value)?bi.value:'?', bi.value ),
+																label,	::wsprintf( label, byteInfoFormat, ::isprint(b)?b:'?', b ),
 																&rcLabel, DT_LEFT|DT_TOP
 															);
 															const COLORREF tc0=::SetTextColor( dc, textColorBlend );
 																const HGDIOBJ hFont0=::SelectObject( dc, Utils::CRideFont::Small );
-																	::DrawText( dc, label, ::wsprintf(label,_T("+$%X"),i), &rcLabel, DT_BOTTOM|DT_SINGLELINE );
+																	::DrawText( dc, label, ::wsprintf(label,_T("+$%X"),(int)i), &rcLabel, DT_BOTTOM|DT_SINGLELINE );
 																::SelectObject( dc, hFont0 );
 															::SetTextColor( dc, tc0 );
 															break;

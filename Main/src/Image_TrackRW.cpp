@@ -671,9 +671,9 @@
 					BYTE nBytesInspected=0, nBytesTypical=0;
 					TDataParseEvent peData( TSectorId::Invalid, r.time );
 					while (*this && nBytesInspected<nBytesInspectedMax){
-						TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
+						auto &rbi=peData.byteInfos[nBytesInspected];
 							rbi.dtStart=currentTime-peData.tStart;
-							ReadByte( bitPattern, &rbi.value );
+							ReadByte( bitPattern, peData.bytes+nBytesInspected );
 						if (currentTime>=tNextStart){
 							currentTime=rbi.dtStart+peData.tStart; // putting unsuitable Byte back
 							break;
@@ -686,9 +686,9 @@
 						// significant amount of other than TypicalBitPatterns, beyond a random noise on Track
 						constexpr BYTE nGapBytesMax=60;
 						while (*this && nBytesInspected<nGapBytesMax){
-							TDataParseEvent::TByteInfo &rbi=peData.byteInfos[nBytesInspected];
+							auto &rbi=peData.byteInfos[nBytesInspected];
 								rbi.dtStart=currentTime-peData.tStart;
-								ReadByte( bitPattern, &rbi.value );
+								ReadByte( bitPattern, peData.bytes+nBytesInspected );
 							const auto it=hist.Find(bitPattern);
 							if (currentTime>=tNextStart
 								||
@@ -836,8 +836,7 @@
 		for each( const auto &pair in peSector ){
 			const TParseEventPtr pe=pair.second;
 			if (pe->IsDataStd()){
-				DWORD nBytes=pe.data->dw;
-				for( const auto *pbi=pe.data->byteInfos; nBytes--; *buffer++=pbi++->value );
+				::memcpy( buffer, pe.data->bytes, pe.data->GetByteCount() );
 				break;
 			}
 		}
@@ -1149,13 +1148,15 @@
 
 	CImage::CTrackReader::TDataParseEvent::TDataParseEvent(const TSectorId &sectorId,TLogTime tStart)
 		: TParseEvent( NONE, tStart, 0, 0 )
+		, byteInfos( (TByteInfo *)(bytes+ARRAYSIZE(dummy)) )
 		, sectorId(sectorId) {
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,DWORD nBytes,TType type){
+	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,WORD nBytes,TType type){
 		ASSERT( nBytes>0 );
 		static_cast<TParseEvent &>(*this)=TParseEvent( type, tStart, tEnd, nBytes );
-		size=(PCBYTE)byteInfos-(PCBYTE)this+nBytes*sizeof(TByteInfo);
+		byteInfos=(TByteInfo *)::memcpy( bytes+nBytes, byteInfos, nBytes*sizeof(TByteInfo) );
+		size=(PCBYTE)(byteInfos+nBytes) - (PCBYTE)this;
 	}
 
 
@@ -1478,18 +1479,19 @@
 			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, TimelyFromPrevious );
-		TDataParseEvent::TByteInfo *p=peData.byteInfos;
-		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing actual CRC along the way
-		for( ; nBytesToRead>0; nBytesToRead-- ){
-			p->dtStart=currentTime-tMarkEnd;
+		WORD nDataBytes=0;
+		while (nDataBytes<nBytesToRead){
+			peData.byteInfos[nDataBytes].dtStart=currentTime-tMarkEnd;
 			if (!*this || !ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
-			p->value=MFM::DecodeByte(w);
-			crc=CFloppyImage::GetCrc16Ccitt( crc, &p++->value, 1 );
+			peData.bytes[ nDataBytes++ ]=MFM::DecodeByte(w);
 		}
-		const auto nDataBytes=p-peData.byteInfos;
+		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
+			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+			peData.bytes, nDataBytes
+		);
 		peData.Finalize( currentTime, nDataBytes );
 		if (!*this){
 			if (pOutParseEvents && nDataBytes)
