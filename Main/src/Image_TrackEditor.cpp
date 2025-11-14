@@ -173,7 +173,7 @@ using namespace Charting;
 											break;
 										if (showByteInfo && pe->IsDataAny()){
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
-											const auto *const pis=pe.data->byteInfos;
+											const auto *const pis=pe.data->GetByteInfos();
 											WORD i=0;
 											for( const TLogTime dt=ti.tStart-pe.data->tStart; pis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;

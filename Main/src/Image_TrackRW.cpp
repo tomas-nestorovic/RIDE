@@ -670,8 +670,9 @@
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					BYTE nBytesInspected=0, nBytesTypical=0;
 					TDataParseEvent peData( TSectorId::Invalid, r.time );
+					auto *const pbi=peData.GetByteInfos();
 					while (*this && nBytesInspected<nBytesInspectedMax){
-						auto &rbi=peData.byteInfos[nBytesInspected];
+						auto &rbi=pbi[nBytesInspected];
 							rbi.dtStart=currentTime-peData.tStart;
 							ReadByte( bitPattern, peData.bytes+nBytesInspected );
 						if (currentTime>=tNextStart){
@@ -686,7 +687,7 @@
 						// significant amount of other than TypicalBitPatterns, beyond a random noise on Track
 						constexpr BYTE nGapBytesMax=60;
 						while (*this && nBytesInspected<nGapBytesMax){
-							auto &rbi=peData.byteInfos[nBytesInspected];
+							auto &rbi=pbi[nBytesInspected];
 								rbi.dtStart=currentTime-peData.tStart;
 								ReadByte( bitPattern, peData.bytes+nBytesInspected );
 							const auto it=hist.Find(bitPattern);
@@ -1147,16 +1148,15 @@
 	}
 
 	CImage::CTrackReader::TDataParseEvent::TDataParseEvent(const TSectorId &sectorId,TLogTime tStart)
-		: TParseEvent( NONE, tStart, 0, 0 )
-		, byteInfos( (TByteInfo *)(bytes+ARRAYSIZE(dummy)) )
+		: TParseEvent( NONE, tStart, 0, ARRAYSIZE(dummy) )
 		, sectorId(sectorId) {
 	}
 
 	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,WORD nBytes,TType type){
 		ASSERT( nBytes>0 );
+		::memcpy( bytes+nBytes, GetByteInfos(), nBytes*sizeof(TByteInfo) );
 		static_cast<TParseEvent &>(*this)=TParseEvent( type, tStart, tEnd, nBytes );
-		byteInfos=(TByteInfo *)::memcpy( bytes+nBytes, byteInfos, nBytes*sizeof(TByteInfo) );
-		size=(PCBYTE)(byteInfos+nBytes) - (PCBYTE)this;
+		size=(PCBYTE)(dummy+nBytes) - (PCBYTE)this;
 	}
 
 
@@ -1479,9 +1479,10 @@
 			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, TimelyFromPrevious );
+		auto *const pbi=peData.GetByteInfos();
 		WORD nDataBytes=0;
 		while (nDataBytes<nBytesToRead){
-			peData.byteInfos[nDataBytes].dtStart=currentTime-tMarkEnd;
+			pbi[nDataBytes].dtStart=currentTime-tMarkEnd;
 			if (!*this || !ReadBits16(w)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;

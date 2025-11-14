@@ -536,22 +536,22 @@
 			} *PCMetaStringParseEvent;
 
 			typedef const struct TDataParseEvent:public TParseEvent{
-				struct TByteInfo{
+				typedef struct TByteInfo{
 					TLogTime dtStart; // offset against ParseEvent's start
-				};
+				} *PByteInfo;
 
 				TSectorId sectorId; // or TSectorId::Invalid
-				TByteInfo *byteInfos;
 				union{
-					struct:TByteInfo{ BYTE v; } dummy[USHRT_MAX];
+					struct:TByteInfo{ BYTE v; } dummy[USHRT_MAX]; // to give the structure initial maximum size
 					BYTE bytes[1];
 				};
 
 				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
 				void Finalize(TLogTime tEnd,WORD nBytes,TType type=DATA_BAD);
-				inline TLogTime GetByteTime(WORD iByte) const{ return tStart+byteInfos[iByte].dtStart; }
+				inline TLogTime GetByteTime(WORD iByte) const{ return tStart+GetByteInfos()[iByte].dtStart; }
 				inline WORD GetByteCount() const{ return w; }
+				inline PByteInfo GetByteInfos() const{ return (PByteInfo)(bytes+GetByteCount()); }
 			} *PCDataParseEvent;
 
 			struct TParseEventPtr sealed{
