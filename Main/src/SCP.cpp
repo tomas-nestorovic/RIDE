@@ -193,7 +193,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 								pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 								if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 									// conversion of the Track to SuperCardPro stream succeeded?
-									const LONG capacity=((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header );
+									const LONG capacity=((TTrackDataHeader *)buffer.begin())->GetFullTrackCapacityInBytes( mp, header );
 									if (GetCurrentDiskFreeSpace()<capacity)
 										return ERROR_DISK_FULL;
 									// . success thanks to adjustments to overcome SuperCard Pro limitations?
@@ -225,7 +225,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 							pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 							if (const DWORD trackLength=TrackToStream( *pit, CMemFile(buffer,SCP_BUFFER_CAPACITY), cylFile, head, bStreamAdjusted )){
 								// conversion of the Track to SuperCardPro stream succeeded?
-								const DWORD capacity=((TTrackDataHeader *)buffer.get())->GetFullTrackCapacityInBytes( mp, header );
+								const DWORD capacity=((TTrackDataHeader *)buffer.begin())->GetFullTrackCapacityInBytes( mp, header );
 								if (GetCurrentDiskFreeSpace()<capacity)
 									return ERROR_DISK_FULL;
 								// . success thanks to adjustments to overcome SuperCard Pro limitations?

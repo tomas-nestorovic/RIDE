@@ -40,8 +40,7 @@ namespace Utils{
 		inline T *operator+(TIndex i) const{ return begin()+i; }
 		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
-		inline void reset(){ Empty(); }
-		inline T *get() const{ return begin(); }
+		inline void reset(){ Empty(), length=0; }
 
 		T *Realloc(TIndex newLength){
 			if (newLength){

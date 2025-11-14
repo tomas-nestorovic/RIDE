@@ -449,18 +449,23 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			fTarget.SetLength( nRequiredBytesHeaderAndCylInfos );
 		// - saving
 		auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), ARRAYSIZE(cylInfos) );
-		CTrackBytes invalidTrackBytes(1);
-			invalidTrackBytes.Invalidate();
+		static const class CInvalidTrackBytes sealed:public CTrackBytes{
+		public:
+			CInvalidTrackBytes()
+				: CTrackBytes(1){
+				Invalidate();
+			}
+		} InvalidTrackBytes;
 		for( TCylinder cyl=0; cyl<ARRAYSIZE(cylInfos); sub.UpdateProgress(++cyl) ){
 			if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
 				continue;
 			const PInternalTrack pitHead0=GetInternalTrackSafe(cyl,0), pitHead1=GetInternalTrackSafe(cyl,1);
 			const CTrackBytes head0=pitHead0!=nullptr // Track 0 exists?
 									? TrackToBytes( *pitHead0 )
-									: std::move(invalidTrackBytes);
+									: InvalidTrackBytes;
 			const CTrackBytes head1=pitHead1!=nullptr // Track 1 exists?
 									? TrackToBytes( *pitHead1 )
-									: std::move(invalidTrackBytes);
+									: InvalidTrackBytes;
 			const auto nBytesLongerTrack=std::max( head0.GetCount(), head1.GetCount() );
 			ASSERT( nBytesLongerTrack<USHRT_MAX/2 );
 			auto nBytesCylinder=Utils::RoundUpToMuls( nBytesLongerTrack*2, (int)sizeof(TCylinderBlock) );

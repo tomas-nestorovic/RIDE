@@ -1937,7 +1937,7 @@
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
 		const Utils::CSharedPodPtr<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );
-		const PLogTime ptModified=buffer.get();
+		const PLogTime ptModified=buffer;
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
 			profile.Reset();

@@ -86,7 +86,7 @@
 			inline bool IsValid() const{ return nBlocksOffset>=2 && nBytesLength!=0; }
 		} cylInfos[84];
 
-		class CTrackBytes sealed:public Utils::CSharedPodPtr<BYTE>{
+		class CTrackBytes:public Utils::CSharedPodPtr<BYTE>{
 			WORD count;
 		public:
 			CTrackBytes(WORD count);

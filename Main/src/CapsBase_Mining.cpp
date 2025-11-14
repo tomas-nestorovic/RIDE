@@ -169,7 +169,7 @@ using namespace Charting;
 					pxy->y=trackTiming[i]-trackTiming[i-1];
 				}
 				minedTrackDeltaTimingSeries.reset(
-					new CChartView::CXyPointSeries( pxy-minedTrackDeltaTiming.get(), minedTrackDeltaTiming, minedTimingPen )
+					new CChartView::CXyPointSeries( pxy-minedTrackDeltaTiming.begin(), minedTrackDeltaTiming, minedTimingPen )
 				);
 				graphics.list[1]=minedTrackDeltaTimingSeries.get();
 				// . displaying the simplified Track
