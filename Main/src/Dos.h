@@ -204,7 +204,7 @@
 				FILE			=16	// invalid File entry to find path of, e.g. an empty Directory entry
 			} error;
 		private:
-			Utils::CCallocPtr<TItem,DWORD> buffer;
+			Utils::CSharedPodPtr<TItem,DWORD> buffer;
 			DWORD nItems;
 			TItem *pLastItem;
 		public:
@@ -214,7 +214,6 @@
 			CFatPath(const CDos *dos,PCFile file); // ctor for exporting a File on Image
 			CFatPath(const CDos *dos,DWORD fileSize); // ctor for importing a File to Image
 			CFatPath(const CDos *dos,RCPhysicalAddress chs); // ctor for editing a Sector (e.g. Boot Sector)
-			CFatPath(CFatPath &&r);
 
 			inline operator bool() const{ return !error; }
 			bool AddItem(PCItem pItem);
@@ -245,7 +244,7 @@
 			};
 
 			CImage *const image;
-			const std::shared_ptr<const CFatPath> fatPath; // shared for copy ctor called in IStream::Clone method used for searching in YAHEL
+			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
 			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/edit particular Sector in the Image (e.g. Boot Sector)

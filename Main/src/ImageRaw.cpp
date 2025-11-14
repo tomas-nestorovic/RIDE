@@ -331,17 +331,14 @@ trackNotFound:
 					default:
 						ASSERT(FALSE);
 				}
-				if (auto tmp=Utils::MakeCallocPtr<PVOID,TCylinder>(nCylinders,0))
-					bufferOfCylinders.reset( tmp.release() );
-				else
-					return ERROR_NOT_ENOUGH_MEMORY;
+				bufferOfCylinders=Utils::MakeSharedPodPtr<PVOID,TCylinder>(nCylinders,0);
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
-				bufferOfCylinders.reset( Utils::MakeCallocPtr<PVOID,TCylinder>(nCylinders,0).release() );
+				bufferOfCylinders=Utils::MakeSharedPodPtr<PVOID,TCylinder>(nCylinders,0);
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}
@@ -657,7 +654,7 @@ trackNotFound:
 			if (d.manualRecognition){
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides.reset( Utils::MakeCallocPtr<TSide,THead>(d.nHeads,d.sideNumbers).release() );
+				explicitSides=Utils::MakeSharedPodPtr<TSide,THead>(d.nHeads,d.sideNumbers);
 				nHeads=d.nHeads;
 			}else
 				explicitSides.reset();

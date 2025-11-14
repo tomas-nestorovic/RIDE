@@ -235,7 +235,7 @@
 		// creates and returns a Track representation of the Stream data
 		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
-		auto &&rawBytesOrg=Utils::MakeCallocPtr( nBytes, rawBytes );
+		const auto &&rawBytesOrg=Utils::MakeSharedPodPtr( nBytes, rawBytes );
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;
@@ -419,7 +419,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		if (nearestIndexPulse<nIndexPulses)
 			indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
 		// - preserve the input RawBytes for fast copying between compatible disks
-		result.SetRawDeviceData( KF_STREAM_ID, std::move(rawBytesOrg) );
+		result.SetRawDeviceData( KF_STREAM_ID, rawBytesOrg );
 		return result;
 	}
 

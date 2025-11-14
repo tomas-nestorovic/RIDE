@@ -6,7 +6,7 @@
 		class CFatPathReaderWriter:public CYahelStreamFile,public Yahel::Stream::IAdvisor{
 			const PCDos dos;
 			const CDos::PFile file;
-			const std::shared_ptr<const CDos::CFatPath> fatPath;
+			const CDos::CFatPath fatPath;
 		public:
 			CFatPathReaderWriter(PCDos dos,CDos::PFile file);
 

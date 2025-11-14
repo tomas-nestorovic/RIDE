@@ -300,10 +300,10 @@
 
 	PCBYTE CImage::CTrackReader::GetRawDeviceData(TId dataId,DWORD &outLength) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
-		if (const auto *p=pLogTimesInfo->rawDeviceData.get())
-			if (pLogTimesInfo->rawDeviceData.id==dataId){
-				outLength=p->length;
-				return p->get();
+		if (const auto &r=pLogTimesInfo->rawDeviceData)
+			if (r.id==dataId){
+				outLength=r.length;
+				return r;
 			}
 		return nullptr;
 	}
@@ -716,7 +716,7 @@
 			for( BYTE i=0; i<nFullRevolutions; i++ )
 				revolutionBits[i]=CBitSequence( allBits, GetFullRevolutionTimeInterval(i) );
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
-			Utils::CCallocPtr<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
+			Utils::CSharedPodPtr<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
 			for( BYTE i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[++i];
@@ -731,7 +731,7 @@
 					continue;
 				}
 				// : marking different Bits as Fuzzy
-				iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeCallocPtr<TRegion>(ses.length) );
+				iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodPtr<TRegion>(ses.length) );
 				// : inheriting fuzzyness from previous Revolution
 				iRev.InheritFlagsFrom( jRev, ses, ses.length );
 			}
@@ -742,7 +742,7 @@
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
 					const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[i-1];
-					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeCallocPtr<TRegion>(ses.length) );
+					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodPtr<TRegion>(ses.length) );
 					// : inheriting fuzzyness from next Revolution
 					iRev.InheritFlagsFrom( jRev, ses, ses.length );
 				}
@@ -877,8 +877,7 @@
 	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent)
 		// ctor
 		// - initialization
-		: bitBuffer( new Utils::CCallocPtr<TBit> )
-		, nBits(0) {
+		: nBits(0) {
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
@@ -886,8 +885,8 @@
 		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
-		bitBuffer->Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
-		pBits=(*bitBuffer)+1; // skip that one hidden Bit
+		bitBuffer.Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
+		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		TBit *p=pBits;
 		for( TLogTime tOne; tr.GetCurrentTime()<tTo; ){
@@ -942,9 +941,9 @@
 		return	it!=end() ? it : nullptr;
 	}
 
-	Utils::CCallocPtr<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
+	Utils::CSharedPodPtr<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
 		// creates and returns the shortest edit script (SES)
-		Utils::CCallocPtr<CDiffBase::TScriptItem> ses( GetBitCount()+theirs.GetBitCount() );
+		Utils::CSharedPodPtr<CDiffBase::TScriptItem> ses( GetBitCount()+theirs.GetBitCount() );
 		if (!ses)
 			return ses;
 		const int i=CDiff<const TBit>(
@@ -1048,7 +1047,7 @@
 
 	void CImage::CTrackReader::CBitSequence::OffsetAll(TLogTime dt) const{
 		// offsets each Bit by given constant
-		for each( TBit &p in *bitBuffer ) // offset also the padding Bits at the beginning and end
+		for each( TBit &p in bitBuffer ) // offset also the padding Bits at the beginning and end
 			p.time+=dt;
 	}
 
@@ -1819,9 +1818,9 @@
 			metaData.insert(mdi);
 	}
 
-	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,Utils::CCallocPtr<BYTE,DWORD> &&data){
+	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,const Utils::CSharedPodPtr<BYTE,DWORD> &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
-		pLogTimesInfo->rawDeviceData.reset( new Utils::CCallocPtr<BYTE,DWORD>(std::move(data)) );
+		static_cast<Utils::CSharedPodPtr<BYTE,DWORD> &>(pLogTimesInfo->rawDeviceData)=data;
 		pLogTimesInfo->rawDeviceData.id=dataId;
 	}
 
@@ -1871,7 +1870,7 @@
 			(nLogTimes-iNextTime-nOnesPreviously)*sizeof(TLogTime)
 		);
 		nLogTimes=nNewLogTimes;
-		const auto newLogTimesTemp=Utils::MakeCallocPtr<TLogTime>(nOnesCurrently);
+		const auto &&newLogTimesTemp=Utils::MakeSharedPodPtr<TLogTime>(nOnesCurrently);
 			PLogTime pt=newLogTimesTemp;
 			for( DWORD i=0; i++<nBits; )
 				if (*bits++)
@@ -1937,7 +1936,7 @@
 		// - normalization
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const Utils::CCallocPtr<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );
+		const Utils::CSharedPodPtr<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );
 		const PLogTime ptModified=buffer.get();
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions

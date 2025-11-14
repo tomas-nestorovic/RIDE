@@ -5,7 +5,7 @@ using namespace Yahel;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,file))
+		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,file)
 		, dataBeginOffsetInSector( wholeSectors ? 0 : dos->properties->dataBeginOffsetInSector)
 		, dataEndOffsetInSector( wholeSectors ? 0 : dos->properties->dataEndOffsetInSector )
 		, recordLength(sectorLength) {
@@ -14,7 +14,7 @@ using namespace Yahel;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(new CFatPath(dos,chs))
+		: image(dos->image) , sectorLength(dos->formatBoot.sectorLength) , fatPath(dos,chs)
 		, dataBeginOffsetInSector(0) , dataEndOffsetInSector(0)
 		, recordLength(sectorLength) {
 		fileSize=sectorLength;
@@ -36,7 +36,7 @@ using namespace Yahel;
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		const UINT nBytesToRead=nCount;
 		CFatPath::PCItem item; DWORD n;
-		if (!fatPath->GetItems(item,n)){
+		if (!fatPath.GetItems(item,n)){
 			auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 			item+=d.quot, n-=d.quot; // skipping Sectors from which not read
 			bool readWithoutCrcError=true;
@@ -66,7 +66,7 @@ using namespace Yahel;
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=std::min<UINT>(nCount,fileSize-position);
 		CFatPath::PCItem item; DWORD n;
-		if (!fatPath->GetItems(item,n)){
+		if (!fatPath.GetItems(item,n)){
 			auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
 			item+=d.quot, n-=d.quot; // skipping Sectors into which not written
 			bool writtenWithoutCrcError=true;
@@ -126,7 +126,7 @@ using namespace Yahel;
 	const TPhysicalAddress &CDos::CFileReaderWriter::GetCurrentPhysicalAddress() const{
 		// returns the PhysicalAddress currently seeked to
 		const auto d=div( position, sectorLength-dataBeginOffsetInSector-dataEndOffsetInSector );
-		if (const CDos::CFatPath::PCItem p=fatPath->GetItem(d.quot)) // Sector exists
+		if (const CDos::CFatPath::PCItem p=fatPath.GetItem(d.quot)) // Sector exists
 			return p->chs;
 		else
 			return TPhysicalAddress::Invalid;
@@ -196,7 +196,7 @@ using namespace Yahel;
 				else
 					return ::lstrcpyn( labelBuffer, (pItem+d.quot)->chs.sectorId.ToString(), labelBufferCharsMax );
 			#else
-				if (const LPCTSTR err=fatPath->GetItems(pItem,nItems))
+				if (const LPCTSTR err=fatPath.GetItems(pItem,nItems))
 					::MultiByteToWideChar( CP_ACP, 0, err,-1, labelBuffer,labelBufferCharsMax );
 				else
 					::MultiByteToWideChar( CP_ACP, 0, (pItem+d.quot)->chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );

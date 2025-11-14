@@ -173,12 +173,12 @@
 	}
 
 	RCPhysicalAddress CCriticalSectorView::GetPhysicalAddress() const{
-		return fSectorData->fatPath->GetHealthyItem(0)->chs;
+		return fSectorData->fatPath.GetHealthyItem(0)->chs;
 	}
 
 	void CCriticalSectorView::ChangeToSector(RCPhysicalAddress rChs){
 		// changes to a different Sector with the PhysicalAddress specified
-		fSectorData->fatPath->GetHealthyItem(0)->chs=rChs;
+		fSectorData->fatPath.GetHealthyItem(0)->chs=rChs;
 		fSectorData->SeekToBegin();
 	}
 

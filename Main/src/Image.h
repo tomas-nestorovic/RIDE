@@ -413,7 +413,7 @@
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 				CMetaData metaData;
 				TDecoderMethod defaultDecoder; // when no MetaData available
-				struct:public std::shared_ptr<Utils::CCallocPtr<BYTE,DWORD>>{ // this cumbersome construct because of compilation against MFC 4.2
+				struct:public Utils::CSharedPodPtr<BYTE,DWORD>{
 					TId id;
 				} rawDeviceData; // valid until Track modified, then disposed
 
@@ -423,7 +423,7 @@
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				const Utils::CCallocPtr<TLogTime,DWORD> logTimes;
+				const Utils::CSharedPodPtr<TLogTime,DWORD> logTimes;
 
 				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
@@ -642,7 +642,7 @@
 					inline TLogTime GetLength() const{ return this[1].time-time; }
 				} *PCBit;
 			private:
-				std::shared_ptr<Utils::CCallocPtr<TBit>> bitBuffer;
+				Utils::CSharedPodPtr<TBit> bitBuffer;
 				TBit *pBits;
 				int nBits;
 			public:
@@ -655,7 +655,7 @@
 				inline int GetBitCount() const{ return nBits; }
 				PCBit Find(TLogTime t) const;
 				PCBit FindOrNull(TLogTime t) const;
-				Utils::CCallocPtr<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
+				Utils::CSharedPodPtr<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
 				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
 				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
 				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;
@@ -802,7 +802,7 @@
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const TMetaDataItem &mdi);
-			void SetRawDeviceData(TId dataId,Utils::CCallocPtr<BYTE,DWORD> &&data);
+			void SetRawDeviceData(TId dataId,const Utils::CSharedPodPtr<BYTE,DWORD> &data);
 			void TrimToTimesCount(DWORD nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();

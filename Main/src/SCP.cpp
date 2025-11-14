@@ -180,7 +180,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		CFile &fTarget= savingToCurrentFile ? f : fTmp;
 		if (!savingToCurrentFile)
 			fTarget.SetLength( sizeof(header)+header.flags.extended*0x70+sizeof(tdhOffsets) );
-		if (const auto buffer=Utils::MakeCallocPtr<BYTE>(SCP_BUFFER_CAPACITY)){
+		if (const auto &&buffer=Utils::MakeSharedPodPtr<BYTE>(SCP_BUFFER_CAPACITY)){
 			auto sub=ap.CreateSubactionProgress( 2000, sizeof(tdhOffsets)/sizeof(DWORD) );
 			for( TCylinder cylFile=0; cylFile<ARRAYSIZE(tdhOffsets); cylFile++ ){
 				const TCylinder cyl=cylFile>>(BYTE)params.doubleTrackStep;

@@ -49,7 +49,7 @@
 		const struct TSourceTrackErrors sealed:TWarnings{
 			const TCylinder cyl;
 			const THead head;
-			const Utils::CCallocPtr<TSourceSectorError,TSector> erroneousSectors;
+			const Utils::CSharedPodPtr<TSourceSectorError,TSector> erroneousSectors;
 			const TSourceTrackErrors *pNextErroneousTrack;
 			TSourceTrackErrors(TCylinder cyl,THead head,TWarnings warnings,const TSourceSectorError *erroneousSectors,TSector nErroneousSectors)
 				: TWarnings(warnings)

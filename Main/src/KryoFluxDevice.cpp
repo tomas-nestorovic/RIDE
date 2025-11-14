@@ -277,7 +277,7 @@
 			*cmd='R';
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			const auto p=Utils::MakeCallocPtr<BYTE>(fLength);
+			const auto &&p=Utils::MakeSharedPodPtr<BYTE>(fLength);
 			if (ReadFull(p,fLength)!=ERROR_SUCCESS || ::memcmp(dataBuffer,p,fLength)!=0) // uploaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
@@ -814,7 +814,7 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return CTrackReaderWriter::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
-		const Utils::CCallocPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
+		const Utils::CSharedPodPtr<BYTE> tmpDataBuffer(KF_BUFFER_CAPACITY);
 		PBYTE p=tmpDataBuffer+WriteCreatorOob(tmpDataBuffer); // inject app signature
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))

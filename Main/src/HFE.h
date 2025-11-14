@@ -86,15 +86,14 @@
 			inline bool IsValid() const{ return nBlocksOffset>=2 && nBytesLength!=0; }
 		} cylInfos[84];
 
-		class CTrackBytes sealed:public Utils::CCallocPtr<BYTE>{
+		class CTrackBytes sealed:public Utils::CSharedPodPtr<BYTE>{
 			WORD count;
 		public:
 			CTrackBytes(WORD count);
-			CTrackBytes(CTrackBytes &&r);
 
-			inline operator PBYTE() const{ return get(); }
+			inline operator PBYTE() const{ return begin(); }
 			inline WORD GetCount() const{ return count; }
-			inline PBYTE end() const{ return get()+count; }
+			inline PBYTE end() const{ return begin()+count; }
 			inline void TrimTo(WORD newCount){ count=newCount; }
 			void Invalidate();
 			void ReverseBitsInEachByte() const;

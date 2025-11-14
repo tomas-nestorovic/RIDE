@@ -93,15 +93,9 @@
 
 	CHFE::CTrackBytes::CTrackBytes(WORD count)
 		// ctor
-		: Utils::CCallocPtr<BYTE>( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)), 0 )
+		: Utils::CSharedPodPtr<BYTE>( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)), 0 )
 		, count(count) {
 		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
-	}
-
-	CHFE::CTrackBytes::CTrackBytes(CTrackBytes &&r)
-		// move ctor
-		: Utils::CCallocPtr<BYTE>( std::move(r) )
-		, count(r.count) {
 	}
 
 	void CHFE::CTrackBytes::Invalidate(){

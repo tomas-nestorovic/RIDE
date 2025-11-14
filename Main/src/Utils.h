@@ -8,55 +8,50 @@ typedef long TStdWinError; // Windows standard i/o error
 namespace Utils{
 
 	template<typename T,typename TIndex=int>
-	class CCallocPtr:public std::unique_ptr<T,void (__cdecl *)(PVOID)>{
+	class CSharedPodPtr:protected CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
 	public:
 		TIndex length;
 
-		CCallocPtr()
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( pointer(), ::free )
-			, length(0) {
+		CSharedPodPtr()
+			: length(0) {
 		}
-		CCallocPtr(TIndex length)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( (T *)::calloc(length,sizeof(T)), ::free )
-			, length(length) {
+		CSharedPodPtr(TIndex length)
+			: length(length) {
+			GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) );
 		}
-		CCallocPtr(TIndex length,int initByte)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memset( ::calloc(length,sizeof(T)), initByte, length*sizeof(T) ),  ::free  )
-			, length(length) {
+		CSharedPodPtr(TIndex length,int initByte)
+			: length(length) {
+			::memset(
+				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
+				initByte, sizeof(T)*length
+			);
 		}
-		CCallocPtr(TIndex length,const T *pCopyInitData)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>(  (T *)::memcpy( ::calloc(length,sizeof(T)), pCopyInitData, length*sizeof(T) ),  ::free  )
-			, length(length) {
-		}
-		CCallocPtr(CCallocPtr &&r)
-			: std::unique_ptr<T,void (__cdecl *)(PVOID)>( std::move(r) )
-			, length(r.length) {
+		CSharedPodPtr(TIndex length,const T *pCopyInitData)
+			: length(length) {
+			::memcpy(
+				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
+				pCopyInitData, sizeof(T)*length
+			);
 		}
 
-		inline operator bool() const{ return get()!=pointer(); }
-		inline operator T *() const{ return get(); }
-		inline T *operator+(TIndex i) const{ return get()+i; }
-		inline T &operator[](TIndex i) const{ return get()[i]; }
+		inline operator bool() const{ return length>0; }
+		inline operator T *() const{ return (T *)operator LPCTSTR(); }
+		inline operator LPCVOID() const{ return begin(); }
+		inline T *operator+(TIndex i) const{ return begin()+i; }
+		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
-		void operator=(CCallocPtr &&r){
-			__super::operator=( std::move(r) );
-			length=r.length;
-		}
+		inline void reset(){ Empty(); }
+		inline T *get() const{ return begin(); }
 
 		T *Realloc(TIndex newLength){
-			if (!newLength){ // the special case when 'realloc' below fails
-				reset();
-				length=newLength;
+			if (newLength){
+				const CSharedPodPtr tmp(newLength);
+				::memcpy( tmp.begin(), begin(), sizeof(T)*std::min(length,newLength) );
+				return (*this=tmp);
+			}else{ // the special case for which the above would fail
+				*this=CSharedPodPtr();
 				return nullptr;
-			}else if (const PVOID tmp=::realloc( get(), sizeof(T)*newLength )){ // enough memory for reallocation?
-				if (tmp!=get()){ // had to move the memory block?
-					release(); // already ::Freed, so don't call ::Free again
-					reset( (T *)tmp );
-				}
-				length=newLength;
-				return get();
-			}else
-				return nullptr; // currently allocated memory has not been affected
+			}
 		}
 
 		template<typename V,class Predicate>
@@ -65,22 +60,22 @@ namespace Utils{
 		}
 
 		// 'for each' support
-		inline T *begin() const{ return get(); }
-		inline T *end() const{ return get()+length; }
+		inline T *begin() const{ return operator T *(); }
+		inline T *end() const{ return begin()+length; }
 	};
 
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>
-	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length){
-		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length );
+	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length){
+		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length );
 	}
 	template<typename T,typename TIndex>
-	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length,int initByte){
-		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
+	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length,int initByte){
+		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
 	}
 	template<typename T,typename TIndex>
-	inline static CCallocPtr<T,typename std::tr1::decay<TIndex>::type> MakeCallocPtr(TIndex length,const T *pCopyInitData){
-		return CCallocPtr<T,typename std::tr1::decay<TIndex>::type>( length, pCopyInitData );
+	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length,const T *pCopyInitData){
+		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length, pCopyInitData );
 	}
 
 	template<typename Ptr>

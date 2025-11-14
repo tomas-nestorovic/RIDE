@@ -52,7 +52,7 @@
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType=Medium::UNKNOWN);
 
-			const Utils::CCallocPtr<TInternalSector,TSector> sectors;
+			const Utils::CSharedPodPtr<TInternalSector,TSector> sectors;
 			bool modified;
 			
 			~CInternalTrack();

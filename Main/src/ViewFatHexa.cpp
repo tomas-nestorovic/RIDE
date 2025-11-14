@@ -64,7 +64,7 @@ using namespace Yahel;
 		// ctor
 		: dos(dos) , file(file)
 		, fatPath( CDos::CFileReaderWriter( dos, file ).fatPath ) {
-		dataTotalLength= fatPath->GetNumberOfItems()*sizeof(CDos::CFatPath::TValue);
+		dataTotalLength= fatPath.GetNumberOfItems()*sizeof(CDos::CFatPath::TValue);
 	}
 
 
@@ -92,7 +92,7 @@ using namespace Yahel;
 	UINT CFatHexaView::CFatPathReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		PCFatItem item; DWORD n;
-		fatPath->GetItems( item, n );
+		fatPath.GetItems( item, n );
 		const auto d=div( position, sizeof(item->value) );
 		if (d.quot>=n) // reading beyond the content?
 			return 0;
@@ -120,7 +120,7 @@ using namespace Yahel;
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		// - modifying the FatPath locally
 		PFatItem item; DWORD n;
-		fatPath->GetItems( item, n );
+		fatPath.GetItems( item, n );
 		const auto d=div( position, sizeof(item->value) );
 		if (d.quot>=n) // writing beyond the content?
 			return;
@@ -144,7 +144,7 @@ using namespace Yahel;
 		}
 		position+=p-(PBYTE)lpBuf;
 		// - assigning the modified FatPath to the File
-		dos->ModifyFileFatPath( file, *fatPath );
+		dos->ModifyFileFatPath( file, fatPath );
 	}
 
 

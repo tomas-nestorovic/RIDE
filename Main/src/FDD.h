@@ -56,7 +56,7 @@
 				TStdWinError SaveToDisk(CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip,bool verify,const volatile bool &cancelled);
 				BYTE VerifySaving(const CFDD *fdd,const TInternalTrack *pit,BYTE nSectorsToSkip);
 			};
-			const Utils::CCallocPtr<TSectorInfo,TSector> sectors;
+			const Utils::CSharedPodPtr<TSectorInfo,TSector> sectors;
 
 			TInternalTrack(const CFDD *fdd,TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCLogTime sectorStartsNanoseconds); //ctor
 			~TInternalTrack(); //dtor
