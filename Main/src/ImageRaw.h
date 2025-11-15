@@ -3,7 +3,7 @@
 	
 	class CImageRaw:public CImage{
 		TCylinder nCylinders;
-		Utils::CSharedPodPtr<PVOID,TCylinder> bufferOfCylinders;
+		Utils::CSharedPodArray<PVOID,TCylinder> bufferOfCylinders;
 		THead nHeads;
 		TSector nSectors,firstSectorNumber;
 		BYTE sectorLengthCode;	WORD sectorLength;
@@ -13,7 +13,7 @@
 		TStdWinError SaveTrackToCurrentPositionInFile(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
-		Utils::CSharedPodPtr<TSide,THead> explicitSides; // non-Null = Side numbers explicitly provided by user
+		Utils::CSharedPodArray<TSide,THead> explicitSides; // non-Null = Side numbers explicitly provided by user
 		DWORD sizeWithoutGeometry;
 		CFile f;
 

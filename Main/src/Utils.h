@@ -8,25 +8,25 @@ typedef long TStdWinError; // Windows standard i/o error
 namespace Utils{
 
 	template<typename T,typename TIndex=int>
-	class CSharedPodPtr:protected CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
+	class CSharedPodArray:protected CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
 	public:
 		TIndex length;
 
-		CSharedPodPtr()
+		CSharedPodArray()
 			: length(0) {
 		}
-		CSharedPodPtr(TIndex length)
+		CSharedPodArray(TIndex length)
 			: length(length) {
 			GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) );
 		}
-		CSharedPodPtr(TIndex length,int initByte)
+		CSharedPodArray(TIndex length,int initByte)
 			: length(length) {
 			::memset(
 				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
 				initByte, sizeof(T)*length
 			);
 		}
-		CSharedPodPtr(TIndex length,const T *pCopyInitData)
+		CSharedPodArray(TIndex length,const T *pCopyInitData)
 			: length(length) {
 			::memcpy(
 				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
@@ -44,11 +44,11 @@ namespace Utils{
 
 		T *Realloc(TIndex newLength){
 			if (newLength){
-				const CSharedPodPtr tmp(newLength);
+				const CSharedPodArray tmp(newLength);
 				::memcpy( tmp.begin(), begin(), sizeof(T)*std::min(length,newLength) );
 				return (*this=tmp);
 			}else{ // the special case for which the above would fail
-				*this=CSharedPodPtr();
+				reset();
 				return nullptr;
 			}
 		}
@@ -63,20 +63,20 @@ namespace Utils{
 		inline T *end() const{ return begin()+length; }
 	};
 
-	typedef CSharedPodPtr<BYTE> CSharedBytePtr;
+	typedef CSharedPodArray<BYTE> CSharedBytes;
 
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>
-	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length){
-		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length );
+	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length){
+		return CSharedPodArray<T,typename std::tr1::decay<TIndex>::type>( length );
 	}
 	template<typename T,typename TIndex>
-	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length,int initByte){
-		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
+	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length,int initByte){
+		return CSharedPodArray<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
 	}
 	template<typename T,typename TIndex>
-	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length,const T *pCopyInitData){
-		return CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type>( length, pCopyInitData );
+	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length,const T *pCopyInitData){
+		return CSharedPodArray<T,typename std::tr1::decay<TIndex>::type>( length, pCopyInitData );
 	}
 
 	template<typename Ptr>

@@ -204,7 +204,7 @@
 				FILE			=16	// invalid File entry to find path of, e.g. an empty Directory entry
 			} error;
 		private:
-			Utils::CSharedPodPtr<TItem,DWORD> buffer;
+			Utils::CSharedPodArray<TItem,DWORD> buffer;
 			DWORD nItems;
 			TItem *pLastItem;
 		public:

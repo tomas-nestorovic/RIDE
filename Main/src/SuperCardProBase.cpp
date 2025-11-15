@@ -206,7 +206,7 @@
 			f.Seek( fBasePos+ri.iFluxDataBegin, CFile::begin );
 			switch (header.nFluxCellBits){
 				case 8:
-					if (const auto &&fluxes=Utils::CSharedBytePtr(ri.nFluxes))
+					if (const auto &&fluxes=Utils::CSharedBytes(ri.nFluxes))
 						if (f.Read( fluxes, ri.nFluxes*sizeof(BYTE) )==ri.nFluxes*sizeof(BYTE)){
 							TLogTime t=result.GetLastIndexTime();
 							for( DWORD i=0; i<ri.nFluxes; i++ )
@@ -219,7 +219,7 @@
 					return CTrackReaderWriter::Invalid;
 				case 0:
 				case 16:
-					if (const auto &&fluxes=Utils::MakeSharedPodPtr<Utils::CBigEndianWord>(ri.nFluxes))
+					if (const auto &&fluxes=Utils::MakeSharedPodArray<Utils::CBigEndianWord>(ri.nFluxes))
 						if (f.Read( fluxes, ri.nFluxes*sizeof(WORD) )==ri.nFluxes*sizeof(WORD)){
 							TLogTime t=result.GetLastIndexTime();
 							for( DWORD i=0; i<ri.nFluxes; i++ )

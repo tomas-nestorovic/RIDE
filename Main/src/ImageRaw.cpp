@@ -331,14 +331,14 @@ trackNotFound:
 					default:
 						ASSERT(FALSE);
 				}
-				bufferOfCylinders=Utils::MakeSharedPodPtr<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Utils::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
-				bufferOfCylinders=Utils::MakeSharedPodPtr<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Utils::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}
@@ -654,7 +654,7 @@ trackNotFound:
 			if (d.manualRecognition){
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides=Utils::MakeSharedPodPtr<TSide,THead>(d.nHeads,d.sideNumbers);
+				explicitSides=Utils::MakeSharedPodArray<TSide,THead>(d.nHeads,d.sideNumbers);
 				nHeads=d.nHeads;
 			}else
 				explicitSides.reset();

@@ -1003,7 +1003,7 @@ invalidTrack:
 		if (psi==ses.end() || writtenBits[psi->iPosA].time>significant.tEnd)
 			return ERROR_SUCCESS; // only insignificant differences at the beginning and end of Revolution
 		// - composition and display of non-overlapping erroneously written regions of the Track
-		const Utils::CSharedPodPtr<CTrackReader::TRegion> badRegions(ses.length);
+		const Utils::CSharedPodArray<CTrackReader::TRegion> badRegions(ses.length);
 		if (!badRegions)
 			return ERROR_NOT_ENOUGH_MEMORY;
 		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );

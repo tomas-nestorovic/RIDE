@@ -109,7 +109,7 @@
 		struct TMatrixRow sealed{
 			BYTE correctDistances[nEvaluationFluxes];
 		};
-		const auto &&A=Utils::MakeSharedPodPtr<TMatrixRow>(nRows);
+		const auto &&A=Utils::MakeSharedPodArray<TMatrixRow>(nRows);
 		for( BYTE nFailures=0,trial=0; trial<nTrials; ){
 			if (pAction->Cancelled)
 				return ERROR_CANCELLED;

@@ -1334,7 +1334,7 @@ using namespace Charting;
 							// modal display of scatter plot of time differences
 							CImage::CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							const Utils::CSharedPodPtr<TLogPoint,TIndex> deltaTimes( tr.GetTimesCount() );
+							const Utils::CSharedPodArray<TLogPoint,TIndex> deltaTimes( tr.GetTimesCount() );
 								PLogPoint pLastItem=deltaTimes;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
@@ -1345,7 +1345,7 @@ using namespace Charting;
 								auto deltaTimeSeries=CChartView::CXyPointSeries(
 									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
-							const Utils::CSharedPodPtr<TLogPoint,TIndex> indexTimes( tr.GetIndexCount() );
+							const Utils::CSharedPodArray<TLogPoint,TIndex> indexTimes( tr.GetIndexCount() );
 								for( BYTE i=0; i<tr.GetIndexCount(); i++ ){
 									auto &r=indexTimes[i];
 										r.x=tr.GetIndexTime(i);
@@ -1530,7 +1530,7 @@ using namespace Charting;
 								::lstrcpy( caption, _T("Timing histogram for whole track") );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
-							const Utils::CSharedPodPtr<TLogPoint,TIndex> data( tr.GetTimesCount() );
+							const Utils::CSharedPodArray<TLogPoint,TIndex> data( tr.GetTimesCount() );
 								PLogPoint pLastItem=data;
 								for( TLogTime t0=tBegin; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
