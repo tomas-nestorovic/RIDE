@@ -48,7 +48,7 @@ namespace Utils{
 				::memcpy( tmp.begin(), begin(), sizeof(T)*std::min(length,newLength) );
 				return (*this=tmp);
 			}else{ // the special case for which the above would fail
-				reset();
+				*this=CSharedPodArray();
 				return nullptr;
 			}
 		}

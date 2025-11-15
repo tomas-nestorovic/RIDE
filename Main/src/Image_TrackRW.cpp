@@ -1870,7 +1870,7 @@
 			(nLogTimes-iNextTime-nOnesPreviously)*sizeof(TLogTime)
 		);
 		nLogTimes=nNewLogTimes;
-		const auto &&newLogTimesTemp=Utils::MakeSharedPodArray<TLogTime>(nOnesCurrently);
+		const CSharedLogTimes newLogTimesTemp(nOnesCurrently);
 			PLogTime pt=newLogTimesTemp;
 			for( DWORD i=0; i++<nBits; )
 				if (*bits++)
@@ -1936,7 +1936,7 @@
 		// - normalization
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const Utils::CSharedPodArray<TLogTime,DWORD> buffer( GetBufferCapacity(), 0 );
+		const CSharedLogTimes buffer( GetBufferCapacity(), 0 );
 		const PLogTime ptModified=buffer;
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions

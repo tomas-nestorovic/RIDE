@@ -197,6 +197,7 @@ struct TLogTimeInterval{
 #define STR_CANCEL		_T("Cancel")
 
 #include "Utils.h"
+typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
 #include "BackgroundAction.h"
 #include "Diff.h"
 #include "MainWindow.h"

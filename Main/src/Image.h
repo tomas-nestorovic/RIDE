@@ -423,7 +423,7 @@
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				const Utils::CSharedPodArray<TLogTime,DWORD> logTimes;
+				const CSharedLogTimes logTimes;
 
 				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
