@@ -151,7 +151,7 @@ using namespace Charting;
 							const auto &peList=te.GetParseEvents();
 							const auto dcSettings0=::SaveDC(dc);
 								::SelectObject( dc, Utils::CRidePen::BlackHairline );
-								const LPCTSTR byteInfoFormat= te.decadicByteValues ? _T("%c\n%d") : _T("%c\n$%02X");
+								const LPCTSTR byteInfoFormat= te.decimalByteValues ? _T("%c\n%d") : _T("%c\n$%02X");
 								TCHAR label[80];
 								const SIZE byteInfoSizeMin=te.timeline.font.GetTextSize(  label,  ::wsprintf( label, byteInfoFormat, 'M', 255 )  );
 								const int nUnitsPerByte=te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
@@ -515,7 +515,7 @@ using namespace Charting;
 			const Utils::CRidePen penIndex;
 			const Utils::CRidePen penMetaData;
 			const Utils::CRideFont fontMetaData;
-			bool decadicByteValues;
+			bool decimalByteValues;
 
 			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
 				// ctor
@@ -526,7 +526,7 @@ using namespace Charting;
 				, penMetaData( 1, COLOR_BLACK, PS_DOT )
 				, fontMetaData( Utils::CRideFont::Small.CreateRotated(90) )
 				, painter(*this)
-				, decadicByteValues( app.GetProfileBool(INI_SECTION,INI_DECADIC) )
+				, decimalByteValues( app.GetProfileBool(INI_SECTION,INI_DECADIC) )
 				, draggedTime(-1)
 				, cursorTime(-1) , cursorFeaturesShown(false)
 				, cursorFeatures( TCursorFeatures::DEFAULT | tr.GetMetaData()*TCursorFeatures::METADATA )
@@ -901,6 +901,9 @@ using namespace Charting;
 						case ID_INTERLEAVE:
 							pCmdUi->Enable( timeEditor.pRegions!=nullptr );
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::REGIONS) );
+							return TRUE;
+						case ID_NUMBER:
+							pCmdUi->SetCheck( timeEditor.decimalByteValues );
 							return TRUE;
 						case ID_SYSTEM:
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::STRUCT) );
@@ -1563,9 +1566,9 @@ using namespace Charting;
 							return TRUE;
 						}
 						case ID_NUMBER:
-							// decadic or hexa-decimal Byte values
+							// decimal or hexa-decimal Byte values
 							app.WriteProfileInt( INI_SECTION, INI_DECADIC,
-								timeEditor.decadicByteValues=!timeEditor.decadicByteValues
+								timeEditor.decimalByteValues=!timeEditor.decimalByteValues
 							);
 							timeEditor.Invalidate();
 							return TRUE;
