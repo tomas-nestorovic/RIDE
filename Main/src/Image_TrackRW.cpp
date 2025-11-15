@@ -1818,9 +1818,9 @@
 			metaData.insert(mdi);
 	}
 
-	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,const Utils::CSharedPodPtr<BYTE,DWORD> &data){
+	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,const Utils::CSharedBytePtr &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
-		static_cast<Utils::CSharedPodPtr<BYTE,DWORD> &>(pLogTimesInfo->rawDeviceData)=data;
+		static_cast<Utils::CSharedBytePtr &>(pLogTimesInfo->rawDeviceData)=data;
 		pLogTimesInfo->rawDeviceData.id=dataId;
 	}
 

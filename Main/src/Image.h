@@ -413,7 +413,7 @@
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 				CMetaData metaData;
 				TDecoderMethod defaultDecoder; // when no MetaData available
-				struct:public Utils::CSharedPodPtr<BYTE,DWORD>{
+				struct:public Utils::CSharedBytePtr{
 					TId id;
 				} rawDeviceData; // valid until Track modified, then disposed
 
@@ -802,7 +802,7 @@
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const TMetaDataItem &mdi);
-			void SetRawDeviceData(TId dataId,const Utils::CSharedPodPtr<BYTE,DWORD> &data);
+			void SetRawDeviceData(TId dataId,const Utils::CSharedBytePtr &data);
 			void TrimToTimesCount(DWORD nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();

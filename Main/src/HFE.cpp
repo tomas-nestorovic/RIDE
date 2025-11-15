@@ -93,7 +93,7 @@
 
 	CHFE::CTrackBytes::CTrackBytes(WORD count)
 		// ctor
-		: Utils::CSharedPodPtr<BYTE>( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)), 0 )
+		: Utils::CSharedBytePtr( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)), 0 )
 		, count(count) {
 		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
 	}

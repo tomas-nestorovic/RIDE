@@ -63,6 +63,8 @@ namespace Utils{
 		inline T *end() const{ return begin()+length; }
 	};
 
+	typedef CSharedPodPtr<BYTE> CSharedBytePtr;
+
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>
 	inline static CSharedPodPtr<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodPtr(TIndex length){

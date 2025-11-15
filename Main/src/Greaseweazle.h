@@ -67,7 +67,7 @@
 			BUS_LAST
 		};
 		const BYTE fddId;
-		const Utils::CSharedPodPtr<BYTE> dataBuffer;
+		const Utils::CSharedBytePtr dataBuffer;
 		#pragma pack(1)
 		struct{
 			BYTE major, minor, isMainFirmware, maxCmd;
