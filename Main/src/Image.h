@@ -564,7 +564,7 @@
 				inline PCParseEvent operator->() const{ return gen; }
 			};
 
-			class CParseEventList:private Utils::CCopyList<TParseEvent>{
+			class CParseEventList:private Utils::CPodList<TParseEvent>{
 				DWORD peTypeCounts[TParseEvent::LAST];
 
 				CParseEventList(const CParseEventList &r); //delete
@@ -593,6 +593,7 @@
 				CParseEventList();
 				CParseEventList(CParseEventList &&r); // move-ctor
 
+				void Add(const Utils::CSharedPodPtr<TParseEvent> &ptr);
 				void Add(const TParseEvent &pe);
 				void Add(const CParseEventList &list);
 				CIterator GetIterator() const;

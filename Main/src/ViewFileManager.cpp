@@ -656,7 +656,7 @@
 			const CListCtrl &lv=GetListCtrl();
 			return (CDos::PFile)lv.GetItemData( lv.GetNextSelectedItem(pos) );
 		}else
-			return (CDos::PFile)selectedFiles.GetNext(pos);
+			return selectedFiles.GetNext(pos);
 	}
 	POSITION CFileManagerView::GetLastSelectedFilePosition() const{
 		// returns the position of last selected File

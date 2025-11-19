@@ -1168,7 +1168,7 @@
 
 	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r)
 		// move-ctor
-		: Utils::CCopyList<TParseEvent>( std::move(r) )
+		: Utils::CPodList<TParseEvent>( std::move(r) )
 		, logStarts( std::move(r.logStarts) )
 		, logEnds( std::move(r.logEnds) ) {
 		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
@@ -1176,19 +1176,25 @@
 		r.RemoveAll();
 	}
 
-	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
-		// adds copy of the specified ParseEvent into this List
-		ASSERT( pe.tStart<pe.tEnd );
+	void CImage::CTrackReader::CParseEventList::Add(const Utils::CSharedPodPtr<TParseEvent> &ptr){
 		// - creating a copy of the ParseEvent
-		POSITION pos=AddTail( pe, pe.size );
-		TParseEvent &copy=GetPrev(pos);
-		if (pe.tStart==TimelyFromPrevious)
-			copy.tStart=GetAt(pos).tEnd; // the tail assumed to be the ParseEvent added previously
+		TParseEvent &pe=*ptr;
+		ASSERT( pe.tStart<pe.tEnd );
+		POSITION pos=static_cast<CStringList *>(this)->AddTail(ptr);
+		if (pe.tStart==TimelyFromPrevious){
+			GetPrev(pos);
+			pe.tStart=GetAt(pos).tEnd; // the tail assumed to be the ParseEvent added previously
+		}
 		// - registering the ParseEvent for quick searching by Start/End time
-		logStarts.insert( std::make_pair(copy.tStart,&copy) );
-		logEnds.insert( std::make_pair(copy.tEnd,&copy) );
+		logStarts.insert( std::make_pair(pe.tStart,&pe) );
+		logEnds.insert( std::make_pair(pe.tEnd,&pe) );
 		// - increasing counter
 		peTypeCounts[pe.type]++;
+	}
+
+	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
+		// adds copy of the specified ParseEvent into this List
+		Add( Utils::CSharedPodPtr<TParseEvent>(pe,pe.size) );
 	}
 
 	void CImage::CTrackReader::CParseEventList::Add(const CParseEventList &list){

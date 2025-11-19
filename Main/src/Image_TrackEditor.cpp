@@ -44,7 +44,7 @@ using namespace Charting;
 		HANDLE hAutoscrollTimer;
 		struct{
 			BYTE oneOkPercent; // a window with logical "1" appearing less than this value is considered OK, otherwise Bad
-			Utils::CCopyList<TLogTimeInterval> badBlocks; // blocks of consecutive InspectionWindows evaluated as Bad
+			Utils::CPodList<TLogTimeInterval> badBlocks; // blocks of consecutive InspectionWindows evaluated as Bad
 		} iwInfo;
 
 		enum TCursorFeatures:BYTE{
@@ -956,10 +956,10 @@ using namespace Charting;
 							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() );
 							return TRUE;
 						case ID_PREV_BAD:
-							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && timeEditor.GetInspectionWindows() && iwInfo.badBlocks.GetCount()>0 && iwInfo.badBlocks.GetHead().tStart<timeEditor.GetCenterTime() );
+							pCmdUi->Enable( timeEditor.GetScrollTime()>0 && timeEditor.GetInspectionWindows() && iwInfo.badBlocks && iwInfo.badBlocks.GetHead().tStart<timeEditor.GetCenterTime() );
 							return TRUE;
 						case ID_NEXT_BAD:
-							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows() && iwInfo.badBlocks.GetCount()>0 && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
+							pCmdUi->Enable( timeEditor.GetScrollTime()<tr.GetTotalTime() && timeEditor.GetInspectionWindows() && iwInfo.badBlocks && timeEditor.GetCenterTime()<iwInfo.badBlocks.GetTail().tStart );
 							return TRUE;
 						case ID_REVOLUTION_PREV:{
 							const TLogTime tCursor=timeEditor.GetClientCursorTime();

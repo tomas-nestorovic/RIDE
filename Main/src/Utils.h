@@ -7,8 +7,29 @@ typedef long TStdWinError; // Windows standard i/o error
 
 namespace Utils{
 
+	template<typename T>
+	class CSharedPodPtr:public CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
+	protected:
+		inline CSharedPodPtr(){}
+	public:
+		inline CSharedPodPtr(const CString &r)
+			: CString(r) {
+		}
+		CSharedPodPtr(const T &copyInitData,int initDataLength=sizeof(T)){
+			::memcpy(
+				GetBufferSetLength( (initDataLength+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
+				&copyInitData, initDataLength
+			);
+		}
+
+		inline T &operator*() const{ return *(T *)operator LPCTSTR(); }
+		inline T *operator->() const{ return (T *)operator LPCTSTR(); }
+	};
+
+	static_assert( sizeof(CSharedPodPtr<BYTE>)==sizeof(CString), "can't easily retype these two, e.g. '(CSharedPodPtr)myAfxStr'" );
+
 	template<typename T,typename TIndex=int>
-	class CSharedPodArray:protected CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
+	class CSharedPodArray:protected CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
 	public:
 		TIndex length;
 
@@ -27,16 +48,13 @@ namespace Utils{
 			);
 		}
 		CSharedPodArray(TIndex length,const T *pCopyInitData)
-			: length(length) {
-			::memcpy(
-				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
-				pCopyInitData, sizeof(T)*length
-			);
+			: CSharedPodPtr( *pCopyInitData, sizeof(T)*length )
+			, length(length) {
 		}
 
 		inline operator bool() const{ return length>0; }
 		inline operator T *() const{ return (T *)operator LPCTSTR(); }
-		inline operator LPCVOID() const{ return begin(); }
+		inline operator LPCVOID() const{ return operator LPCTSTR(); }
 		inline T *operator+(TIndex i) const{ return begin()+i; }
 		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
@@ -48,7 +66,7 @@ namespace Utils{
 				::memcpy( tmp.begin(), begin(), sizeof(T)*std::min(length,newLength) );
 				return (*this=tmp);
 			}else{ // the special case for which the above would fail
-				*this=CSharedPodArray();
+				reset();
 				return nullptr;
 			}
 		}
@@ -105,52 +123,57 @@ namespace Utils{
 	typedef CPtrList<int> CIntList;
 
 	template<typename T>
-	class CCopyList:public CStringList{
+	class CPodList:protected CStringList{ // list of Plain Old Data structures (of variable lengths but the same prefix <T>)
+		// don't make CStringList 'public' - client mustn't call 'Find' (the contents are PODs instead of null-terminated strings!)
+		// lots of casts to invoke 'CStringList' methods that return references to (instead of copies of) 'CString'
 	public:
-		CCopyList(){}
-		CCopyList(const CCopyList &r){
-			// shallow-copy ctor
-			for( POSITION pos=r.GetHeadPosition(); pos; )
-				__super::AddTail( static_cast<const CStringList &>(r).GetNext(pos) );
+		inline CPodList(){}
+		CPodList(const CPodList &r){
+			// shallow-copy ctor (to avoid "Error C2248: 'CObject::CObject' : cannot access private member declared in class 'CObject'")
+			__super::AddTail(
+				&const_cast<CStringList &>( static_cast<const CStringList &>(r) )
+			);
 		}
 
+		inline operator bool() const{ return GetCount()>0; }
+		inline void RemoveAll(){ __super::RemoveAll(); }
+		inline POSITION GetHeadPosition() const{ return __super::GetHeadPosition(); }
+		inline POSITION GetTailPosition() const{ return __super::GetTailPosition(); }
+		//inline ... Find(LPCTSTR) const; // commented out as the contents are PODs instead of null-terminated strings!
+
 		POSITION AddHead(const T &element,int elementSize=sizeof(T)){
-			const POSITION pos=__super::AddHead(_T(""));
-			SetAt( pos, element, elementSize );
-			return pos;
+			return __super::AddHead( static_cast<const CString &>(CSharedPodPtr<T>(element,elementSize)) );
 		}
 		POSITION AddTail(const T &element,int elementSize=sizeof(T)){
-			const POSITION pos=__super::AddTail(_T(""));
-			SetAt( pos, element, elementSize );
-			return pos;
+			return __super::AddTail( static_cast<const CString &>(CSharedPodPtr<T>(element,elementSize)) );
 		}
 		T &GetNext(POSITION &rPosition) const{
-			return *(T *)__super::GetNext(rPosition).operator LPCTSTR();
+			return *static_cast<CSharedPodPtr<T> &>(
+				const_cast<CStringList *>( static_cast<const CStringList *>(this) )->GetNext(rPosition)
+			);
 		}
 		T &GetPrev(POSITION &rPosition) const{
-			return *(T *)__super::GetPrev(rPosition).operator LPCTSTR();
+			return *static_cast<CSharedPodPtr<T> &>(
+				const_cast<CStringList *>( static_cast<const CStringList *>(this) )->GetPrev(rPosition)
+			);
 		}
 		T &GetHead() const{
-			return *(T *)__super::GetHead().operator LPCTSTR();
+			return *static_cast<CSharedPodPtr<T> &>(
+				const_cast<CStringList *>( static_cast<const CStringList *>(this) )->GetHead()
+			);
 		}
 		T &GetTail() const{
-			return *(T *)__super::GetTail().operator LPCTSTR();
+			return *static_cast<CSharedPodPtr<T> &>(
+				const_cast<CStringList *>( static_cast<const CStringList *>(this) )->GetTail()
+			);
+		}
+		const CSharedPodPtr<T> &GetPtrAt(POSITION position) const{
+			return static_cast<const CSharedPodPtr<T> &>(
+				const_cast<CStringList *>( static_cast<const CStringList *>(this) )->GetAt(position)
+			);
 		}
 		T &GetAt(POSITION position) const{
-			return *(T *)__super::GetAt(position).operator LPCTSTR();
-		}
-		void SetAt(POSITION pos,const T &element,int elementSize=sizeof(T)){
-			::memcpy( __super::GetAt(pos).GetBuffer(elementSize), &element, elementSize );
-		}
-		POSITION InsertBefore(POSITION pos,const T &element,int elementSize=sizeof(T)){
-			pos=__super::InsertBefore(pos,_T(""));
-			SetAt( pos, element, elementSize );
-			return pos;
-		}
-		POSITION InsertAfter(POSITION pos,const T &element,int elementSize=sizeof(T)){
-			pos=__super::InsertAfter(pos,_T(""));
-			SetAt( pos, element, elementSize );
-			return pos;
+			return *GetPtrAt(position);
 		}
 	};
 
