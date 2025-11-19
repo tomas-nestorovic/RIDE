@@ -179,8 +179,8 @@ BEGIN
     "+",            ID_ZOOM_IN,             ASCII,  NOINVERT
     "-",            ID_ZOOM_OUT,            ASCII,  NOINVERT
     "0",            ID_ZOOM_FIT,            VIRTKEY, CONTROL, NOINVERT
-    "B",            ID_FILE_SHIFT_UP,       VIRTKEY, NOINVERT
-    "C",            ID_FILE_SHIFT_DOWN,     VIRTKEY, NOINVERT
+    "R",            ID_FILE_SHIFT_UP,       VIRTKEY, NOINVERT
+    "W",            ID_FILE_SHIFT_DOWN,     VIRTKEY, NOINVERT
     "D",            ID_PREV_PANE,           VIRTKEY, NOINVERT
     "E",            ID_REVOLUTION_PREV,     VIRTKEY, NOINVERT
     "F",            ID_META_NEXT,           VIRTKEY, NOINVERT
@@ -808,10 +808,10 @@ BEGIN
         MENUITEM "Next window\tRight",          ID_UP
         MENUITEM "Next revolution\tT",          ID_REVOLUTION_NEXT
         MENUITEM SEPARATOR
-        MENUITEM "Previous event\tC",           ID_FILE_SHIFT_DOWN
+        MENUITEM "Previous event\tW",           ID_FILE_SHIFT_DOWN
         MENUITEM "Previous fuzzy event\tD",     ID_PREV_PANE
         MENUITEM "Next fuzzy event\tG",         ID_NEXT_PANE
-        MENUITEM "Next event\tB",               ID_FILE_SHIFT_UP
+        MENUITEM "Next event\tR",               ID_FILE_SHIFT_UP
         MENUITEM SEPARATOR
         MENUITEM "Previous mark\tJ",            ID_RECORD_PREV
         MENUITEM "Next mark\tL",                ID_RECORD_NEXT
