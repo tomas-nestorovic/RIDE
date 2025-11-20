@@ -944,8 +944,8 @@
 	Utils::CSharedPodArray<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
 		// creates and returns the shortest edit script (SES)
 		Utils::CSharedPodArray<CDiffBase::TScriptItem> ses( GetBitCount()+theirs.GetBitCount() );
-		if (!ses)
-			return ses;
+		//if (!ses) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
+			//return ses;
 		const int i=CDiff<const TBit>(
 			begin(), GetBitCount()
 		).GetShortestEditScript(

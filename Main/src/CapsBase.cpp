@@ -1004,8 +1004,8 @@ invalidTrack:
 			return ERROR_SUCCESS; // only insignificant differences at the beginning and end of Revolution
 		// - composition and display of non-overlapping erroneously written regions of the Track
 		const Utils::CSharedPodArray<CTrackReader::TRegion> badRegions(ses.length);
-		if (!badRegions)
-			return ERROR_NOT_ENOUGH_MEMORY;
+		//if (!badRegions) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
+			//return ERROR_NOT_ENOUGH_MEMORY;
 		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );
 		CTrackReader::CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];

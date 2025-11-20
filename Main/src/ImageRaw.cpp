@@ -41,8 +41,9 @@ using namespace Yahel;
 	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
-		if (!bufferOfCylinders.Realloc(nCyl))
-			return ERROR_NOT_ENOUGH_MEMORY;
+		bufferOfCylinders.Realloc(nCyl);
+		//if (!bufferOfCylinders.Realloc(nCyl)) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
+			//return ERROR_NOT_ENOUGH_MEMORY;
 		// - initializing added Cylinders with the FillerByte
 		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
 			if (cancelled)
