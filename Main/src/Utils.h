@@ -9,11 +9,9 @@ namespace Utils{
 
 	template<typename T>
 	class CSharedPodPtr:public CString{ // 'std::shared_ptr'-like pointer to Plain Old Data
-	protected:
-		inline CSharedPodPtr(){}
 	public:
-		inline CSharedPodPtr(const CString &r)
-			: CString(r) {
+		inline CSharedPodPtr(TCHAR initByte,int initDataLength=sizeof(T))
+			: CString( initByte, (initDataLength+sizeof(TCHAR)-1)/sizeof(TCHAR) ) {
 		}
 		CSharedPodPtr(const T &copyInitData,int initDataLength=sizeof(T)){
 			::memcpy(
@@ -33,19 +31,9 @@ namespace Utils{
 	public:
 		TIndex length;
 
-		CSharedPodArray()
-			: length(0) {
-		}
-		CSharedPodArray(TIndex length)
-			: length(length) {
-			GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) );
-		}
-		CSharedPodArray(TIndex length,int initByte)
-			: length(length) {
-			::memset(
-				GetBufferSetLength( (sizeof(T)*length+sizeof(TCHAR)-1)/sizeof(TCHAR) ),
-				initByte, sizeof(T)*length
-			);
+		CSharedPodArray(TIndex length=0,TCHAR initByte=0)
+			: CSharedPodPtr( initByte, sizeof(T)*length )
+			, length(length) {
 		}
 		CSharedPodArray(TIndex length,const T *pCopyInitData)
 			: CSharedPodPtr( *pCopyInitData, sizeof(T)*length )

@@ -726,10 +726,8 @@
 					return nSectorsFound;
 				if (!ses) // comparison failure?
 					break;
-				if (ses.length==0){ // neighboring Revolutions bitwise identical?
-					ses.reset();
+				if (ses.length==0) // neighboring Revolutions bitwise identical?
 					continue;
-				}
 				// : marking different Bits as Fuzzy
 				iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
 				// : inheriting fuzzyness from previous Revolution
@@ -1942,7 +1940,7 @@
 		// - normalization
 		const DWORD iModifStart=iNextTime;
 		DWORD iTime=iModifStart;
-		const CSharedLogTimes buffer( GetBufferCapacity(), 0 );
+		const CSharedLogTimes buffer( GetBufferCapacity() );
 		const PLogTime ptModified=buffer;
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions

@@ -209,7 +209,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// ctor
 		// - initialization
 		: cylinder(cyl) , head(head) , codec(codec)
-		, sectors( nSectors, 0 ) {
+		, sectors( nSectors ) {
 		TInternalTrack::TSectorInfo *psi=sectors;
 		for( TSector s=0; s<nSectors; psi++->seqNum=s++ ){
 			psi->length=fdd->GetUsableSectorLength(( psi->id=*bufferId++ ).lengthCode );
