@@ -724,12 +724,9 @@
 				ses=iRev.GetShortestEditScript( jRev, ap.CreateSubactionProgress(StepGranularity) );
 				if (ap.Cancelled)
 					return nSectorsFound;
-				if (!ses) // comparison failure?
-					break;
-				if (ses.length==0) // neighboring Revolutions bitwise identical?
-					continue;
-				// : marking different Bits as Fuzzy
-				iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
+				// : marking different Bits neighboring Revolutions as Fuzzy
+				if (ses.length) // bitwise different?
+					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
 				// : inheriting fuzzyness from previous Revolution
 				iRev.InheritFlagsFrom( jRev, ses, ses.length );
 			}
