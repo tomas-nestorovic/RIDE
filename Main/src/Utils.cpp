@@ -1431,9 +1431,10 @@ namespace Utils{
 
 	#define ERROR_BUFFER_SIZE	220
 
-	PTCHAR FormatErrorCode(PTCHAR buf,TStdWinError errCode){
+	static PTCHAR FormatErrorCode(PTCHAR buf,TStdWinError errCode){
 		// generates into Buffer a message corresponding to the ErrorCode; assumed that the Buffer is at least ERROR_BUFFER_SIZE characters big
 		WCHAR msg[ERROR_BUFFER_SIZE];
+		*msg='\0';
 		if (errCode<=12000 || errCode>USHRT_MAX)
 			// "standard" or COM (HRESULT) error
 			::FormatMessageW(
