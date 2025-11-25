@@ -25,7 +25,7 @@ using namespace Charting;
 	typedef CImage::CTrackReader::PCRegion PCRegion;
 
 	#define MSG_FUZZY_NAVIGATION	_T("This fuzzy bit has no counterpart in any revolution")
-	#define MSG_INSPECTION_APPROXIMATE _T("Inspection may vary during operation on real hardware")
+	#define MSG_INSPECTION_APPROXIMATE _T("Inspection may vary when run on real hardware")
 
 	#define INI_SECTION	_T("imgte")
 	#define INI_DECADIC	_T("dec")

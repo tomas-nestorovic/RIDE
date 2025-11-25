@@ -157,7 +157,7 @@ using namespace Yahel;
 				position=std::min<TPosition>( lOff, dataTotalLength );
 				break;
 			case SeekPosition::end:
-				position=std::max<TPosition>( dataTotalLength-lOff, 0 );
+				position=std::max( dataTotalLength-lOff, 0LL );
 				break;
 			default:
 				ASSERT(FALSE);

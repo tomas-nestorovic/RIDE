@@ -1602,7 +1602,7 @@ namespace Utils{
 					::GetWindowRect( hMsgBox, &r );
 					::SetWindowPos(	hMsgBox, 0,
 									0,0,
-									std::max<int>( r.Width(), checkBoxSize.cx+2*CHECKBOX_MARGIN ),  r.Height()+CHECKBOX_MARGIN+checkBoxSize.cy,
+									std::max( r.Width(), (int)checkBoxSize.cx+2*CHECKBOX_MARGIN ),  r.Height()+CHECKBOX_MARGIN+checkBoxSize.cy,
 									SWP_NOZORDER | SWP_NOMOVE
 								);
 					// . creating the CheckBox

@@ -21,7 +21,7 @@ namespace UxTheme
 	static HMODULE hLib;
 
 	inline PVOID GetProcedure(LPCSTR procName){
-		return	GetProcedure( hLib, "UxTheme.dll", procName );
+		return	GetProcedure( hLib, "UxTheme", procName );
 	}
 
 	HTHEME OpenThemeData(HWND hwnd,LPCWSTR pszClassList){
@@ -57,7 +57,7 @@ namespace Lib
 	static HMODULE hLib;
 
 	inline PVOID GetProcedure(LPCSTR procName){
-		return	GetProcedure( hLib, "SetupAPI.dll", procName );
+		return	GetProcedure( hLib, "SetupAPI", procName );
 	}
 
 	HDEVINFO GetClassDevs(
@@ -197,7 +197,7 @@ namespace Lib
 	static HMODULE hLib;
 
 	inline PVOID GetProcedure(LPCSTR procName){
-		return	GetProcedure( hLib, "WinUsb.dll", procName );
+		return	GetProcedure( hLib, "WinUsb", procName );
 	}
 
 	BOOL Initialize(
@@ -401,7 +401,7 @@ namespace CAPS
 	typedef PCHAR  (__cdecl *CAPSHOOKS)(...);
 
 	inline PVOID GetProcedure(LPCSTR procName){
-		return	GetProcedure( hLib, "CAPSimg.dll", procName );
+		return	GetProcedure( hLib, "CAPSimg", procName );
 	}
 
 	SDWORD GetVersionInfo(PVOID pversioninfo, UDWORD flag){

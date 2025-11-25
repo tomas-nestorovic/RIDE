@@ -227,8 +227,8 @@ typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
 #include "DialogEmptySpaceFilling.h"
 #include "DialogRealDeviceSelection.h"
 
-#define DLL_SHELL32		_T("shell32.dll")
-#define DLL_WININET		_T("wininet.dll")
+#define DLL_SHELL32		_T("shell32")
+#define DLL_WININET		_T("wininet")
 
 #define APP_FULLNAME	_T("Real and Imaginary Disk Editor")
 #define APP_ABBREVIATION "RIDE"
