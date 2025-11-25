@@ -830,9 +830,9 @@
 		CParseEventList peSector;
 		const TFdcStatus st=ReadData( id, idEndTime, idEndProfile, nBytesToRead, &peSector );
 		for each( const auto &pair in peSector ){
-			const TParseEventPtr pe=pair.second;
-			if (pe->IsDataStd()){
-				::memcpy( buffer, pe.data->bytes, pe.data->GetByteCount() );
+			const auto &peData=*(PCDataParseEvent)pair.second; // assumption
+			if (peData.IsDataStd()){ // confirm above assumption that ParseEvent contains Sector data
+				::memcpy( buffer, peData.bytes, peData.GetByteCount() );
 				break;
 			}
 		}

@@ -554,16 +554,6 @@
 				inline PByteInfo GetByteInfos() const{ return (PByteInfo)(bytes+GetByteCount()); }
 			} *PCDataParseEvent;
 
-			struct TParseEventPtr sealed{
-				union{
-					PCDataParseEvent data;
-					PCParseEvent gen; // any other non-customized ParseEvent
-				};
-
-				inline TParseEventPtr(PCParseEvent pe){ gen=pe; }
-				inline PCParseEvent operator->() const{ return gen; }
-			};
-
 			class CParseEventList:private Utils::CPodList<TParseEvent>{
 				DWORD peTypeCounts[TParseEvent::LAST];
 

@@ -19,8 +19,6 @@ using namespace Charting;
 	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 	typedef const TParseEvent *PCParseEvent;
 
-	typedef CImage::CTrackReader::TParseEventPtr TParseEventPtr;
-
 	typedef CImage::CTrackReader::TRegion TRegion,*PRegion;
 	typedef CImage::CTrackReader::PCRegion PCRegion;
 
@@ -157,30 +155,31 @@ using namespace Charting;
 								const int nUnitsPerByte=te.timeline.GetUnitCount( CImage::GetActive()->EstimateNanosecondsPerOneByte() );
 								const enum{ BI_NONE, BI_MINIMAL, BI_FULL } showByteInfo = nUnitsPerByte>byteInfoSizeMin.cx ? BI_FULL : nUnitsPerByte>1 ? BI_MINIMAL : BI_NONE;
 								for( auto it=peList.GetIterator(); continuePainting&&it; ){
-									const TParseEventPtr pe=it++->second;
-									if (const auto ti=pe->Intersect(visible)){ // ParseEvent visible?
+									const auto &pe=*(it++->second);
+									if (const auto ti=pe.Intersect(visible)){ // ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
-										RECT rcLabel={ te.timeline.GetClientUnits(pe->tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
-										const COLORREF textColor=TParseEvent::TypeColors[pe->type];
+										RECT rcLabel={ te.timeline.GetClientUnits(pe.tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
+										const COLORREF textColor=TParseEvent::TypeColors[pe.type];
 								{		EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id ){
-												::SelectObject( dc, parseEventBrushes[pe->type] );
+												::SelectObject( dc, parseEventBrushes[pe.type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
 												::SetTextColor( dc, textColor );
-												::DrawText( dc, pe->GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+												::DrawText( dc, pe.GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 								}		if (!continuePainting) // new paint request?
 											break;
-										if (showByteInfo && pe->IsDataAny()){
+										if (showByteInfo && pe.IsDataAny()){
+											const auto &peData=(const CImage::CTrackReader::TDataParseEvent &)pe;
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
-											const auto *const pis=pe.data->GetByteInfos();
+											const auto *const pis=peData.GetByteInfos();
 											WORD i=0;
-											for( const TLogTime dt=ti.tStart-pe.data->tStart; pis[i].dtStart<dt; i++ ); // skip invisible part
+											for( const TLogTime dt=ti.tStart-peData.tStart; pis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
 											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
-											while (continuePainting && i<pe.data->GetByteCount()){ // draw visible part
+											while (continuePainting && i<peData.GetByteCount()){ // draw visible part
 												const auto &bi=pis[i];
-												const TLogTime tByteStart=pe.data->GetByteTime(i);
+												const TLogTime tByteStart=peData.GetByteTime(i);
 												if (ti.tEnd<tByteStart) // past the visible part?
 													break;
 												EXCLUSIVELY_LOCK(p.params);
@@ -191,7 +190,7 @@ using namespace Charting;
 															break;
 														case BI_FULL:{
 															rcLabel.left=2+g.PerpLine( tByteStart, 0, fullBiLineHeight );
-															const BYTE b=pe.data->bytes[i];
+															const BYTE b=peData.bytes[i];
 															::DrawText(
 																dc,
 																label,	::wsprintf( label, byteInfoFormat, ::isprint(b)?b:'?', b ),
