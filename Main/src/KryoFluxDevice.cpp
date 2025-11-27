@@ -697,7 +697,7 @@
 				for each( auto &ris in pit->sectors ){
 					pit->ReadSector( ris, r );
 					const auto &rev=ris.revolutions[r];
-					if (pit->GetIndexTime(i)<rev.dataEndTime){ // data over index?
+					if (pit->GetIndexTime(i)<rev.dataFieldEndTime){ // data over index?
 						hasDataOverIndex=true;
 						if (i+1==pit->GetIndexCount()){
 							nHealthySectors=0; // can't use the last Revolution if it has data over index

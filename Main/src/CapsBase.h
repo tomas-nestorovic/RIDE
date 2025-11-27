@@ -28,7 +28,7 @@
 				TLogTime idEndTime;
 				CTrackReader::TProfile idEndProfile;
 				CTrackReader::TDataParseEvent *peData;
-				TLogTime dataEndTime;
+				TLogTime dataFieldEndTime;
 				TFdcStatus fdcStatus;
 
 				inline bool HasDataReady() const{ return peData!=nullptr || fdcStatus.DescribesMissingDam(); }

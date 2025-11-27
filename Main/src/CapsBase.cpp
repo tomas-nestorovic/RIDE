@@ -362,7 +362,7 @@
 			if (!currRev.fdcStatus.DescribesMissingDam()){ // "some" data found
 				peOwner.Add(peData);
 				currRev.peData=(TDataParseEvent *)&*peData;
-				currRev.dataEndTime=GetCurrentTime();
+				currRev.dataFieldEndTime=GetCurrentTime();
 			}
 		}
 	}
