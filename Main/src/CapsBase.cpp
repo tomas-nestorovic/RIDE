@@ -137,14 +137,6 @@
 		RewindToIndex(0);
 	}
 
-	CCapsBase::CInternalTrack::~CInternalTrack(){
-		// dtor
-		for each( const TInternalSector &ris in sectors )
-			for each( auto &r in ris.revolutions )
-				if (const PVOID data=r.data)
-					::free(data);
-	}
-
 	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags){
 		// creates and returns a Track decoded from underlying CAPS Track representation
 		// - at least one full Revolution must be available
@@ -354,21 +346,22 @@
 		else if (!IsValidSectorLengthCode(ris.id.lengthCode))
 			// e.g. invalid for copy-protection marks (Sector with LengthCode 167 has no data)
 			currRev.fdcStatus.ExtendWith( TFdcStatus::NoDataField );
-		else if (!currRev.data){ // data not yet buffered
+		else if (!currRev.peData){ // data not yet buffered
 			// at least Sector's ID Field found in specified Revolution
 			if (currRev.fdcStatus.DescribesMissingDam()) // known from before that data don't exist?
 				return;
 			const WORD sectorOfficialLength=ris.GetOfficialSectorLength();
-			BYTE buffer[16384]; // big enough to contain the longest possible Sector
+			CSharedParseEventPtr peData(0);
 			currRev.fdcStatus.ExtendWith(
 				ReadData(
 					ris.id,
 					currRev.idEndTime, currRev.idEndProfile,
-					sectorOfficialLength, buffer
+					sectorOfficialLength, &peData, nullptr
 				)
 			);
 			if (!currRev.fdcStatus.DescribesMissingDam()){ // "some" data found
-				currRev.data=(PSectorData)::memcpy( ::malloc(sectorOfficialLength), buffer, sectorOfficialLength );
+				peOwner.Add(peData);
+				currRev.peData=(TDataParseEvent *)&*peData;
 				currRev.dataEndTime=GetCurrentTime();
 			}
 		}
@@ -383,11 +376,11 @@
 				const auto &refRev=ris.revolutions[ris.dirtyRevolution];
 				for( BYTE r=0; r<ris.nRevolutions; r++ ){
 					const auto &rev=ris.revolutions[r];
-					if (const PSectorData data=rev.data)
+					if (rev.peData)
 						WriteData( // spreading referential data across each Revolution
 							rev.idEndTime, rev.idEndProfile,
 							sectorOfficialDataLength,
-							(PCBYTE)::memcpy( data, refRev.data, sectorOfficialDataLength ),
+							( const_cast<TDataParseEvent *&>(rev.peData)=refRev.peData )->bytes,
 							refRev.fdcStatus
 						);
 				}
@@ -675,7 +668,7 @@
 				// . returning (any) Data
 				*outDataStarts++=optRev->idEndTime;
 				*outFdcStatuses++=optRev->fdcStatus;
-				*outBufferData++=optRev->data;
+				*outBufferData++=optRev->peData->bytes;
 				//*outBufferLengths++=... // already set above
 			}
 		else

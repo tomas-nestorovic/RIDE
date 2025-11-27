@@ -27,12 +27,12 @@
 			struct{
 				TLogTime idEndTime;
 				CTrackReader::TProfile idEndProfile;
-				PSectorData data;
+				CTrackReader::TDataParseEvent *peData;
 				TLogTime dataEndTime;
 				TFdcStatus fdcStatus;
 
-				inline bool HasDataReady() const{ return data!=nullptr || fdcStatus.DescribesMissingDam(); }
-				inline bool HasGoodDataReady() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
+				inline bool HasDataReady() const{ return peData!=nullptr || fdcStatus.DescribesMissingDam(); }
+				inline bool HasGoodDataReady() const{ return peData!=nullptr && fdcStatus.IsWithoutError(); }
 			} revolutions[Revolution::MAX];
 			BYTE nRevolutions;
 			BYTE currentRevolution;
@@ -47,6 +47,8 @@
 		typedef const TInternalSector *PCInternalSector,&RCInternalSector;
 
 		typedef class CInternalTrack sealed:public CTrackReaderWriter{
+			CParseEventList peOwner;
+
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,BYTE nRevs,UDWORD lockFlags);
@@ -55,8 +57,6 @@
 			const Utils::CSharedPodArray<TInternalSector,TSector> sectors;
 			bool modified;
 			
-			~CInternalTrack();
-
 			void ReadSector(TInternalSector &ris,BYTE rev);
 			void FlushSectorBuffers();
 		} *PInternalTrack;

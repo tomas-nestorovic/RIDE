@@ -554,6 +554,8 @@
 				inline PByteInfo GetByteInfos() const{ return (PByteInfo)(bytes+GetByteCount()); }
 			} *PCDataParseEvent;
 
+			typedef Utils::CSharedPodPtr<TParseEvent> CSharedParseEventPtr;
+
 			class CParseEventList:private Utils::CPodList<TParseEvent>{
 				DWORD peTypeCounts[TParseEvent::LAST];
 
@@ -583,7 +585,7 @@
 				CParseEventList();
 				CParseEventList(CParseEventList &&r); // move-ctor
 
-				void Add(const Utils::CSharedPodPtr<TParseEvent> &ptr);
+				void Add(const CSharedParseEventPtr &ptr);
 				void Add(const TParseEvent &pe);
 				void Add(const CParseEventList &list);
 				CIterator GetIterator() const;
@@ -607,8 +609,8 @@
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents);
+			TFdcStatus ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents);
 		public:
 			typedef const struct TRegion:public TLogTimeInterval{
 				COLORREF color;
@@ -759,8 +761,7 @@
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
 			CParseEventList ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis=true);
-			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents);
-			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer);
+			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutAllParseEvents);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		//#ifdef _DEBUG

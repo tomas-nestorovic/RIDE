@@ -568,7 +568,7 @@
 		WORD nDataEnds=0;
 		for( WORD s=0; s<nSectorsFound; s++ ){
 			CParseEventList peSector;
-			if (!ReadData( pOutFoundSectors[s], pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), &peSector ).DescribesMissingDam()
+			if (!ReadData( pOutFoundSectors[s], pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), nullptr, &peSector ).DescribesMissingDam()
 				&&
 				*this // not end of Track (aka. data complete)
 			){
@@ -810,33 +810,19 @@
 		return peTrack;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CParseEventList *pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:
-				return	ReadDataFm( id, nBytesToRead, pOutParseEvents );
+				return	ReadDataFm( id, nBytesToRead, pOutDataPe, pOutParseEvents );
 			case Codec::MFM:
-				return	ReadDataMfm( id, nBytesToRead, pOutParseEvents );
+				return	ReadDataMfm( id, nBytesToRead, pOutDataPe, pOutParseEvents );
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
 				return TFdcStatus::NoDataField;
 		}
-	}
-
-	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,LPBYTE buffer){
-		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
-		CParseEventList peSector;
-		const TFdcStatus st=ReadData( id, idEndTime, idEndProfile, nBytesToRead, &peSector );
-		for each( const auto &pair in peSector ){
-			const auto &peData=*(PCDataParseEvent)pair.second; // assumption
-			if (peData.IsDataStd()){ // confirm above assumption that ParseEvent contains Sector data
-				::memcpy( buffer, peData.bytes, peData.GetByteCount() );
-				break;
-			}
-		}
-		return st;
 	}
 
 //#ifdef _DEBUG
@@ -1171,7 +1157,7 @@
 		r.RemoveAll();
 	}
 
-	void CImage::CTrackReader::CParseEventList::Add(const Utils::CSharedPodPtr<TParseEvent> &ptr){
+	void CImage::CTrackReader::CParseEventList::Add(const CSharedParseEventPtr &ptr){
 		// - creating a copy of the ParseEvent
 		TParseEvent &pe=*ptr;
 		ASSERT( pe.tStart<pe.tEnd );
@@ -1189,7 +1175,7 @@
 
 	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
 		// adds copy of the specified ParseEvent into this List
-		Add( Utils::CSharedPodPtr<TParseEvent>(pe,pe.size) );
+		Add( CSharedParseEventPtr(pe,pe.size) );
 	}
 
 	void CImage::CTrackReader::CParseEventList::Add(const CParseEventList &list){
@@ -1305,7 +1291,7 @@
 		return 0;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
 		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
@@ -1442,7 +1428,7 @@
 		return nSectors;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CParseEventList *pOutParseEvents){
+	TFdcStatus CImage::CTrackReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
@@ -1478,7 +1464,7 @@
 		if (pOutParseEvents)
 			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
-		TDataParseEvent peData( sectorId, TimelyFromPrevious );
+		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
 		WORD nDataBytes=0;
 		while (nDataBytes<nBytesToRead){
@@ -1494,26 +1480,27 @@
 			peData.bytes, nDataBytes
 		);
 		peData.Finalize( currentTime, nDataBytes );
-		if (!*this){
-			if (pOutParseEvents && nDataBytes)
-				pOutParseEvents->Add( peData );
-			return result;
+		const CSharedParseEventPtr peDataPtr( peData, peData.size );
+		if (nDataBytes){
+			if (pOutDataPe)
+				*pOutDataPe=peDataPtr;
+			if (pOutParseEvents)
+				pOutParseEvents->Add(peDataPtr);
 		}
+		if (!*this)
+			return result;
 		// - comparing Data Field's CRC
 		DWORD dw;
 		const CFloppyImage::TCrc16 crcReported= ReadBits32(dw) ? Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian() : 0;
 		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
-			if (pOutParseEvents){
-				pOutParseEvents->Add( peData );
+			if (pOutParseEvents)
 				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
-			}
-		}else
-			if (pOutParseEvents){
-				peData.type=TParseEvent::DATA_OK;
-				pOutParseEvents->Add( peData );
+		}else{
+			peDataPtr->type=TParseEvent::DATA_OK;
+			if (pOutParseEvents)
 				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
-			}
+		}
 		return result;
 	}
 

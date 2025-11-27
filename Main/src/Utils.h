@@ -22,6 +22,7 @@ namespace Utils{
 
 		inline T &operator*() const{ return *(T *)operator LPCTSTR(); }
 		inline T *operator->() const{ return (T *)operator LPCTSTR(); }
+		inline bool operator==(const T *other) const{ return operator->()==other; }
 	};
 
 	static_assert( sizeof(CSharedPodPtr<BYTE>)==sizeof(CString), "can't easily retype these two, e.g. '(CSharedPodPtr)myAfxStr'" );
