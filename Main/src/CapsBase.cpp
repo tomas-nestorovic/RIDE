@@ -372,17 +372,17 @@
 		for each( const TInternalSector &ris in sectors )
 			if (ris.dirtyRevolution<Revolution::MAX){
 				// Sector has been modified
-				const WORD sectorOfficialDataLength=ris.GetOfficialSectorLength();
 				const auto &refRev=ris.revolutions[ris.dirtyRevolution];
-				for( BYTE r=0; r<ris.nRevolutions; r++ ){
+				for( BYTE r=0; r<ris.nRevolutions; r++ ){ // spread reference data across all Revolutions
 					const auto &rev=ris.revolutions[r];
-					if (rev.peData)
-						WriteData( // spreading referential data across each Revolution
+					if (rev.peData){
+						::memcpy( rev.peData->bytes, refRev.peData->bytes, std::min(rev.peData->GetByteCount(),refRev.peData->GetByteCount()) );
+						WriteData(
 							rev.idEndTime, rev.idEndProfile,
-							sectorOfficialDataLength,
-							( const_cast<TDataParseEvent *&>(rev.peData)=refRev.peData )->bytes,
+							rev.peData->GetByteCount(), rev.peData->bytes,
 							refRev.fdcStatus
 						);
+					}
 				}
 				//ris.dirtyRevolution=Revolution::NONE; // commented out - particular Revolution remains "selected" until the end of this session
 			}
