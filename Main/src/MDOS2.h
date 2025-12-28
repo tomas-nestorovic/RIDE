@@ -210,7 +210,6 @@
 		TLogSector __fyzlog__(RCPhysicalAddress chs) const;
 		TPhysicalAddress __logfyz__(TLogSector ls) const;
 		PSectorData __getHealthyLogicalSectorData__(TLogSector logSector) const;
-		void __markLogicalSectorAsDirty__(TLogSector logSector) const;
 		WORD __getLogicalSectorFatItem__(TLogSector logSector) const;
 		bool __setLogicalSectorFatItem__(TLogSector logSector,WORD value12) const;
 		void InitializeEmptyMedium(CFormatDialog::PCParameters params,CActionProgress &ap) override;

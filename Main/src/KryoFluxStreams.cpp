@@ -49,7 +49,7 @@
 
 	bool CKryoFluxStreams::SetNameBase(LPCTSTR fullName){
 		// True <=> a valid naming pattern has been recognized, otherwise False
-		LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-2-1-1-1-3; // see the TrackNamingPattern
+		LPCTSTR trackIdentifier=fullName+::lstrlen(fullName)-(sizeof("00.0.raw")-1); // see the TrackNamingPattern
 		int cyl; char head;
 		if (trackIdentifier>fullName // sufficiently long name?
 			&&

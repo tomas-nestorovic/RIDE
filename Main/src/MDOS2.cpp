@@ -67,10 +67,6 @@
 		// returns data of LogicalSector, or Null of such Sector is unreadable or doesn't exist
 		return image->GetHealthySectorData( __logfyz__(logSector) );
 	}
-	void CMDOS2::__markLogicalSectorAsDirty__(TLogSector logSector) const{
-		// marks given LogicalSector as dirty
-		image->MarkSectorAsDirty( __logfyz__(logSector) );
-	}
 
 	#define FAT_ITEMS_IN_SECTOR	341 /* # of items in FAT12's single Sector */
 

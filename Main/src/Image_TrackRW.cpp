@@ -1832,6 +1832,7 @@
 
 	bool CImage::CTrackReaderWriter::WriteBits(const bool *bits,DWORD nBits){
 		// True <=> specified amount of Bits in the buffer has successfully overwritten "nBits" immediatelly following the CurrentTime, otherwise False
+		ASSERT(nBits>0);
 		// - determining the number of current "ones" in the immediatelly next "nBits" cells
 		const TLogTime tOverwritingStart=currentTime;
 		const TProfile overwritingStartProfile=profile;

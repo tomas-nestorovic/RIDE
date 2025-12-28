@@ -628,13 +628,14 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		const LPCWPSTRUCT pcws=(LPCWPSTRUCT)lParam;
 		if (pcws->message==WM_INITDIALOG){
 			::SetDlgItemText( pcws->hwnd, ID_DRIVEA, ofn_shortcutHint );
-			if (const HWND hComment=::GetDlgItem( pcws->hwnd, ID_COMMENT )){
+			if (const HWND hHyperlink=::GetDlgItem( pcws->hwnd, ID_DRIVEA )){
 				// initializing the customized part of the dialog
+				::SendMessage( hHyperlink, WM_SETFONT, ::SendMessage(::GetActiveWindow(),WM_GETFONT,0,0), TRUE );
 				Utils::CRideDialog::SetDlgItemSingleCharUsingFont(
 					pcws->hwnd, ID_COMMENT,
 					L'\xf0e8', (HFONT)Utils::CRideFont(FONT_WINGDINGS,190,false,true).Detach() // a thick arrow right
 				);
-				::PostMessage( hComment, WM_SHOW_HINT, 0, (LPARAM)INI_MSG_REAL_DEVICES );
+				::PostMessage( hHyperlink, WM_SHOW_HINT, 0, (LPARAM)INI_MSG_REAL_DEVICES );
 			}
 		}else if (pcws->message==WM_NOTIFY)
 			switch (Utils::CRideDialog::GetClickedHyperlinkId(pcws->lParam)){

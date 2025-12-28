@@ -1846,7 +1846,7 @@ BEGIN
     CONTROL         "&Verify formatted/written tracks (recommended)",
                     ID_VERIFY_TRACK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     241,211,10
-    CONTROL         "Verify sectors marked as bad in FAT",ID_VERIFY_SECTOR,
+    CONTROL         "Verify sectors marked as &bad in FAT",ID_VERIFY_SECTOR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,252,200,10
 END
 

@@ -300,8 +300,8 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - grow before calling base (for current Cyl/Head dimensions mustn't be the cause of failure)
-		const UDWORD nNewCylsMax=std::max<UDWORD>( capsImageInfo.maxcylinder, cyl ); // inclusive!
-		const UDWORD nNewHeadsMax=std::max<UDWORD>( capsImageInfo.maxhead, head ); // inclusive!
+		const UDWORD nNewCylsMax=std::max( capsImageInfo.maxcylinder, (UDWORD)cyl ); // inclusive!
+		const UDWORD nNewHeadsMax=std::max( capsImageInfo.maxhead, (UDWORD)head ); // inclusive!
 {		const auto mc0=Utils::CVarTempReset<UDWORD>( capsImageInfo.maxcylinder, nNewCylsMax );
 		const auto mh0=Utils::CVarTempReset<UDWORD>( capsImageInfo.maxhead, nNewHeadsMax );
 		if (const TStdWinError err=__super::FormatTrack( cyl, head, codec, nSectors, bufferId, bufferLength, bufferFdcStatus, gap3, fillerByte, cancelled ))
