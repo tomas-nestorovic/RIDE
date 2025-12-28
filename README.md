@@ -57,13 +57,15 @@ Dumping is the second way of creating a disk. A typical scenario of a collecting
 
 Here I'd like to pinpoint some highlights that RIDE can offer for your retro-computing archeology:
 
-- It attempts to bridge the gap between classical "import/export tools" and a simple data recovery applications in the realm of free software.
-- It can automatically recognize the disk operating system (DOS) and corresponding disk format without user's intervention. Just insert the disk, access it via RIDE and immediatelly work with the files.
-- It supports the hard-to-find _MDOS 2.0_ filing system (originally developed by _Didaktik_).
-- It can read/write/format non-standard _MS-DOS_ track structures, including FAT32 for hard-drive images (Master Boot Record currently not supported, however).
-- It doesn't attempt to shield you from any information available in a given filing system – even critical values are at your disposal.
-- It allows you to at least dump sectors of unsupported filesystems, including the most common errors (usually part of a copy-protection scheme).
-- It supports high-DPI screens.
+- It attempts to bridge the gap between classical "import/export application" and a data recovery tool in the realm of free software.
+- It automatically recognizes the [disk operating system](https://nestorovic.hyperlink.cz/ride/html/faq_supportedSystems.html) (DOS) and corresponding disk format without user's intervention (though the user may step in). Just insert the disk, access it via RIDE and immediatelly work with the files.
+- It supports [various real devices](https://nestorovic.hyperlink.cz/ride/html/faq_realFdd.html) connected locally, such as KryoFlux or Greaseweazle.
+- It doesn't make assumptions about track layout – even non-standard tracks can be read/written/formatted.
+- It doesn't attempt to shield you from any information available in a given filesystem – even critical values are at your disposal (look for _Advanced_ sections; if you mess them up, then unfortunately _you_ fix them).
+- It allows you to at least browse, edit, and eventually dump sectors of unsupported filesystems.
+- It supports high-DPI screens in Windows (no blurring).
+- It is portable, has minimal system requirements, and doesn't depend on third-party libraries – Windows native libraries is all that you need (my oldest testing environment is thus a 1990's desktop with MMX processor, 80 MB RAM, and running Windows XP).
+- It [can run in Linux](https://nestorovic.hyperlink.cz/ride/html/faq_linux.html).
 
 # Compilation and Running (no installation needed, ever!)
 RIDE needs Visual Studio 2010 or higher to compile, and Windows XP or higher to run. After cloning the repository, simply click _Build → Build Solution_ while having selected either the _Debug_ or _Release_ configuration, and that's it.
