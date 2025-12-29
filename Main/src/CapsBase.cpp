@@ -379,7 +379,7 @@
 						::memcpy( rev.peData->bytes, refRev.peData->bytes, std::min(rev.peData->GetByteCount(),refRev.peData->GetByteCount()) );
 						WriteData(
 							rev.idEndTime, rev.idEndProfile,
-							rev.peData->GetByteCount(), rev.peData->bytes,
+							*rev.peData,
 							refRev.fdcStatus
 						);
 					}

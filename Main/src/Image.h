@@ -772,8 +772,8 @@
 
 		class CTrackReaderWriter:public CTrackReader{
 			bool WriteBits(const bool *bits,DWORD nBits);
-			WORD WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
-			WORD WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
+			bool WriteDataFm(TDataParseEvent &peData,TFdcStatus sr);
+			bool WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr);
 		public:
 			static const CTrackReaderWriter Invalid;
 
@@ -798,7 +798,7 @@
 			void TrimToTimesCount(DWORD nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();
-			WORD WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr);
+			bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr);
 			TStdWinError Normalize();
 			TStdWinError NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
 			CTrackReaderWriter &Reverse();

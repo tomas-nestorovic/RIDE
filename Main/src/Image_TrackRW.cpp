@@ -1298,11 +1298,11 @@
 		return TFdcStatus::SectorNotFound;
 	}
 
-	WORD CImage::CTrackReaderWriter::WriteDataFm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
-		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
+	bool CImage::CTrackReaderWriter::WriteDataFm(TDataParseEvent &peData,TFdcStatus sr){
+		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
 		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
-		return 0;
+		return false;
 	}
 
 
@@ -1504,8 +1504,8 @@
 		return result;
 	}
 
-	WORD CImage::CTrackReaderWriter::WriteDataMfm(WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
-		// attempts to write specified amount of Bytes in the Buffer, starting at current position; returns the amount of Bytes actually written
+	bool CImage::CTrackReaderWriter::WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr){
+		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
 		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		WORD w, sync1=0; DWORD sync23=0;
@@ -1517,12 +1517,12 @@
 		}
 		w=ReadBit(); // leaving synchronization mark behind
 		if (!*this) // Track end encountered
-			return 0;
+			return false;
 		const TLogTime tDataFieldMarkStart=logTimes[iNextTime-1]; // aligning to the synchronization mark terminal "1"
 		const TProfile dataFieldMarkProfile=profile;
 		// - a Data Field mark should follow the synchronization
 		if (!ReadBits15(w)) // Track end encountered; 15 plus 1 bit from above
-			return 0;
+			return false;
 		BYTE dam=MFM::DecodeByte(w);
 		switch (dam&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 			case 0xfa: // normal data
@@ -1534,28 +1534,30 @@
 					dam=0xfa;
 				break;
 			default:
-				return 0; // not the expected Data mark
+				return false; // not the expected Data mark
 		}
 		// - the NumberOfBytesToWrite should be the same as already written!
-		for( WORD i=nBytesToWrite; i>0; i-- )
+		for( WORD i=peData.GetByteCount(); i>0; i-- )
 			if (!ReadBits16(w)) // Track end encountered
-				return 0;
+				return false;
 		// - data should be followed by a 16-bit CRC
 		DWORD dw;
 		if (!ReadBits32(dw)) // Track end encountered
-			return 0;
+			return false;
 		// - rewinding back to the end of distorted 0xA1A1A1 synchronization mark
 		SetCurrentTimeAndProfile( tDataFieldMarkStart, dataFieldMarkProfile );
 		bool bits[(WORD)-1],*pBit=bits;
 		*pBit++=true; // the previous data bit in a distorted 0xA1 sync mark was a "1"
 		// - encoding the Data Field mark
 		pBit=MFM::EncodeByte( dam, pBit );
-		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ); // computing the CRC along the way
 		// - encoding all Buffer data
-		crc=CFloppyImage::GetCrc16Ccitt( crc, buffer, nBytesToWrite ); // computing the CRC along the way
-		for( WORD n=nBytesToWrite; n>0; n-- )
-			pBit=MFM::EncodeByte( *buffer++, pBit );
+		for( WORD n=0; n<peData.GetByteCount(); n++ )
+			pBit=MFM::EncodeByte( peData.bytes[n], pBit );
 		// - encoding computed 16-bit CRC
+		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
+			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+			peData.bytes, peData.GetByteCount()
+		);
 		if (sr.DescribesDataFieldCrcError())
 			crc=~crc;
 		pBit=MFM::EncodeWord( Utils::CBigEndianWord(crc).GetBigEndian(), pBit ); // CRC already big-endian, converting it to little-endian
@@ -1563,9 +1565,7 @@
 		if (pBit[-1]) // CRC ends with "1" ...
 			*pBit++=false; // ... so the gap must begin with "0"
 		// - writing the Bits
-		return	WriteBits( bits+1, pBit-bits-1 ) // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
-				? nBytesToWrite
-				: 0;
+		return	WriteBits( bits+1, pBit-bits-1 ); // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
 	}
 
 	char CImage::CTrackReader::ReadByte(WORD &rOutBits,PBYTE pOutValue){
@@ -1869,15 +1869,15 @@
 		return true;
 	}
 
-	WORD CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToWrite,PCBYTE buffer,TFdcStatus sr){
-		// attempts to write specified amount of Bytes in the Buffer, starting after specified IdEndTime; returns the number of Bytes actually written
+	bool CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr){
+		// True <=> the whole DataParseEvent was written to the Track, starting after specified IdEndTime, otherwise False
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:
-				return	WriteDataFm( nBytesToWrite, buffer, sr );
+				return	WriteDataFm( peData, sr );
 			case Codec::MFM:
-				return	WriteDataMfm( nBytesToWrite, buffer, sr );
+				return	WriteDataMfm( peData, sr );
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - all Codecs should be included in the Switch statement!
 				return 0;
