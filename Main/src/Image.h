@@ -696,6 +696,12 @@
 			}
 
 			inline
+			PCLogTime GetBuffer() const{
+				// returns the inner buffer
+				return logTimes;
+			}
+
+			inline
 			TLogTime GetCurrentTime() const{
 				// returns the LogicalTime ellapsed from the beginning of recording
 				return currentTime;
@@ -764,14 +770,15 @@
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutAllParseEvents);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
-		//#ifdef _DEBUG
 			void SaveCsv(LPCTSTR filename) const;
 			void SaveDeltaCsv(LPCTSTR filename) const;
-		//#endif
+		#ifdef _DEBUG
+			void VerifyChronology() const;
+		#endif
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
-			bool WriteBits(const bool *bits,DWORD nBits);
+			bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes);
 			bool WriteDataFm(TDataParseEvent &peData,TFdcStatus sr);
 			bool WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr);
 		public:
@@ -792,6 +799,9 @@
 			DWORD GetBufferCapacity() const;
 			void AddTime(TLogTime logTime);
 			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
+			void AddByte(TLogTimeInterval &inOutAt,BYTE b);
+			void AddWord(TLogTimeInterval &inOutAt,WORD w);
+			void AddDWord(TLogTimeInterval &inOutAt,DWORD dw);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const TMetaDataItem &mdi);
 			void SetRawDeviceData(TId dataId,const Utils::CSharedBytes &data);
@@ -802,6 +812,7 @@
 			TStdWinError Normalize();
 			TStdWinError NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
 			CTrackReaderWriter &Reverse();
+			CTrackReaderWriter &Offset(TLogTime dt);
 		};
 
 		class CSectorDataSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{

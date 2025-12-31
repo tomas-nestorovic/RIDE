@@ -825,7 +825,6 @@
 		}
 	}
 
-//#ifdef _DEBUG
 	void CImage::CTrackReader::SaveCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 		for( DWORD i=0; i<nLogTimes; i++ )
@@ -838,7 +837,19 @@
 		for( DWORD i=0; i<nLogTimes; tPrev=logTimes[i++] )
 			Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i]-tPrev );		
 	}
-//#endif
+
+#ifdef _DEBUG
+	void CImage::CTrackReader::VerifyChronology() const{
+		TLogTime tPrev=INT_MIN;
+		for( DWORD i=0; i<nLogTimes; i++ )
+			if (logTimes[i]<0)
+				Utils::Information("negative");
+			else if (logTimes[i]<=tPrev)
+				Utils::Information("tachyon");
+			else
+				tPrev=logTimes[i];
+	}
+#endif
 
 
 
@@ -1317,23 +1328,24 @@
 	namespace MFM{
 		static constexpr CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
 
-		static bool *EncodeByte(BYTE byte,bool *bitBuffer){
-			bool prevDataBit=bitBuffer[-1];
-			for( BYTE mask=0x80; mask!=0; mask>>=1 )
-				if (byte&mask){ // current bit is a "1"
-					*bitBuffer++=false; // clock is a "0"
-					*bitBuffer++ = prevDataBit = true; // data is a "1"
+		static bool g_prevDataBit;
+
+		static WORD EncodeByte(BYTE byte){
+			WORD result=0;
+			for( WORD mask=0x8000; mask!=0; byte<<=1,mask>>=1 )
+				if ((char)byte<0){ // current bit is a "1"
+					mask>>=1; // clock is a "0"
+					g_prevDataBit=true, result|=mask; // data is a "1"
 				}else{ // current bit is a "0"
-					*bitBuffer++=!prevDataBit; // insert "1" clock if previous data bit was a "0"
-					*bitBuffer++ = prevDataBit = false; // data is a "0"
+					result|=!g_prevDataBit*mask, mask>>=1; // insert "1" clock if previous data bit was a "0"
+					g_prevDataBit=false; // data is a "0"
 				}
-			return bitBuffer;
+			return result;
 		}
-		static bool *EncodeWord(WORD w,bool *bitBuffer){
-			return	EncodeByte(
-						LOBYTE(w),
-						EncodeByte( HIBYTE(w), bitBuffer ) // high Byte comes first
-					);
+		static DWORD EncodeWord(WORD w){ // big-endian Word assumed
+			const WORD high=EncodeByte( LOBYTE(w) );
+			const WORD low =EncodeByte( HIBYTE(w) );
+			return	MAKELONG( low, high );
 		}
 
 		static BYTE DecodeByte(WORD w){
@@ -1515,13 +1527,11 @@
 			if ((sync1&0xffdf)==0x4489 && (sync23&0xffdfffdf)==0x44894489)
 				break;
 		}
-		w=ReadBit(); // leaving synchronization mark behind
-		if (!*this) // Track end encountered
-			return false;
-		const TLogTime tDataFieldMarkStart=logTimes[iNextTime-1]; // aligning to the synchronization mark terminal "1"
-		const TProfile dataFieldMarkProfile=profile;
+		const TLogTime tIwSynced=profile.iwTime;
+		TLogTimeInterval tiClear( currentTime+tIwSynced/2, INT_MAX ); // portion of this Track to "unformat"
 		// - a Data Field mark should follow the synchronization
-		if (!ReadBits15(w)) // Track end encountered; 15 plus 1 bit from above
+		TLogTimeInterval ti( currentTime, peData.tStart ); // Time slot for each Byte to write (yet to correctly offset below)
+		if (!ReadBits16(w)) // Track end encountered
 			return false;
 		BYTE dam=MFM::DecodeByte(w);
 		switch (dam&0xfe){ // branching on observed data address mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
@@ -1536,36 +1546,36 @@
 			default:
 				return false; // not the expected Data mark
 		}
-		// - the NumberOfBytesToWrite should be the same as already written!
-		for( WORD i=peData.GetByteCount(); i>0; i-- )
-			if (!ReadBits16(w)) // Track end encountered
+		// - write new Data Field mark to temporary storage
+		CTrackReaderWriter tmp( peData.GetByteCount()*sizeof(WORD)*CHAR_BIT, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
+		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
+		tmp.AddWord( ti, MFM::EncodeByte(dam) );
+		// - write new Bytes to temporary storage
+		for( WORD i=0; i<peData.GetByteCount(); i++ ){
+			if (!ReadBits16(w)) // Track end encountered (the # of Bytes should be the same as previously read!)
 				return false;
-		// - data should be followed by a 16-bit CRC
+			ti.tEnd=currentTime;
+			tmp.AddWord( ti, MFM::EncodeByte(peData.bytes[i]) );
+		}
+		// - write new CRC16 to temporary storage
 		DWORD dw;
-		if (!ReadBits32(dw)) // Track end encountered
+		if (!ReadBits32(dw)) // Track end encountered (the CRC doesn't fit in the Track)
 			return false;
-		// - rewinding back to the end of distorted 0xA1A1A1 synchronization mark
-		SetCurrentTimeAndProfile( tDataFieldMarkStart, dataFieldMarkProfile );
-		bool bits[(WORD)-1],*pBit=bits;
-		*pBit++=true; // the previous data bit in a distorted 0xA1 sync mark was a "1"
-		// - encoding the Data Field mark
-		pBit=MFM::EncodeByte( dam, pBit );
-		// - encoding all Buffer data
-		for( WORD n=0; n<peData.GetByteCount(); n++ )
-			pBit=MFM::EncodeByte( peData.bytes[n], pBit );
-		// - encoding computed 16-bit CRC
 		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
 			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, peData.GetByteCount()
 		);
 		if (sr.DescribesDataFieldCrcError())
 			crc=~crc;
-		pBit=MFM::EncodeWord( Utils::CBigEndianWord(crc).GetBigEndian(), pBit ); // CRC already big-endian, converting it to little-endian
-		// - writing one extra "0" bit if the CRC ends with "1" (leaving this case uncovered often leads to magnetic problems)
-		if (pBit[-1]) // CRC ends with "1" ...
-			*pBit++=false; // ... so the gap must begin with "0"
-		// - writing the Bits
-		return	WriteBits( bits+1, pBit-bits-1 ); // "1" = the auxiliary "previous" bit of distorted 0xA1 sync mark
+		ti.tEnd=currentTime;
+		tmp.AddDWord( ti, MFM::EncodeWord(crc) );
+		// - write an extra "0" bit if the CRC ends with "1" (leaving this case uncovered often leads to magnetic problems)
+		if (MFM::g_prevDataBit) // CRC ends with "1" ...
+			ReadBit(); // ... so the gap must begin with "0" (this read bit will be reset)
+		// - dump the temporary storage to this Track
+		tmp.Offset(tIwSynced); // Timing thus far offset backwards by one InspectionWindow to comply with DataParseEvent (and Decoders), hence correcting it forwards
+		tiClear.tEnd=tIwSynced+currentTime+profile.iwTime/2;
+		return	ReplaceTimes( tiClear, tmp );
 	}
 
 	char CImage::CTrackReader::ReadByte(WORD &rOutBits,PBYTE pOutValue){
@@ -1733,6 +1743,33 @@
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
+	void CImage::CTrackReaderWriter::AddByte(TLogTimeInterval &at,BYTE b){
+		// appends given Byte (most significant bit first) at the end of the Track; returns the least significant bit written
+		ASSERT( GetTotalTime()<at.tStart );
+		TLogTime tmpLogTimes[CHAR_BIT],L=at.GetLength(); BYTE nTmpLogTimes=0;
+		for( BYTE i=0; b!=0; b<<=1,i++ )
+			if ((char)b<0)
+				tmpLogTimes[nTmpLogTimes++]=at.tStart+i*L/CHAR_BIT;
+		AddTimes( tmpLogTimes, nTmpLogTimes );
+		at.tStart=at.tEnd; // advance Time in favor of the caller
+	}
+
+	void CImage::CTrackReaderWriter::AddWord(TLogTimeInterval &at,WORD w){
+		// appends given Word (most significant bit first) at the end of the Track; returns the least significant bit written
+		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
+		AddByte( TLogTimeInterval(at.tStart,tCenter), HIBYTE(w) );
+		at.tStart=tCenter; // advance Time in favor of the caller
+		AddByte( at, LOBYTE(w) );
+	}
+
+	void CImage::CTrackReaderWriter::AddDWord(TLogTimeInterval &at,DWORD dw){
+		// appends given DWord (most significant bit first) at the end of the Track; returns the least significant bit written
+		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
+		AddWord( TLogTimeInterval(at.tStart,tCenter), HIWORD(dw) );
+		at.tStart=tCenter; // advance Time in favor of the caller
+		AddWord( at, LOWORD(dw) );
+	}
+
 	void CImage::CTrackReaderWriter::AddIndexTime(TLogTime logTime){
 		// appends LogicalTime representing the position of the index pulse on the disk
 		ASSERT( nIndexPulses<=Revolution::MAX );
@@ -1830,41 +1867,30 @@
 		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
 	}
 
-	bool CImage::CTrackReaderWriter::WriteBits(const bool *bits,DWORD nBits){
-		// True <=> specified amount of Bits in the buffer has successfully overwritten "nBits" immediatelly following the CurrentTime, otherwise False
-		ASSERT(nBits>0);
-		// - determining the number of current "ones" in the immediatelly next "nBits" cells
-		const TLogTime tOverwritingStart=currentTime;
-		const TProfile overwritingStartProfile=profile;
-		DWORD nOnesPreviously=0;
-		for( DWORD n=nBits; n-->0; nOnesPreviously+=ReadBit() );
-		const TLogTime tOverwritingEnd=currentTime;
-		// - determining the number of new "ones" in the current Bits
-		DWORD nOnesCurrently=0;
-		for( DWORD n=nBits; n-->0; nOnesCurrently+=bits[n] );
-		// - overwriting the "nBits" cells with new Bits
-		SetCurrentTimeAndProfile( tOverwritingStart, overwritingStartProfile );
-		const DWORD nNewLogTimes=nLogTimes+nOnesCurrently-nOnesPreviously;
+	bool CImage::CTrackReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes){
+		// True <=> new LogicalTimes written to the cleared interval, otherwise False
+		ASSERT(writeTimes.GetTimesCount()>0);
+		ASSERT( clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
+		// - determining the number of LogicalTimes in the interval to clear
+		SetCurrentTime(clearTimes.tStart);
+		const auto iLogTimeToClearA=iNextTime;
+		SetCurrentTime(clearTimes.tEnd);
+		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
+		// - replacing the LogicalTimes
+		const DWORD nNewLogTimes=nLogTimes+writeTimes.GetTimesCount()-nLogTimesToClear;
 		if (nNewLogTimes>GetBufferCapacity())
 			return false;
-		const TLogTime tOverwritingLength=tOverwritingEnd-tOverwritingStart;
-		if (GetMetaData()) // does this Track use MetaData?
-			AddMetaData(
-				TMetaDataItem( TLogTimeInterval(tOverwritingStart,tOverwritingEnd), false, nBits )
-			);
-		const PLogTime pOverwritingStart=logTimes+iNextTime;
 		::memmove(
-			pOverwritingStart+nOnesCurrently,
-			pOverwritingStart+nOnesPreviously,
-			(nLogTimes-iNextTime-nOnesPreviously)*sizeof(TLogTime)
+			logTimes+iLogTimeToClearA+writeTimes.GetTimesCount(),
+			logTimes+iNextTime,
+			(nLogTimes-iNextTime)*sizeof(TLogTime)
 		);
 		nLogTimes=nNewLogTimes;
-		const CSharedLogTimes newLogTimesTemp(nOnesCurrently);
-			PLogTime pt=newLogTimesTemp;
-			for( DWORD i=0; i++<nBits; )
-				if (*bits++)
-					*pt++=tOverwritingStart+(LONGLONG)tOverwritingLength*i/nBits;
-			::memcpy( pOverwritingStart, newLogTimesTemp, nOnesCurrently*sizeof(TLogTime) );
+		::memcpy(
+			logTimes+iLogTimeToClearA,
+			writeTimes.GetBuffer(),
+			writeTimes.GetTimesCount()*sizeof(TLogTime)
+		);
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		return true;
 	}
@@ -2009,5 +2035,11 @@
 		}
 		pLogTimesInfo->metaData=metaData;
 		//pLogTimesInfo->rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
+		return *this;
+	}
+
+	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Offset(TLogTime dt){
+		// offsets timing in this Track
+		for( auto i=nLogTimes; i>0; logTimes[--i]+=dt );
 		return *this;
 	}
