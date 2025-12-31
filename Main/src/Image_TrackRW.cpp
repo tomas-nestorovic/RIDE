@@ -700,7 +700,7 @@
 							}
 							nBytesInspected++;
 						}
-						peData.Finalize( currentTime, nBytesInspected, TParseEvent::DATA_IN_GAP );
+						peData.Finalize( currentTime, profile, nBytesInspected, TParseEvent::DATA_IN_GAP );
 						rOutParseEvents.Add( peData );
 					}
 				}
@@ -1143,11 +1143,13 @@
 		, sectorId(sectorId) {
 	}
 
-	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,WORD nBytes,TType type){
+	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,const TProfile &profileEnd,WORD nBytes,TType type){
 		ASSERT( nBytes>0 );
 		::memcpy( bytes+nBytes, GetByteInfos(), nBytes*sizeof(TByteInfo) );
 		static_cast<TParseEvent &>(*this)=TParseEvent( type, tStart, tEnd, nBytes );
-		size=(PCBYTE)(dummy+nBytes) - (PCBYTE)this;
+		GetByteInfos()[nBytes].dtStart=tEnd-tStart; // auxiliary ByteInfo to store the end of the last Byte
+		size=(PCBYTE)(dummy+nBytes+1) - (PCBYTE)this;
+		this->profileEnd=profileEnd;
 	}
 
 
@@ -1491,7 +1493,7 @@
 			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, nDataBytes
 		);
-		peData.Finalize( currentTime, nDataBytes );
+		peData.Finalize( currentTime, profile, nDataBytes );
 		const CSharedParseEventPtr peDataPtr( peData, peData.size );
 		if (nDataBytes){
 			if (pOutDataPe)
@@ -1551,13 +1553,13 @@
 		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
 		tmp.AddWord( ti, MFM::EncodeByte(dam) );
 		// - write new Bytes to temporary storage
+		ASSERT( currentTime-profile.iwTime<peData.tStart && peData.tStart<currentTime+profile.iwTime ); // sanity check (we shouldn't be much off the original Start)
 		for( WORD i=0; i<peData.GetByteCount(); i++ ){
-			if (!ReadBits16(w)) // Track end encountered (the # of Bytes should be the same as previously read!)
-				return false;
-			ti.tEnd=currentTime;
+			ti.tEnd=peData.GetByteTime(i+1);
 			tmp.AddWord( ti, MFM::EncodeByte(peData.bytes[i]) );
 		}
 		// - write new CRC16 to temporary storage
+		SetCurrentTimeAndProfile( peData.tEnd, peData.profileEnd );
 		DWORD dw;
 		if (!ReadBits32(dw)) // Track end encountered (the CRC doesn't fit in the Track)
 			return false;

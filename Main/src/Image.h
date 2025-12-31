@@ -540,6 +540,7 @@
 					TLogTime dtStart; // offset against ParseEvent's start
 				} *PByteInfo;
 
+				TProfile profileEnd; // Profile at the end of this ParseEvent (aka. at the end of the last Byte)
 				TSectorId sectorId; // or TSectorId::Invalid
 				union{
 					struct:TByteInfo{ BYTE v; } dummy[USHRT_MAX]; // to give the structure initial maximum size
@@ -548,7 +549,7 @@
 
 				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
 
-				void Finalize(TLogTime tEnd,WORD nBytes,TType type=DATA_BAD);
+				void Finalize(TLogTime tEnd,const TProfile &profileEnd,WORD nBytes,TType type=DATA_BAD);
 				inline TLogTime GetByteTime(WORD iByte) const{ return tStart+GetByteInfos()[iByte].dtStart; }
 				inline WORD GetByteCount() const{ return w; }
 				inline PByteInfo GetByteInfos() const{ return (PByteInfo)(bytes+GetByteCount()); }
