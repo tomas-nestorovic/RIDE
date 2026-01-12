@@ -1,22 +1,17 @@
 #include "stdafx.h"
 using namespace Yahel;
 
-	#define CRC16_POLYNOM 0x1021
-
 	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(TCrc16 seed,LPCVOID bytes,WORD nBytes){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		TCrc16 result= (LOBYTE(seed)<<8) + HIBYTE(seed);
-		for( PCBYTE buffer=(PCBYTE)bytes; nBytes--; ){
-			BYTE x = result>>8 ^ *buffer++;
-			x ^= x>>4;
-			result = (result<<8) ^ (WORD)(x<<12) ^ (WORD)(x<<5) ^ (WORD)x;
-		}
-		return (LOBYTE(result)<<8) + HIBYTE(result);
+		return Checksum::Compute(
+			Checksum::TParams(Checksum::TParams::Ibm3740,seed), bytes, nBytes
+		);
 	}
 
 	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(LPCVOID bytes,WORD nBytes){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		return GetCrc16Ccitt( 0xffff, bytes, nBytes );
+		static const Checksum::TParams Params( Checksum::TParams::Ibm3740, 0xffff );
+		return Checksum::Compute( Params, bytes, nBytes );
 	}
 
 	bool CFloppyImage::IsValidSectorLengthCode(BYTE lengthCode){

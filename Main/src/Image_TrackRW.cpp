@@ -1328,7 +1328,8 @@
 
 
 	namespace MFM{
-		static constexpr CFloppyImage::TCrc16 CRC_A1A1A1=0xb4cd; // CRC of 0xa1, 0xa1, 0xa1
+
+		constexpr CFloppyImage::TCrc16 CRC_A1A1A1=0xcdb4; // CRC of 0xa1, 0xa1, 0xa1
 
 		static bool g_prevDataBit;
 
@@ -1394,14 +1395,13 @@
 			// . an ID Field mark should follow the synchronization
 			if (!ReadBits16(w)) // Track end encountered
 				break;
-			const BYTE idam=MFM::DecodeByte(w);
-			if ((idam&0xfe)!=0xfe) // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
-				continue;			
 			struct{
-				BYTE idFieldAm, cyl, side, sector, length;
-			} data={ idam };
+				BYTE idam, cyl, side, sector, length;
+			} data={ MFM::DecodeByte(w) };
+			if ((data.idam&0xfe)!=0xfe) // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
+				continue;			
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, idam ) );
+				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, data.idam ) );
 			// . reading SectorId
 			TSectorId &rid=*pOutFoundSectors++;
 			if (!ReadBits16(w)) // Track end encountered
@@ -1427,7 +1427,7 @@
 			// . reading and comparing ID Field's CRC
 			DWORD dw;
 			CFloppyImage::TCrc16 crc=0;
-			const bool crcBad=!ReadBits32(dw) || Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian()!=( crc=CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
+			const bool crcBad=!ReadBits32(dw) || MFM::DecodeWord(dw)!=( crc=CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
 			*pOutIdStatuses++ =	crcBad 
 								? TFdcStatus::IdFieldCrcError
 								: TFdcStatus::WithoutError;
@@ -1505,7 +1505,7 @@
 			return result;
 		// - comparing Data Field's CRC
 		DWORD dw;
-		const CFloppyImage::TCrc16 crcReported= ReadBits32(dw) ? Utils::CBigEndianWord(MFM::DecodeWord(dw)).GetBigEndian() : 0;
+		const CFloppyImage::TCrc16 crcReported= ReadBits32(dw) ? MFM::DecodeWord(dw) : 0;
 		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents)

@@ -429,17 +429,17 @@ using namespace Yahel;
 			return pAction->TerminateWithError( ERROR_CANCELLED );
 		if (checksum==Checksum::GetErrorValue())
 			return pAction->TerminateWithError( ERROR_FUNCTION_FAILED );
-		cpe.initValue=checksum; // reuse the field
+		cpe.seed=checksum; // reuse the field
 		return pAction->TerminateWithSuccess();
 	}
 
-	int CHexaEditor::ComputeChecksum(const Checksum::TParams &cp,const TPosInterval &range) const{
+	Checksum::T CHexaEditor::ComputeChecksum(const Checksum::TParams &cp,const TPosInterval &range) const{
 		TChecksumParamsEx cpe( cp, range, *instance );
 		if (const TStdWinError err=CBackgroundActionCancelable( Checksum_thread, &cpe, THREAD_PRIORITY_BELOW_NORMAL ).Perform())
 			return Checksum::GetErrorValue();
 		CString checksumText;
-		checksumText.Format( _T("%d (0x%X)"), cpe.initValue, cpe.initValue ); // reused during computation
-		const CString msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
+		checksumText.Format( _T("%d (0x%X)"), cpe.seed, cpe.seed ); // reused during computation
+		const CString &&msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
 		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
 			Utils::SetClipboardString( checksumText );
 		return Checksum::GetErrorValue(); // don't do default processing
