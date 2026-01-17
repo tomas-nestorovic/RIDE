@@ -1346,8 +1346,8 @@
 			return result;
 		}
 		static DWORD EncodeWord(WORD w){ // big-endian Word assumed
-			const WORD high=EncodeByte( LOBYTE(w) );
-			const WORD low =EncodeByte( HIBYTE(w) );
+			const WORD high=EncodeByte( HIBYTE(w) );
+			const WORD low =EncodeByte( LOBYTE(w) );
 			return	MAKELONG( low, high );
 		}
 
