@@ -1084,7 +1084,7 @@
 		dw=data;
 	}
 
-	CString CImage::CTrackReader::TParseEvent::GetDescription() const{
+	CString CImage::CTrackReader::TParseEvent::GetDescription(bool preferDecimalValues) const{
 		CString desc;
 		switch (type){
 			case TParseEvent::SYNC_3BYTES:
@@ -1107,12 +1107,12 @@
 			case TParseEvent::DATA_IN_GAP:
 				desc.Format( _T("Gap data (circa %d Bytes)"), dw);
 				break;
-			case TParseEvent::CRC_OK:
-				desc.Format( _T("0x%X ok CRC"), dw);
+			case TParseEvent::CRC_OK:{
+				TCHAR format[]=_T("0x%_ %s CRC");
+				format[3]= preferDecimalValues ? 'd' : 'X';
+				desc.Format( format+2*preferDecimalValues, dw, type==CRC_OK?_T("ok"):_T("bad") );
 				break;
-			case TParseEvent::CRC_BAD:
-				desc.Format( _T("0x%X bad CRC"), dw );
-				break;
+			}
 			case TParseEvent::NONFORMATTED:
 				desc.Format( _T("Nonformatted %d.%d µs"), div((int)GetLength(),1000) );
 				break;

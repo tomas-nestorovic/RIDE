@@ -165,7 +165,7 @@ using namespace Charting;
 												::SelectObject( dc, parseEventBrushes[pe.type] );
 												::PatBlt( dc, xa,-EVENT_HEIGHT, xz-xa,EVENT_HEIGHT, 0xa000c9 ); // ternary raster operation "dest AND pattern"
 												::SetTextColor( dc, textColor );
-												::DrawText( dc, pe.GetDescription(),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
+												::DrawText( dc, pe.GetDescription(te.decimalByteValues),-1, &rcLabel, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 											}
 								}		if (!continuePainting) // new paint request?
 											break;

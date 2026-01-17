@@ -830,7 +830,7 @@ BEGIN
         MENUITEM "Decoding evaluation...",      ID_INDICATOR_REC
         MENUITEM "Export...",                   ID_FILE_SAVE_AS
         MENUITEM SEPARATOR
-        MENUITEM "Decadic Byte values",         ID_NUMBER
+        MENUITEM "Prefer decimal values",       ID_NUMBER
     END
 END
 
