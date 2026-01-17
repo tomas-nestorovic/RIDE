@@ -1482,12 +1482,13 @@
 		auto *const pbi=peData.GetByteInfos();
 		WORD nDataBytes=0;
 		while (nDataBytes<nBytesToRead){
-			pbi[nDataBytes].dtStart=currentTime-tMarkEnd;
-			if (!*this || !ReadBits16(w)){ // Track end encountered
+			auto &rbi=pbi[nDataBytes];
+			rbi.dtStart=currentTime-tMarkEnd;
+			if (!*this || !ReadBits16(rbi.org.wEncoded)){ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
-			peData.bytes[ nDataBytes++ ]=MFM::DecodeByte(w);
+			peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(rbi.org.wEncoded);
 		}
 		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
 			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
@@ -1553,10 +1554,19 @@
 		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
 		tmp.AddWord( ti, MFM::EncodeByte(dam) );
 		// - write new Bytes to temporary storage
+		auto *const pbi=peData.GetByteInfos();
 		ASSERT( currentTime-profile.iwTime<peData.tStart && peData.tStart<currentTime+profile.iwTime ); // sanity check (we shouldn't be much off the original Start)
 		for( WORD i=0; i<peData.GetByteCount(); i++ ){
+			auto &org=pbi[i].org;
 			ti.tEnd=peData.GetByteTime(i+1);
-			tmp.AddWord( ti, MFM::EncodeByte(peData.bytes[i]) );
+			if (peData.bytes[i]==org.value) // Byte not changed ?
+				tmp.AddWord( ti, org.wEncoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
+			else
+				tmp.AddWord( ti,
+					org.wEncoded = MFM::EncodeByte(
+						org.value = peData.bytes[i]
+					)
+				);
 		}
 		// - write new CRC16 to temporary storage
 		SetCurrentTimeAndProfile( peData.tEnd, peData.profileEnd );

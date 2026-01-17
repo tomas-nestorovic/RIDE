@@ -537,13 +537,17 @@
 
 			typedef const struct TDataParseEvent:public TParseEvent{
 				typedef struct TByteInfo{
+					struct{
+						BYTE value;
+						WORD wEncoded;
+					} org;
 					TLogTime dtStart; // offset against ParseEvent's start
 				} *PByteInfo;
 
 				TProfile profileEnd; // Profile at the end of this ParseEvent (aka. at the end of the last Byte)
 				TSectorId sectorId; // or TSectorId::Invalid
 				union{
-					struct:TByteInfo{ BYTE v; } dummy[USHRT_MAX]; // to give the structure initial maximum size
+					struct:TByteInfo{ BYTE v; } dummy[SHRT_MAX]; // to give the structure initial maximum size
 					BYTE bytes[1];
 				};
 
