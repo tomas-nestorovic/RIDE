@@ -528,7 +528,7 @@
 				inline bool IsDataAny() const{ return IsType( DATA_OK, DATA_IN_GAP ); }
 				inline bool IsCrc() const{ return IsType( CRC_OK, CRC_BAD ); }
 				inline bool IsFuzzy() const{ return IsType( FUZZY_OK, FUZZY_BAD ); }
-				CString GetDescription() const;
+				CString GetDescription(bool preferDecimalValues=false) const;
 			} *PCParseEvent;
 
 			typedef const struct TMetaStringParseEvent:public TParseEvent{
