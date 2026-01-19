@@ -1561,12 +1561,16 @@
 			ti.tEnd=peData.GetByteTime(i+1);
 			if (peData.bytes[i]==org.value) // Byte not changed ?
 				tmp.AddWord( ti, org.wEncoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
-			else
+			else{
 				tmp.AddWord( ti,
 					org.wEncoded = MFM::EncodeByte(
 						org.value = peData.bytes[i]
 					)
 				);
+				auto &next=pbi[i+1].org;
+				if (org.wEncoded&1 && next.wEncoded>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
+					next.value=~next.value; // updated clock bits
+			}
 		}
 		// - write new CRC16 to temporary storage
 		SetCurrentTimeAndProfile( peData.tEnd, peData.profileEnd );
