@@ -668,7 +668,7 @@
 				// . returning (any) Data
 				*outDataStarts++=optRev->idEndTime;
 				*outFdcStatuses++=optRev->fdcStatus;
-				*outBufferData++=optRev->peData->bytes;
+				*outBufferData++= optRev->peData ? optRev->peData->bytes : nullptr;
 				//*outBufferLengths++=... // already set above
 			}
 		else
