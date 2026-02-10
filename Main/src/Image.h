@@ -541,6 +541,7 @@
 						BYTE value;
 						WORD wEncoded;
 					} org;
+					bool bad; // the Value is potentially wrong due to underlying low-level timing
 					TLogTime dtStart; // offset against ParseEvent's start
 				} *PByteInfo;
 
@@ -623,7 +624,7 @@
 
 			class CBitSequence sealed{
 			public:
-				typedef const struct TBit sealed{
+				struct TBitBase abstract{
 					union{
 						struct{
 							BYTE value:1; // recognized 0 or 1 from the underlying low-level timing
@@ -634,11 +635,23 @@
 						BYTE flags;
 					};
 					TLogTime time;
+				};
+				typedef const struct TBit sealed:public TBitBase{
 					int uid; // unique identifier (unused by default, set by caller)
 
 					inline bool operator==(const TBit &r) const{ return value==r.value; }
 					inline TLogTime GetLength() const{ return this[1].time-time; }
 				} *PCBit;
+				
+				template <typename T>
+				struct TData sealed:public TBitBase{
+					T value; // '__super::value' now used to indicate validity of this Data
+
+					TData(){ flags=0; } // initialized as invalid
+					inline operator bool() const{ return __super::value!=0; }
+					inline operator T() const{ return value; }
+					inline void Validate(){ __super::value=1; }
+				};
 			private:
 				Utils::CSharedPodArray<TBit> bitBuffer;
 				TBit *pBits;
@@ -646,11 +659,13 @@
 			public:
 				CBitSequence();
 				CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent=0);
+				CBitSequence(CTrackReader &tr,int nBitsFromCurrTime,BYTE oneOkPercent=0);
 				CBitSequence(const CBitSequence &base,const TLogTimeInterval &ti);
 
 				inline operator bool() const{ return nBits>0; }
 				inline TBit &operator[](int i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
 				inline int GetBitCount() const{ return nBits; }
+				TData<WORD> GetWord(int i) const;
 				PCBit Find(TLogTime t) const;
 				PCBit FindOrNull(TLogTime t) const;
 				Utils::CSharedPodArray<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
@@ -782,6 +797,8 @@
 		#endif
 		};
 
+		typedef CTrackReader::TDataParseEvent::TByteInfo *PByteInfo;
+
 		class CTrackReaderWriter:public CTrackReader{
 			bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes);
 			bool WriteDataFm(TDataParseEvent &peData,TFdcStatus sr);
@@ -902,10 +919,10 @@
 		virtual TLogTime EstimateNanosecondsPerOneByte() const;
 		TSector GetCountOfHealthySectors(TCylinder cyl,THead head) const;
 		bool IsTrackHealthy(TCylinder cyl,THead head) const;
-		virtual void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts)=0;
+		virtual void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts)=0;
 		void BufferTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors);
 		PSectorData GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD pSectorLength=nullptr,TFdcStatus *pFdcStatus=nullptr,TLogTime *outDataStart=nullptr);
-		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD pSectorLength=nullptr,TFdcStatus *pFdcStatus=nullptr,TLogTime *outDataStart=nullptr);
+		PSectorData GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD pSectorLength=nullptr,TFdcStatus *pFdcStatus=nullptr,TLogTime *outDataStart=nullptr,PByteInfo *outByteInfos=nullptr);
 		PSectorData GetHealthySectorData(TCylinder cyl,THead head,PCSectorId pid,PWORD sectorLength=nullptr,BYTE nSectorsToSkip=0);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs,PWORD sectorLength,BYTE nSectorsToSkip=0);
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs);

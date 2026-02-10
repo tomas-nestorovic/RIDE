@@ -877,11 +877,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return __bufferSectorData__( chs.cylinder, chs.head, &chs.sectorId, sectorLength, pit, nSectorsToSkip, pFdcStatus );
 	}
 
-	void CFDD::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
+	void CFDD::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr );
+		ASSERT( outBufferData!=nullptr && outByteInfos!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr );
 		// - initializing the output buffers with data retrieval failure (assumption)
 		::ZeroMemory( outBufferData, nSectors*sizeof(PSectorData) );
+		::ZeroMemory( outByteInfos, nSectors*sizeof(*outByteInfos) );
 		for( TSector i=nSectors; i>0; outFdcStatuses[--i]=TFdcStatus::SectorNotFound );
 		// - getting the real data for the Sectors
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
@@ -2016,7 +2017,7 @@ formatStandardWay:
 					LOG_ACTION(_T("track verification"));
 					PVOID dummyBuffer[(TSector)-1];
 					TFdcStatus statuses[(TSector)-1];
-					GetTrackData( cyl, head, Revolution::ANY_GOOD, bufferId, Utils::CByteIdentity(), nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+					GetTrackData( cyl, head, Revolution::ANY_GOOD, bufferId, Utils::CByteIdentity(), nSectors, (PSectorData *)dummyBuffer, (PByteInfo *)dummyBuffer, (PWORD)dummyBuffer, statuses, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 					for( TSector n=0; n<nSectors; n++ ){
 						const TPhysicalAddress chs={ cyl, head, bufferId[n] };
 						if (!statuses[n].IsWithoutError())

@@ -1069,14 +1069,14 @@ namespace Medium{
 		LOG_TRACK_ACTION(cyl,head,_T("void CImage::BufferTrackData"));
 		PVOID dummyBuffer[(TSector)-1];
 		TFdcStatus statuses[(TSector)-1];
-		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PWORD)dummyBuffer, statuses, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
+		GetTrackData( cyl, head, rev, bufferId, bufferNumbersOfSectorsToSkip, nSectors, (PSectorData *)dummyBuffer, (PByteInfo *)dummyBuffer, (PWORD)dummyBuffer, statuses, (PLogTime)dummyBuffer ); // "DummyBuffer" = throw away any outputs
 	}
 
 	PSectorData CImage::GetSectorData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId pid,BYTE nSectorsToSkip,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data; WORD w; TLogTime t;
+		PSectorData data; PByteInfo pbi; WORD w; TLogTime t;
 		GetTrackData(
-			cyl, head, rev, pid, &nSectorsToSkip, 1, &data,
+			cyl, head, rev, pid, &nSectorsToSkip, 1, &data, &pbi,
 			pSectorLength?pSectorLength:&w,
 			pFdcStatus?pFdcStatus:&TFdcStatus(),
 			outDataStarts?outDataStarts:&t
@@ -1084,11 +1084,12 @@ namespace Medium{
 		return data;
 	}
 
-	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts){
+	PSectorData CImage::GetSectorData(RCPhysicalAddress chs,BYTE nSectorsToSkip,Revolution::TType rev,PWORD pSectorLength,TFdcStatus *pFdcStatus,TLogTime *outDataStarts,PByteInfo *outByteInfos){
 		// returns Data of a Sector on a given PhysicalAddress; returns Null if Sector not found or Track not formatted
-		PSectorData data; WORD w; TLogTime t;
+		PSectorData data; PByteInfo pbi; WORD w; TLogTime t;
 		GetTrackData(
 			chs.cylinder, chs.head, rev, &chs.sectorId, &nSectorsToSkip, 1, &data,
+			outByteInfos?outByteInfos:&pbi,
 			pSectorLength?pSectorLength:&w,
 			pFdcStatus?pFdcStatus:&TFdcStatus(),
 			outDataStarts?outDataStarts:&t

@@ -20,7 +20,8 @@
 	UINT CImage::CSectorDataSerializer::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min<UINT>( nCount, dataTotalLength-position );
-		const UINT nBytesToRead=nCount;
+		UINT nBytesToRead=nCount;
+		bool readWithoutError=true; // assumption
 		for( WORD w; true; )
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
@@ -63,35 +64,42 @@
 				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				if (revolution>=Revolution::MAX)
 					revolution=Revolution::ANY_GOOD;
-				TFdcStatus sr; // in/out
-				const PCSectorData sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr );
-				if (!sectorData)
-					break;
-				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
-					break;
-				w-=sector.offset;
-				if (sr.IsWithoutError()){
-					if (w<nCount){
-						lpBuf=(PBYTE)::memcpy(lpBuf,sectorData+sector.offset,w)+w;
-						nCount-=w;
-						Seek(w,SeekPosition::current);
+				TFdcStatus sr; PByteInfo pbi; // in/out
+				const PCSectorData sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr, nullptr, &pbi );
+				if (!sectorData || !w){ // A|B, B = DAM not found, B = e.g. reading Sector with LengthCode 231 (has by default no data, a pointer to zero-length data has been returned by GetSectorData)
+					// no data for this Sector
+					nBytesToRead-=nCount;
+					if (!nBytesToRead) // nothing read yet ?
+						readWithoutError=false; // output nothing with a read error
+					nCount=0; // output just what's been read thus far
+				}else{
+					// some (good or bad) data exist for this Sector
+					w-=sector.offset;
+					const WORD n=std::min( nCount, (UINT)w );
+					if (pbi && revolution<Revolution::MAX){ // info on Bad Bytes applicable only to particular Revolution
+						pbi+=sector.offset;
+						for( w=0; w<n; w++ )
+							if (pbi++->bad){ // a Bad Byte encountered
+								nBytesToRead+=w-nCount; // include just good part of this Sector and drop the rest of the query
+								if (!nBytesToRead){ // nothing read yet ?
+									nBytesToRead=++w; // output just this single Bad Byte
+									readWithoutError=false;
+								}
+								nCount=0; // output just what's been read thus far
+								break;
+							}
 					}else{
-						::memcpy(lpBuf,sectorData+sector.offset,nCount);
-						Seek(nCount,SeekPosition::current);
-						::SetLastError( ERROR_SUCCESS );
-						return nBytesToRead;
+						readWithoutError=sr.IsWithoutError();
+						w=n;
 					}
-				}else
-					if (nCount<nBytesToRead){ // already read something?
-						::SetLastError( ERROR_SUCCESS );
-						return nBytesToRead-nCount; // returning only the ok part to not mix readable and unreadable data
-					}else{
-						const UINT len=std::min<UINT>( nCount, w );
-						::memcpy( lpBuf, sectorData+sector.offset, len );
-						Seek( len, SeekPosition::current );
-						::SetLastError( ERROR_CRC );
-						return len; // bad data are to be retrieved in individual chunks
-					}
+					lpBuf=(PBYTE)::memcpy( lpBuf, sectorData+sector.offset, w )+w;
+					Seek( w, SeekPosition::current ); // advance pointer
+				}
+				if (!nCount){ // all Bytes read ?
+					::SetLastError( readWithoutError ? ERROR_SUCCESS : ERROR_CRC );
+					return nBytesToRead;
+				}
+				nCount-=w;
 			}
 		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;

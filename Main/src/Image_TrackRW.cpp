@@ -877,11 +877,19 @@
 		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBits+2 )->time=tFrom; // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
-		pBits=bitBuffer+1; // skip that one hidden Bit
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
+		*this=CBitSequence( tr, nBits, oneOkPercent );
+	}
+
+	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader &tr,int nBitsFromCurrTime,BYTE oneOkPercent)
+		// ctor
+		// - initialization
+		: nBits(0) {
+		// - create and populate the BitBuffer
+		bitBuffer.Realloc( 1+nBitsFromCurrTime+2 )->time=tr.GetCurrentTime(); // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
+		pBits=bitBuffer+1; // skip that one hidden Bit
 		TBit *p=pBits;
-		for( TLogTime tOne; tr.GetCurrentTime()<tTo; ){
+		for( TLogTime tOne; nBits<nBitsFromCurrTime; nBits++ ){
 			p->flags=0;
 			p->value=tr.ReadBit(tOne);
 			p->time=tr.GetCurrentTime();
@@ -915,6 +923,23 @@
 			nBits-=base.pBits-pBits;
 			pBits=base.pBits;
 		}
+	}
+
+	CImage::CTrackReader::CBitSequence::TData<WORD> CImage::CTrackReader::CBitSequence::GetWord(int i) const{
+		// 
+		TData<WORD> result;
+		i*=sizeof(result.value)*CHAR_BIT;
+		const int iByteEnd=i+sizeof(result.value)*CHAR_BIT;
+		if (nBits<iByteEnd) // insufficient # of Bits ?
+			return result;
+		while (i<iByteEnd){
+			const auto &bit=pBits[i++];
+			result.value<<=1, result.value|=bit.value;
+			result.flags|=bit.flags;
+		}
+		result.time=pBits[i-1].time;
+		result.Validate();
+		return result;
 	}
 
 	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime t) const{
@@ -1474,22 +1499,25 @@
 			default:
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
-		const TLogTime tMarkEnd=currentTime;
 		if (pOutParseEvents)
 			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
+		const CBitSequence bits( *this, nBytesToRead*MFM::BITS_PER_BYTE );
 		WORD nDataBytes=0;
-		while (nDataBytes<nBytesToRead){
-			auto &rbi=pbi[nDataBytes];
-			rbi.dtStart=currentTime-tMarkEnd;
-			if (!*this || !ReadBits16(rbi.org.wEncoded)){ // Track end encountered
+		for( TLogTime dt=0; nDataBytes<nBytesToRead; )
+			if (const auto &&d=bits.GetWord(nDataBytes)){
+				auto &rbi=pbi[nDataBytes];
+				rbi.dtStart=dt, dt=d.time-peData.tStart;
+				rbi.bad=d.bad;
+				peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(
+					rbi.org.wEncoded = d.value
+				);
+			}else{ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
-			peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(rbi.org.wEncoded);
-		}
 		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
 			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, nDataBytes
@@ -1557,9 +1585,10 @@
 		auto *const pbi=peData.GetByteInfos();
 		ASSERT( currentTime-profile.iwTime<peData.tStart && peData.tStart<currentTime+profile.iwTime ); // sanity check (we shouldn't be much off the original Start)
 		for( WORD i=0; i<peData.GetByteCount(); i++ ){
-			auto &org=pbi[i].org;
+			auto &rbi=pbi[i];
+			auto &org=rbi.org;
 			ti.tEnd=peData.GetByteTime(i+1);
-			if (peData.bytes[i]==org.value) // Byte not changed ?
+			if (peData.bytes[i]==org.value) // Byte not changed
 				tmp.AddWord( ti, org.wEncoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
 			else{
 				tmp.AddWord( ti,
@@ -1570,6 +1599,7 @@
 				auto &next=pbi[i+1].org;
 				if (org.wEncoded&1 && next.wEncoded>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
 					next.value=~next.value; // updated clock bits
+				rbi.bad=false;
 			}
 		}
 		// - write new CRC16 to temporary storage
