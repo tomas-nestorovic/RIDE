@@ -71,7 +71,7 @@
 					nBytesToRead-=nCount;
 					if (!nBytesToRead) // nothing read yet ?
 						readWithoutError=false; // output nothing with a read error
-					nCount=0; // output just what's been read thus far
+					w=nCount; // output just what's been read thus far
 				}else{
 					// some (good or bad) data exist for this Sector
 					w-=sector.offset;
@@ -85,7 +85,7 @@
 									nBytesToRead=++w; // output just this single Bad Byte
 									readWithoutError=false;
 								}
-								nCount=0; // output just what's been read thus far
+								nCount=w; // output just what's been read thus far
 								break;
 							}
 					}else{
@@ -95,11 +95,11 @@
 					lpBuf=(PBYTE)::memcpy( lpBuf, sectorData+sector.offset, w )+w;
 					Seek( w, SeekPosition::current ); // advance pointer
 				}
+				nCount-=w;
 				if (!nCount){ // all Bytes read ?
 					::SetLastError( readWithoutError ? ERROR_SUCCESS : ERROR_CRC );
 					return nBytesToRead;
 				}
-				nCount-=w;
 			}
 		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;
