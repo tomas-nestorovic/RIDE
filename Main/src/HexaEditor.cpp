@@ -174,19 +174,18 @@ using namespace Yahel;
 
 
 	#ifdef UNICODE
-		#define GetBaseClassName IInstance::GetBaseClassNameW
+		#define BaseClassName Yahel::BaseClassNameW
 	#else
-		#define GetBaseClassName IInstance::GetBaseClassNameA
+		#define BaseClassName Yahel::BaseClassNameA
 	#endif
 
 	CHexaEditor::CHexaEditor(PVOID param)
 		// ctor
-		: CCtrlView( GetBaseClassName(AfxGetInstanceHandle()), AFX_WS_DEFAULT_VIEW&~WS_BORDER )
+		: CCtrlView( BaseClassName, AFX_WS_DEFAULT_VIEW&~WS_BORDER )
 		, font(FONT_COURIER_NEW,105,false,true)
 		, instance( IInstance::Create(AfxGetInstanceHandle(),this,param,font) )
 		, hDefaultAccelerators( instance->GetAcceleratorTable() )
 		, contextMenu( instance->GetContextMenu() ) {
-		instance.p->Release();
 	}
 
 
@@ -280,7 +279,7 @@ using namespace Yahel;
 		TSearchParamsEx(const TSearchParams &sp,const IInstance &yahel)
 			: TSearchParams(sp)
 			, yahel(yahel)
-			, found(Stream::GetErrorPosition()) {
+			, found(Stream::ErrorPosition) {
 		}
 	};
 
@@ -298,14 +297,14 @@ using namespace Yahel;
 			);
 			if (pAction->Cancelled)
 				return pAction->TerminateWithError( ERROR_CANCELLED );
-			if (spe.found!=Stream::GetErrorPosition())
+			if (spe.found!=Stream::ErrorPosition)
 				return pAction->TerminateWithSuccess();
 			if (Utils::QuestionYesNo( _T("No match found yet.\nContinue from the beginning?"), MB_DEFBUTTON1 )){
 				spe.found=spe.yahel.FindNextOccurence(
 					TPosInterval( 0, fCaret ),
 					pAction->Cancelled
 				);
-				if (spe.found!=Stream::GetErrorPosition())
+				if (spe.found!=Stream::ErrorPosition)
 					return pAction->TerminateWithSuccess();
 			}
 		}else
@@ -322,7 +321,7 @@ using namespace Yahel;
 					THREAD_PRIORITY_BELOW_NORMAL
 				).Perform()==ERROR_SUCCESS
 				? spe.found
-				: Stream::GetErrorPosition();
+				: Stream::ErrorPosition;
 	}
 
 
@@ -427,7 +426,7 @@ using namespace Yahel;
 		const auto checksum=cpe.yahel.GetChecksum( cpe, cpe.range, pAction->Cancelled );
 		if (pAction->Cancelled)
 			return pAction->TerminateWithError( ERROR_CANCELLED );
-		if (checksum==Checksum::GetErrorValue())
+		if (checksum==Checksum::ErrorSeed)
 			return pAction->TerminateWithError( ERROR_FUNCTION_FAILED );
 		cpe.seed=checksum; // reuse the field
 		return pAction->TerminateWithSuccess();
@@ -436,13 +435,13 @@ using namespace Yahel;
 	Checksum::T CHexaEditor::ComputeChecksum(const Checksum::TParams &cp,const TPosInterval &range) const{
 		TChecksumParamsEx cpe( cp, range, *instance );
 		if (const TStdWinError err=CBackgroundActionCancelable( Checksum_thread, &cpe, THREAD_PRIORITY_BELOW_NORMAL ).Perform())
-			return Checksum::GetErrorValue();
+			return Checksum::ErrorSeed;
 		CString checksumText;
 		checksumText.Format( _T("%d (0x%X)"), cpe.seed, cpe.seed ); // reused during computation
 		const CString &&msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
 		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
 			Utils::SetClipboardString( checksumText );
-		return Checksum::GetErrorValue(); // don't do default processing
+		return Checksum::ErrorSeed; // don't do default processing
 	}
 
 

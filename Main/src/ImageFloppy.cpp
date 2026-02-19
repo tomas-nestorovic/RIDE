@@ -1,14 +1,14 @@
 #include "stdafx.h"
 using namespace Yahel;
 
-	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(TCrc16 seed,LPCVOID bytes,WORD nBytes){
+	CFloppyImage::TCrc16 CFloppyImage::GetCrcIbm3740(TCrc16 seed,LPCVOID bytes,WORD nBytes){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
 		return Checksum::Compute(
 			Checksum::TParams(Checksum::TParams::Ibm3740,seed), bytes, nBytes
 		);
 	}
 
-	CFloppyImage::TCrc16 CFloppyImage::GetCrc16Ccitt(LPCVOID bytes,WORD nBytes){
+	CFloppyImage::TCrc16 CFloppyImage::GetCrcIbm3740(LPCVOID bytes,WORD nBytes){
 		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
 		static const Checksum::TParams Params( Checksum::TParams::Ibm3740, 0xffff );
 		return Checksum::Compute( Params, bytes, nBytes );

@@ -48,6 +48,9 @@
 		// - showing the name of the DOS
 		const CDos::PCProperties propDos=dos->properties;
 		SetDlgItemText( ID_SYSTEM, propDos->name );
+		Yahel::Gui::SetDlgItemIntBuddyW( m_hWnd, ID_SIZE, 0, Yahel::Gui::Decimal, false );
+		Yahel::Gui::SetDlgItemIntBuddyW( m_hWnd, ID_GAP, 0, Yahel::Gui::Decimal, false );
+		Yahel::Gui::SetDlgItemIntBuddyW( m_hWnd, ID_DIRECTORY, 0, Yahel::Gui::Decimal, false );
 		// - populating dedicated ComboBox with possible Cluster sizes
 		CComboBox cb;
 		cb.Attach(GetDlgItemHwnd(ID_CLUSTER));
@@ -289,7 +292,7 @@
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
 		const TFormat f={ Medium::UNKNOWN, Codec::ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), dos->formatBoot.sectorLengthCode, GetDlgItemInt(ID_SIZE), GetDlgComboBoxSelectedValue(ID_CLUSTER) };
-		for( BYTE n=nFormatsInTotal-1; n--; ){ // "-1" = custom format
+		for( char n=nFormatsInTotal-1; n-->0; ){ // "-1" = custom format
 			const PCStdFormat psf=(PCStdFormat)ComboBox_GetItemData(hFormat,n);
 			if (psf->params.cylinder0==cylA && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){
 				ComboBox_SetCurSel(hFormat,n);

@@ -16,7 +16,7 @@ using namespace Yahel;
 			if (const auto pdt=dos->BeginDirectoryTraversal(directory))
 				recordLength=pdt->entrySize;
 			else
-				recordLength=Stream::IAdvisor::GetMaximumRecordLength();
+				recordLength=Stream::MaximumRecordLength;
 		}
 
 		HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{

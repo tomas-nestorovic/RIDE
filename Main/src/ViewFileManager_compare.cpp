@@ -194,9 +194,8 @@ using namespace Yahel;
 
 	void CFileManagerView::CFileComparisonDialog::COleComparisonDropTarget::OpenPhysicalFile(LPCWSTR fileName){
 		// opens chosen physical File upon confirmation and shows its content in HexaEditor
-		if (IStream *const s=Stream::FromFileForSharedReading(fileName)){
+		if (const auto &&s=Stream::FromFileForSharedReading(fileName)){
 			Open( s, fileName );
-			s->Release();
 		}else
 			Utils::FatalError( _T("Can't open"), ::GetLastError() );
 	}

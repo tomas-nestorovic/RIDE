@@ -466,10 +466,8 @@
 										);
 										sectorListTextBox.SetFont( GetFont() );
 								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
-									if (IStream *const s=Yahel::Stream::FromBuffer( sectorData, sectorDataLength )){
+									if (const auto &&s=Yahel::Stream::FromBuffer( sectorData, sectorDataLength ))
 										hexaEditor.Reset( s, nullptr, sectorDataLength );
-										s->Release();
-									}
 									hexaEditor.Create(
 										nullptr, nullptr,
 										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS,

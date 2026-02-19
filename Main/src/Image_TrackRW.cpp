@@ -1452,7 +1452,7 @@
 			// . reading and comparing ID Field's CRC
 			DWORD dw;
 			CFloppyImage::TCrc16 crc=0;
-			const bool crcBad=!ReadBits32(dw) || MFM::DecodeWord(dw)!=( crc=CFloppyImage::GetCrc16Ccitt(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
+			const bool crcBad=!ReadBits32(dw) || MFM::DecodeWord(dw)!=( crc=CFloppyImage::GetCrcIbm3740(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
 			*pOutIdStatuses++ =	crcBad 
 								? TFdcStatus::IdFieldCrcError
 								: TFdcStatus::WithoutError;
@@ -1504,7 +1504,7 @@
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
-		const CBitSequence bits( *this, nBytesToRead*MFM::BITS_PER_BYTE );
+		const CBitSequence bits( *this, nBytesToRead*16 );
 		WORD nDataBytes=0;
 		for( TLogTime dt=0; nDataBytes<nBytesToRead; )
 			if (const auto &&d=bits.GetWord(nDataBytes)){
@@ -1518,8 +1518,8 @@
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
-		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
-			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrcIbm3740(
+			CFloppyImage::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, nDataBytes
 		);
 		peData.Finalize( currentTime, profile, nDataBytes );
@@ -1607,8 +1607,8 @@
 		DWORD dw;
 		if (!ReadBits32(dw)) // Track end encountered (the CRC doesn't fit in the Track)
 			return false;
-		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrc16Ccitt(
-			CFloppyImage::GetCrc16Ccitt( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrcIbm3740(
+			CFloppyImage::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, peData.GetByteCount()
 		);
 		if (sr.DescribesDataFieldCrcError())

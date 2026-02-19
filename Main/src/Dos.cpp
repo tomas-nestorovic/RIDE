@@ -1414,10 +1414,8 @@
 		, hexaEditor(nullptr) {
 		hexaEditor.SetLabelColumnParams( 0 );
 		hexaEditor.SetEditable( !CImage::GetActive()->IsWriteProtected() );
-		if (IStream *const s=Yahel::Stream::FromBuffer( ::memcpy(newValueBuffer,value,valueSize), valueSize )){
+		if (const auto &&s=Yahel::Stream::FromBuffer( ::memcpy(newValueBuffer,value,valueSize), valueSize ))
 			hexaEditor.Reset( s, nullptr, valueSize );
-			s->Release();
-		}
 	}
 
 	void CDos::CHexaValuePropGridEditor::PreInitDialog(){

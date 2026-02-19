@@ -208,7 +208,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					for( BYTE i=0; i<ti->nSectors; i++,dataStart+=__getSectorLength__(si++) )
 						if (!sectorsDebug[i].modified // Sector not marked Modified ...
 							&&
-							sectorsDebug[i].crc16!=GetCrc16Ccitt( dataStart, __getSectorLength__(si) ) // ... but its data show different CRC
+							sectorsDebug[i].crc16!=GetCrcIbm3740( dataStart, __getSectorLength__(si) ) // ... but its data show different CRC
 						){
 							const TSectorId id={ si->cylinderNumber, si->sideNumber, si->sectorNumber, si->sectorLengthCode };
 							Utils::FatalError(
@@ -339,7 +339,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						const TSectorInfo *si=ti->sectorInfo;
 						for( BYTE i=0; i<ti->nSectors; i++,dataStart+=__getSectorLength__(si++) ){
 							sectorsDebug[i].modified=false;
-							sectorsDebug[i].crc16=GetCrc16Ccitt( dataStart, __getSectorLength__(si) );
+							sectorsDebug[i].crc16=GetCrcIbm3740( dataStart, __getSectorLength__(si) );
 						}
 					tracksDebug[cyl*diskInfo.nHeads+head]=sectorsDebug;
 				}
