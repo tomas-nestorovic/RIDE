@@ -58,6 +58,7 @@
 			bool modified;
 			
 			void ReadSector(TInternalSector &ris,BYTE rev);
+			void FlushSectorBuffer(const TInternalSector &ris);
 			void FlushSectorBuffers();
 		} *PInternalTrack;
 		typedef const CInternalTrack *PCInternalTrack;
@@ -187,7 +188,7 @@
 		bool IsTrackScanned(TCylinder cyl,THead head) const override sealed;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override sealed;
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts) override sealed;
-		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus) override sealed;
+		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus,bool flush) override sealed;
 		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override sealed;
 		Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override sealed;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;

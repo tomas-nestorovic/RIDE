@@ -116,14 +116,15 @@
 				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				writtenWithoutCrcError&=sr.IsWithoutError();
-				image->MarkSectorAsDirty(chs,sector.indexOnTrack,&sr);
 				w-=sector.offset;
 				if (w<nCount){
 					::memcpy(sectorData+sector.offset,lpBuf,w);
 					lpBuf=(PCBYTE)lpBuf+w, nCount-=w;
+					image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
 					Seek(w,SeekPosition::current);
 				}else{
 					::memcpy(sectorData+sector.offset,lpBuf,nCount);
+					image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
 					Seek(nCount,SeekPosition::current);
 					::SetLastError( writtenWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 					return;

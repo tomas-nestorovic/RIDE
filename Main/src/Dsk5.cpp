@@ -385,7 +385,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return TDataStatus::NOT_READY;
 	}
 
-	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
+	TStdWinError CDsk5::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus,bool){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		ASSERT( !IsWriteProtected() );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();

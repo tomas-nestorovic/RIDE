@@ -84,7 +84,7 @@
 		}
 	}
 
-	TStdWinError CSpectrumDos::CTape::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus){
+	TStdWinError CSpectrumDos::CTape::MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus,bool){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus; returns Windows standard i/o error
 		ASSERT( !IsWriteProtected() );
 		if (chs.cylinder<fileManager.nFiles){

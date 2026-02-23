@@ -1139,7 +1139,7 @@ namespace Medium{
 
 	void CImage::MarkSectorAsDirty(RCPhysicalAddress chs){
 		// marks Sector on a given PhysicalAddress as "dirty", plus sets it the given FdcStatus
-		MarkSectorAsDirty(chs,0,&TFdcStatus::WithoutError);
+		MarkSectorAsDirty( chs, 0, &TFdcStatus::WithoutError, false );
 	}
 
 	Revolution::TType CImage::GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{

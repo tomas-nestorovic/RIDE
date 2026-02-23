@@ -939,7 +939,7 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 							LOG_SECTOR_ACTION(&p.chs.sectorId,_T("writing"));
 							if (const PSectorData targetData=dp.target->GetSectorData(p.chs,s,Revolution::ANY_GOOD)){
 								::memcpy( targetData, bufferSectorData[s], bufferLength[s] );
-								if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s) )!=ERROR_SUCCESS)
+								if (( err=dp.target->MarkSectorAsDirty(p.chs,s,bufferFdcStatus+s,false) )!=ERROR_SUCCESS)
 									goto errorDuringWriting;
 							}else{
 								err=::GetLastError();

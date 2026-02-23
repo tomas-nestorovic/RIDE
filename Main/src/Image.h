@@ -928,7 +928,7 @@
 		PSectorData GetHealthySectorData(RCPhysicalAddress chs);
 		PSectorData GetHealthySectorDataOfUnknownLength(TPhysicalAddress &rChs,PWORD sectorLength);
 		virtual TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const=0;
-		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus)=0;
+		virtual TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus,bool flush)=0;
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
 		virtual Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const;
 		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;

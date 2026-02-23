@@ -75,7 +75,7 @@ using namespace Yahel;
 				if (const PSectorData sectorData=image->GetSectorData(item->chs,0,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 					writtenWithoutCrcError&=sr.IsWithoutError();
 					w-=d.rem+dataBeginOffsetInSector+dataEndOffsetInSector;
-					image->MarkSectorAsDirty(item->chs,0,&sr);
+					image->MarkSectorAsDirty(item->chs,0,&sr,false);
 					if (w<nCount){
 						::memcpy(sectorData+dataBeginOffsetInSector+d.rem,lpBuf,w);
 						lpBuf=(PCBYTE)lpBuf+w, nCount-=w, position+=w, d.rem=0;

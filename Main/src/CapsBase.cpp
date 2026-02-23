@@ -367,25 +367,30 @@
 		}
 	}
 
+	void CCapsBase::CInternalTrack::FlushSectorBuffer(const TInternalSector &ris){
+		// spreads referential "dirty" data (if Sector modified) across each Revolution
+		if (ris.dirtyRevolution<Revolution::MAX){
+			// Sector has been modified
+			const auto &refRev=ris.revolutions[ris.dirtyRevolution];
+			for( BYTE r=0; r<ris.nRevolutions; r++ ){ // spread reference data across all Revolutions
+				const auto &rev=ris.revolutions[r];
+				if (rev.peData){
+					::memcpy( rev.peData->bytes, refRev.peData->bytes, std::min(rev.peData->GetByteCount(),refRev.peData->GetByteCount()) );
+					WriteData(
+						rev.idEndTime, rev.idEndProfile,
+						*rev.peData,
+						refRev.fdcStatus
+					);
+				}
+			}
+			//ris.dirtyRevolution=Revolution::NONE; // commented out - particular Revolution remains "selected" until the end of this session
+		}
+	}
+
 	void CCapsBase::CInternalTrack::FlushSectorBuffers(){
 		// spreads referential "dirty" data (if Sector modified) across each Revolution
 		for each( const TInternalSector &ris in sectors )
-			if (ris.dirtyRevolution<Revolution::MAX){
-				// Sector has been modified
-				const auto &refRev=ris.revolutions[ris.dirtyRevolution];
-				for( BYTE r=0; r<ris.nRevolutions; r++ ){ // spread reference data across all Revolutions
-					const auto &rev=ris.revolutions[r];
-					if (rev.peData){
-						::memcpy( rev.peData->bytes, refRev.peData->bytes, std::min(rev.peData->GetByteCount(),refRev.peData->GetByteCount()) );
-						WriteData(
-							rev.idEndTime, rev.idEndProfile,
-							*rev.peData,
-							refRev.fdcStatus
-						);
-					}
-				}
-				//ris.dirtyRevolution=Revolution::NONE; // commented out - particular Revolution remains "selected" until the end of this session
-			}
+			FlushSectorBuffer(ris);
 		//modified=false; // commented out as the Track hasn't yet been saved!
 	}
 
