@@ -246,7 +246,7 @@
 
 	#define EXTENSION_UNKNOWN	_T("UNKNOWN_%03d")
 
-	LPCTSTR CGDOS::TDirectoryEntry::__getFileTypeDesc__(PTCHAR buffer) const{
+	LPCTSTR CGDOS::TDirectoryEntry::GetFileTypeDesc(PTCHAR buffer) const{
 		// populates the Buffer with textual representation of FileType and returns the Buffer
 		switch (fileType){
 			case BASIC			: return EXTENSION_BASIC;
@@ -290,8 +290,11 @@
 		// returns File name concatenated with File extension for presentation of the File to the user
 		CPathString result=__super::GetFilePresentationNameAndExt(file);
 		result.DetachExtension(); // detach e.g. ".%07" ...
-		TCHAR bufExt[16];
-		return result.AppendDotExtensionIfAny( ((PCDirectoryEntry)file)->__getFileTypeDesc__(bufExt) ); // ... and replace it with e.g. ".SCREEN$"
+		if (file!=ZX_DIR_ROOT){
+			TCHAR bufExt[16];
+			return result.AppendDotExtensionIfAny( ((PCDirectoryEntry)file)->GetFileTypeDesc(bufExt) ); // ... and replace it with e.g. ".SCREEN$"
+		}else
+			return result;
 	}
 
 	void CGDOS::TDirectoryEntry::SetNameAndExt(RCPathString newName,RCPathString newExt){
@@ -429,7 +432,7 @@
 			TCHAR bufExt[16];
 			if (de!=ZX_DIR_ROOT){
 				result.DetachExtension();
-				result.AppendDotExtensionIfAny( de->__getFileTypeDesc__(bufExt) );
+				result.AppendDotExtensionIfAny( de->GetFileTypeDesc(bufExt) );
 			}
 		}else{
 			// exporting to another RIDE instance
@@ -496,7 +499,7 @@
 					// multi-char Extension provided - recognizing its text
 					for( tmp.fileType=(TDirectoryEntry::TFileType)1; tmp.fileType; tmp.fileType=(TDirectoryEntry::TFileType)((BYTE)tmp.fileType+1) ){
 						TCHAR bufExt[16];
-						if (!::lstrcmpi(zxExt,tmp.__getFileTypeDesc__(bufExt)))
+						if (!::lstrcmpi(zxExt,tmp.GetFileTypeDesc(bufExt)))
 							break;
 					}
 					if (!tmp.fileType)

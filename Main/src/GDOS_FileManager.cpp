@@ -63,7 +63,7 @@
 				break;
 			case INFORMATION_TYPE:
 				// File Type
-				::DrawText( dc, de->__getFileTypeDesc__(bufT),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
+				::DrawText( dc, de->GetFileTypeDesc(bufT),-1, &r, DT_SINGLELINE|DT_VCENTER|DT_RIGHT );
 				break;
 			case INFORMATION_SIZE:{
 				// File Size
@@ -111,7 +111,7 @@
 				return ::strncmp(f1->name,f2->name,GDOS_FILE_NAME_LENGTH_MAX);
 			case INFORMATION_TYPE:{
 				TCHAR buf1[32],buf2[32];
-				return ::lstrcmp( f1->__getFileTypeDesc__(buf1), f2->__getFileTypeDesc__(buf2) );
+				return ::lstrcmp( f1->GetFileTypeDesc(buf1), f2->GetFileTypeDesc(buf2) );
 			}
 			case INFORMATION_SIZE:
 				return DOS->GetFileOfficialSize(f1)-DOS->GetFileOfficialSize(f2);
@@ -291,7 +291,7 @@ error:			*de=tmp; // recovering the original DirectoryEntry
 		// populates the Buffer with File "extension" description and returns the Buffer
 		TDirectoryEntry tmp;
 			tmp.fileType=(TDirectoryEntry::TFileType)extension.charValue;
-		return tmp.__getFileTypeDesc__(buf);
+		return tmp.GetFileTypeDesc(buf);
 	}
 	CFileManagerView::PEditorBase CGDOS::CGdosFileManagerView::CExtensionEditor::Create(PDirectoryEntry de) const{
 		// creates and returns the Editor of File "extension"

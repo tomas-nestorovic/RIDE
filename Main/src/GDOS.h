@@ -112,7 +112,7 @@
 			} etc;
 
 			bool __isStandardRomFile__() const;
-			LPCTSTR __getFileTypeDesc__(PTCHAR buffer) const;
+			LPCTSTR GetFileTypeDesc(PTCHAR buffer) const;
 			void GetNameOrExt(PPathString pOutName,PPathString pOutExt) const;
 			void SetNameAndExt(RCPathString newName,RCPathString newExt);
 			PWORD __getStdParameter1__();
