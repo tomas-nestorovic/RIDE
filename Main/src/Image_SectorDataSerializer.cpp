@@ -71,7 +71,7 @@
 					nBytesToRead-=nCount;
 					if (!nBytesToRead) // nothing read yet ?
 						readWithoutError=false; // output nothing with a read error
-					w=nCount; // output just what's been read thus far
+					w=0, nCount=0; // output just what's been read thus far
 				}else{
 					// some (good or bad) data exist for this Sector
 					w-=sector.offset;
