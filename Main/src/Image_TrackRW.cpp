@@ -1132,7 +1132,8 @@
 			case TParseEvent::DATA_IN_GAP:
 				desc.Format( _T("Gap data (circa %d Bytes)"), dw);
 				break;
-			case TParseEvent::CRC_OK:{
+			case TParseEvent::CRC_OK:
+			case TParseEvent::CRC_BAD:{
 				TCHAR format[]=_T("0x%_ %s CRC");
 				format[3]= preferDecimalValues ? 'd' : 'X';
 				desc.Format( format+2*preferDecimalValues, dw, type==CRC_OK?_T("ok"):_T("bad") );
