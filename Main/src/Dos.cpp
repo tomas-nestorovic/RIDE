@@ -1331,6 +1331,10 @@
 		, entry(nullptr) , entryType(TDirectoryTraversal::UNKNOWN) {
 	}
 
+	CDos::TDirectoryTraversal::~TDirectoryTraversal(){
+		// dtor (guarantee destruction of descendants)
+	}
+
 	CDos::PFile CDos::TDirectoryTraversal::AllocateNewEntry(){
 		// allocates and returns new entry at the end of current Directory and returns; returns Null if new entry cannot be allocated (e.g. because disk is full)
 		return nullptr; // Null = cannot allocate new Empty entry (aka. this Directory has fixed number of entries)

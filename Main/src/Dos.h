@@ -175,6 +175,7 @@
 			TStdWinError warning; // it's up to the caller to consider further traversal of the Directory (i.e. interpret this warning as a serious error)
 
 			TDirectoryTraversal(PCFile directory,WORD entrySize); // ctor
+			virtual ~TDirectoryTraversal();
 
 			virtual PFile AllocateNewEntry();
 			virtual PFile GetOrAllocateEmptyEntries(BYTE count,PFile *pOutEmptyEntriesBuffer);
