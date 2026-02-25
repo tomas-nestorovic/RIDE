@@ -263,6 +263,11 @@
 		}
 	}
 
+	void CFileManagerView::RevokeOwnership(CWnd *pWnd){
+		if (const POSITION pos=ownedWindows.Find(pWnd))
+			ownedWindows.RemoveAt(pos);
+	}
+
 	#define ERROR_MSG_CANT_CHANGE_DIRECTORY	_T("Cannot change the directory")
 
 	void CFileManagerView::__switchToDirectory__(CDos::PFile directory) const{
