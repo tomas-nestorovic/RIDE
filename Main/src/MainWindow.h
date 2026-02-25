@@ -124,6 +124,7 @@
 		};
 
 		static void SetStatusBarTextReady();
+		static void SetStatusBarTextScannerPaused();
 		static void __resetStatusBar__();
 		static void __setStatusBarText__(LPCTSTR text);
 

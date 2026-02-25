@@ -422,7 +422,7 @@ using namespace Yahel;
 				break;
 			}
 			case CImage::CSectorDataSerializer::TScannerStatus::PAUSED:
-				CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
+				CMainWindow::SetStatusBarTextScannerPaused();
 				break;
 			default:
 				CMainWindow::SetStatusBarTextReady();

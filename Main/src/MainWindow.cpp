@@ -176,9 +176,11 @@
 
 	void CMainWindow::SetStatusBarTextReady(){
 		// sets the MainWindow's StatusBar text
-		CStatusBar &rsb=app.GetMainWindow()->statusBar;
-		if (rsb.m_hWnd)
-			rsb.SetPaneText(0,_T("Ready"));
+		__setStatusBarText__( _T("Ready") );
+	}
+	void CMainWindow::SetStatusBarTextScannerPaused(){
+		// sets the MainWindow's StatusBar text
+		__setStatusBarText__( _T("SCANNER PAUSED!") );
 	}
 	void CMainWindow::__resetStatusBar__(){
 		// resets the MainWindow's StatusBar

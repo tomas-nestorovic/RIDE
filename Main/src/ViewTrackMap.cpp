@@ -473,6 +473,9 @@
 			TDI_INSTANCE->RedrawWindow(); // make sure TDI's whole client area is up-to-date before showing the following message
 			Utils::InformationWithCheckableShowNoMore( _T("Use the \"") TRACK_MAP_TAB_LABEL _T("\" tab to explore the structure of the disk, incl. hidden features. Right-click a track or a sector for more operations."), INI_TRACKMAP, INI_MSG_CAPABILITIES );
 		}
+		// - inform on paused Scanner
+		if (scanner.params.skipUnscannedTracks)
+			CMainWindow::SetStatusBarTextScannerPaused();
 		return result;
 	}
 
@@ -589,7 +592,7 @@
 		if (*buf || !scanner.params.skipUnscannedTracks)
 			CMainWindow::__setStatusBarText__(buf);
 		else
-			CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
+			CMainWindow::SetStatusBarTextScannerPaused();
 	}
 
 	afx_msg void CTrackMapView::OnLButtonUp(UINT nFlags,CPoint point){
@@ -845,7 +848,7 @@
 			ResetStatusBarMessage();
 		}else{
 			p.skipUnscannedTracks=true;
-			CMainWindow::__setStatusBarText__( _T("SCANNER PAUSED!") );
+			CMainWindow::SetStatusBarTextScannerPaused();
 		}
 	}
 	afx_msg void CTrackMapView::TogglePaused_updateUI(CCmdUI *pCmdUI){
