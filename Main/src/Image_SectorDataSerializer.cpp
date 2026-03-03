@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CImage::CSectorDataSerializer::CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions)
+	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , currTrack(0)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions)
@@ -17,14 +17,14 @@
 
 
 
-	UINT CImage::CSectorDataSerializer::Read(LPVOID lpBuf,UINT nCount){
+	UINT CImage::CDiskSerializer::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
-		nCount=std::min<UINT>( nCount, dataTotalLength-position );
+		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		UINT nBytesToRead=nCount;
 		bool readWithoutError=true; // assumption
-		for( WORD w; true; )
+		for( WORD w; true; ){
+			const TPhysicalAddress &&chs=GetCurrentPhysicalAddress();
 			if (revolution==Revolution::ALL_INTERSECTED){
-				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				const BYTE nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
 				PCSectorData data[Revolution::MAX];
 				bool allRevolutionsIdentical=true; // assumption
@@ -40,7 +40,7 @@
 					else
 						break;
 				w-=sector.offset;
-				for( WORD i=sector.offset,const iEnd=i+std::min<UINT>(w,nCount); i<iEnd; i++ ){
+				for( WORD i=sector.offset,const iEnd=i+std::min((UINT)w,nCount); i<iEnd; i++ ){
 					const BYTE reference=data[0][i];
 					for( BYTE rev=1; rev<nAvailableRevolutions; allRevolutionsIdentical&=data[rev++][i]==reference );
 					if (allRevolutionsIdentical)
@@ -61,7 +61,6 @@
 					return nBytesToRead;
 				}
 			}else{
-				const TPhysicalAddress chs=GetCurrentPhysicalAddress();
 				if (revolution>=Revolution::MAX)
 					revolution=Revolution::ANY_GOOD;
 				TFdcStatus sr; PByteInfo pbi; // in/out
@@ -71,7 +70,7 @@
 					nBytesToRead-=nCount;
 					if (!nBytesToRead) // nothing read yet ?
 						readWithoutError=false; // output nothing with a read error
-					w=0, nCount=0; // output just what's been read thus far
+					nCount=0; // output just what's been read thus far
 				}else{
 					// some (good or bad) data exist for this Sector
 					w-=sector.offset;
@@ -94,26 +93,27 @@
 					}
 					lpBuf=(PBYTE)::memcpy( lpBuf, sectorData+sector.offset, w )+w;
 					Seek( w, SeekPosition::current ); // advance pointer
+					nCount-=w;
 				}
-				nCount-=w;
 				if (!nCount){ // all Bytes read ?
 					::SetLastError( readWithoutError ? ERROR_SUCCESS : ERROR_CRC );
 					return nBytesToRead;
 				}
 			}
+		}
 		::SetLastError(ERROR_READ_FAULT);
 		return nBytesToRead-nCount;
 	}
 
-	void CImage::CSectorDataSerializer::Write(LPCVOID lpBuf,UINT nCount){
+	void CImage::CDiskSerializer::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
-		nCount=std::min<UINT>( nCount, dataTotalLength-position );
+		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		bool writtenWithoutCrcError=true; // assumption
 		for( WORD w; true; ){
-			const TPhysicalAddress chs=GetCurrentPhysicalAddress();
+			const TPhysicalAddress &&chs=GetCurrentPhysicalAddress();
 			TFdcStatus sr; // in/out
 			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
-				if (!w) // e.g. reading Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
+				if (!w) // e.g. writing Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
 					break;
 				writtenWithoutCrcError&=sr.IsWithoutError();
 				w-=sector.offset;
@@ -135,15 +135,15 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
-	HRESULT CImage::CSectorDataSerializer::Clone(IStream **ppstm){
+	HRESULT CImage::CDiskSerializer::Clone(IStream **ppstm){
 		if (ppstm){
-			*ppstm=image->CreateSectorDataSerializer(pParentHexaEditor);
+			*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();
 			return S_OK;
 		}else
 			return E_INVALIDARG;
 	}
 
-	BYTE CImage::CSectorDataSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	BYTE CImage::CDiskSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
 		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}

@@ -6,7 +6,7 @@ using namespace Yahel;
 	#define IMAGE	tab.image
 	#define DOS		IMAGE->dos
 
-	typedef CImage::CSectorDataSerializer::TScannerStatus TScannerStatus;
+	typedef CImage::CDiskSerializer::TScannerStatus TScannerStatus;
 
 
 	CDiskBrowserView::CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
@@ -106,10 +106,10 @@ using namespace Yahel;
 
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		f.Attach( IMAGE->CreateSectorDataSerializer(this) );
+		f=IMAGE->CreateDiskSerializer(this);
 		Update( f, f, f->GetLength() );
 		const auto lastKnownScannerStatus=f->GetTrackScannerStatus(); // getting last known explicit status (e.g. by the user) ...
-		if (lastKnownScannerStatus!=CImage::CSectorDataSerializer::TScannerStatus::UNAVAILABLE)
+		if (lastKnownScannerStatus!=CImage::CDiskSerializer::TScannerStatus::UNAVAILABLE)
 			f->SetTrackScannerStatus(lastKnownScannerStatus); // ... and resetting any internal status of the scanner
 	}
 
@@ -368,7 +368,7 @@ using namespace Yahel;
 				);
 				return true;
 			case ID_CREATOR:
-				// command sent by CSectorDataSerializer to inform that new Tracks have been scanned
+				// command sent by CDiskSerializer to inform that new Tracks have been scanned
 				// . seeking to particular PhysicalAddress
 				if (seekTo.chs!=TPhysicalAddress::Invalid
 					&&
@@ -416,13 +416,13 @@ using namespace Yahel;
 		// - report in StatusBar
 		TCylinder nScannedCyls;
 		switch (f->GetTrackScannerStatus(&nScannedCyls)){
-			case CImage::CSectorDataSerializer::TScannerStatus::RUNNING:{
+			case CImage::CDiskSerializer::TScannerStatus::RUNNING:{
 				TCHAR buf[32];
 				::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
 				CMainWindow::__setStatusBarText__(buf);
 				break;
 			}
-			case CImage::CSectorDataSerializer::TScannerStatus::PAUSED:
+			case CImage::CDiskSerializer::TScannerStatus::PAUSED:
 				CMainWindow::SetStatusBarTextScannerPaused();
 				break;
 			default:

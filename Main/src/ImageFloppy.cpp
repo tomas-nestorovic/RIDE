@@ -28,7 +28,7 @@ using namespace Yahel;
 
 
 	const CFloppyImage::TScannerState CFloppyImage::TScannerState::Initial={
-		CSectorDataSerializer::TScannerStatus::RUNNING,
+		CDiskSerializer::TScannerStatus::RUNNING,
 		0, // # of Tracks scanned thus far
 		false, // not all Tracks scanned yet
 		0, // total length of data discovered thus far
@@ -103,11 +103,11 @@ using namespace Yahel;
 		return ERROR_SUCCESS;
 }	}
 
-	CImage::CSectorDataSerializer *CFloppyImage::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
+	CComPtr<CImage::CDiskSerializer> CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
-		class CSerializer sealed:public CSectorDataSerializer{
+		class CSerializer sealed:public CDiskSerializer{
 			inline CFloppyImage &GetFloppyImage() const{
 				return *(CFloppyImage *)image;
 			}
@@ -152,7 +152,7 @@ using namespace Yahel;
 						do{
 							//EXCLUSIVELY_LOCK(scannedTracks); // postponed until below for smoother operation; may thus work with outdated values in ScannedTracks but that's ok!
 							const bool hasTrackBeenScannedBefore=image->IsTrackScanned( scannedTracks.n>>1, scannedTracks.n&1 );
-							const int tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
+							const TPosition tmp = ps->trackHexaInfos[scannedTracks.n].Update(*ps); // calls CImage::ScanTrack
 							EXCLUSIVELY_LOCK(scannedTracks);
 							ps->dataTotalLength = scannedTracks.dataTotalLength = tmp; // making sure the DataTotalLength is the last thing modified in the Locked section
 							scannedTracks.nDiscoveredRevolutions=std::max( scannedTracks.nDiscoveredRevolutions, ps->GetAvailableRevolutionCount(scannedTracks.n>>1,scannedTracks.n&1) );
@@ -223,7 +223,7 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorDataSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
+				: CDiskSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
@@ -259,7 +259,7 @@ using namespace Yahel;
 			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				BYTE track;
+				TTrack track;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (logPos<0 || logPos>=scannedTracks.dataTotalLength)
 					return false;
@@ -285,7 +285,7 @@ using namespace Yahel;
 				return false;
 			}
 
-			// CSectorDataSerializer methods
+			// CDiskSerializer methods
 			#if _MFC_VER>=0x0A00
 			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override{
 			#else
@@ -505,7 +505,9 @@ using namespace Yahel;
 			}
 		};
 		// - returning a Serializer class instance
-		return new CSerializer(pParentHexaEditor,this);
+		CComPtr<CDiskSerializer> tmp;
+		tmp.p=new CSerializer(pParentHexaEditor,this);
+		return tmp;
 	}
 
 	TLogTime CFloppyImage::EstimateNanosecondsPerOneByte() const{

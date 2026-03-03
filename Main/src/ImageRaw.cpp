@@ -796,11 +796,11 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CSectorDataSerializer *CImageRaw::CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor){
+	CComPtr<CImage::CDiskSerializer> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		static const BYTE nDiscoveredRawRevolutions=1;
-		class CSerializer sealed:public CSectorDataSerializer{
+		class CSerializer sealed:public CDiskSerializer{
 			const CImageRaw *const image;
 
 			void __getPhysicalAddress__(int logPos,TTrack &rOutTrack,BYTE &rOutSectorIndex,PWORD pOutOffset) const{
@@ -815,11 +815,11 @@ trackNotFound:
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CSectorDataSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions )
+				: CDiskSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions )
 				, image(image) {
 			}
 
-			// CSectorDataSerializer methods
+			// CDiskSerializer methods
 			#if _MFC_VER>=0x0A00
 			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override{
 			#else
@@ -895,5 +895,7 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		return new CSerializer(pParentHexaEditor,this);
+		CComPtr<CDiskSerializer> tmp;
+		tmp.p=new CSerializer(pParentHexaEditor,this);
+		return tmp;
 	}

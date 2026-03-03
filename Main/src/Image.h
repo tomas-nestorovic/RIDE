@@ -837,7 +837,7 @@
 			CTrackReaderWriter &Offset(TLogTime dt);
 		};
 
-		class CSectorDataSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
+		class CDiskSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
@@ -845,10 +845,10 @@
 			Revolution::TType revolution;
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
-				WORD offset;
-			} sector;
+				WORD offset; // pointer into Sector data
+			} sector; // call 'Seek' to modify this structure
 
-			CSectorDataSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions);
+			CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
@@ -944,7 +944,7 @@
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual TStdWinError MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig=false);
-		virtual CSectorDataSerializer *CreateSectorDataSerializer(CHexaEditor *pParentHexaEditor)=0;
+		virtual CComPtr<CDiskSerializer> CreateDiskSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual CString ListUnsupportedFeatures() const;
 		void SetRedrawToAllViews(bool redraw) const;
