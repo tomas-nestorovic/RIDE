@@ -803,7 +803,7 @@ trackNotFound:
 		class CSerializer sealed:public CDiskSerializer{
 			const CImageRaw *const image;
 
-			void __getPhysicalAddress__(int logPos,TTrack &rOutTrack,BYTE &rOutSectorIndex,PWORD pOutOffset) const{
+			void __getPhysicalAddress__(TPosition logPos,TTrack &rOutTrack,BYTE &rOutSectorIndex,PWORD pOutOffset) const{
 				// determines the PhysicalAddress that contains the specified LogicalPosition
 				const auto s=div( position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
 				if (pOutOffset)
@@ -842,9 +842,9 @@ trackNotFound:
 											};
 				return result;
 			}
-			DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
+			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
-				return (  (chs.cylinder*image->nHeads+chs.head)*image->nSectors + chs.sectorId.sector-image->firstSectorNumber  ) * image->sectorLength;
+				return (  TPosition(chs.cylinder*image->nHeads+chs.head)*image->nSectors + chs.sectorId.sector-image->firstSectorNumber  ) * image->sectorLength;
 			}
 			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const override{
 				// returns Track scanner Status, if any

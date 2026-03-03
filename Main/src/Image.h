@@ -871,7 +871,7 @@
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
 			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
-			virtual DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
+			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 			virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const=0;
 			virtual void SetTrackScannerStatus(TScannerStatus status)=0;
 		};

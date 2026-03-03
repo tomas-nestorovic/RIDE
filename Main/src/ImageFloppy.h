@@ -8,11 +8,7 @@
 			CDiskSerializer::TScannerStatus scannerStatus;
 			BYTE n;
 			bool allScanned;
-			#if _MFC_VER>=0x0A00
-			LONGLONG dataTotalLength;
-			#else
-			LONG dataTotalLength;
-			#endif
+			Yahel::TPosition dataTotalLength;
 			BYTE nDiscoveredRevolutions;
 		};
 

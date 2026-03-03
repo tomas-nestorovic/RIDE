@@ -187,10 +187,10 @@ using namespace Yahel;
 				CEvent bufferEvent;
 			} request;
 			struct{
-				int logicalPosition;
-				int nRowsAtLogicalPosition; // how many rows from the beginning of the disk are at the end of this Track
+				TPosition logicalPosition;
+				TRow nRowsAtLogicalPosition; // how many rows from the beginning of the disk are at the end of this Track
 
-				int Update(const CSerializer &s){
+				TPosition Update(const CSerializer &s){
 					// updates the Track info and returns the LogicalPosition at which this Track ends
 					// . retrieving the Sectors lengths via ScanTrack (though Track already scanned by the TrackWorker)
 					const BYTE track=this-s.trackHexaInfos;
@@ -256,7 +256,7 @@ using namespace Yahel;
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}
 
-			bool __getPhysicalAddress__(int logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
+			bool __getPhysicalAddress__(TPosition logPos,PTrack pOutTrack,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 				TTrack track;
@@ -270,7 +270,7 @@ using namespace Yahel;
 						TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 						if (TSector nSectors=__scanTrack__( track, ids, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Position
-							int pos=trackHexaInfos[track+1].logicalPosition;
+							TPosition pos=trackHexaInfos[track+1].logicalPosition;
 							while (( pos-=lengths[--nSectors] )>logPos);
 							if (pOutSectorOffset)
 								*pOutSectorOffset=logPos-pos;
@@ -310,14 +310,14 @@ using namespace Yahel;
 				const TPhysicalAddress result={ currTrack>>1, currTrack&1, ids[sector.indexOnTrack] };
 				return result;
 			}
-			DWORD GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
+			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const BYTE track=chs.cylinder*2+chs.head;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (track>=scannedTracks.n)
 					return scannedTracks.dataTotalLength;
-		}		DWORD result=trackHexaInfos[track].logicalPosition;
+		}		TPosition result=trackHexaInfos[track].logicalPosition;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				for( TSector s=0,const nSectors=__scanTrack__(track,ids,lengths); s<nSectors; result+=lengths[s++] )
 					if (nSectorsToSkip)
@@ -370,8 +370,8 @@ using namespace Yahel;
 					return 0;
 		}		TTrack track;
 				__getPhysicalAddress__(logPos,&track,nullptr,nullptr); // guaranteed to always succeed
-				auto pos=trackHexaInfos[track+1].logicalPosition;
-				auto nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
+				TPosition pos=trackHexaInfos[track+1].logicalPosition;
+				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 				WORD lengths[FDD_SECTORS_MAX];
 				TSector nSectors=__scanTrack__( track, nullptr, lengths );
 				do{
@@ -405,8 +405,8 @@ using namespace Yahel;
 						WORD lengths[FDD_SECTORS_MAX];
 						if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Row
-							auto logPos=trackHexaInfos[track+1].logicalPosition;
-							auto nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
+							TPosition logPos=trackHexaInfos[track+1].logicalPosition;
+							TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 							do{
 								const WORD length=lengths[--nSectors];
 								logPos-=length;
@@ -426,7 +426,7 @@ using namespace Yahel;
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=__scanTrack__( track, nullptr, lengths );
-					auto result=trackHexaInfos[track+1].logicalPosition;
+					TPosition result=trackHexaInfos[track+1].logicalPosition;
 					while (( result-=lengths[--nSectors] )>logPos);
 					if (pOutRecordStartLogPos)
 						*pOutRecordStartLogPos = result;
@@ -479,7 +479,7 @@ using namespace Yahel;
 					return nullptr;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
 				TSector nSectors=__scanTrack__( track, ids, lengths );
-				auto lp=trackHexaInfos[track+1].logicalPosition;
+				TPosition lp=trackHexaInfos[track+1].logicalPosition;
 				while (( lp-=lengths[--nSectors] )>logPos);
 				if (logPos!=lp)
 					return nullptr;
