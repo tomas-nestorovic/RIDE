@@ -1,9 +1,8 @@
 #include "stdafx.h"
 
-	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
+	CImage::CSectorReaderWriter::CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength)
 		// ctor
-		: pParentHexaEditor(pParentHexaEditor) , image(image) , currTrack(0)
-		, nDiscoveredRevolutions(nDiscoveredRevolutions)
+		: pParentHexaEditor(pParentHexaEditor) , image(image)
 		, revolution(Revolution::ANY_GOOD) {
 		this->dataTotalLength=dataTotalLength;
 		sector.indexOnTrack=0, sector.offset=0;
@@ -12,12 +11,7 @@
 
 
 
-
-
-
-
-
-	UINT CImage::CDiskSerializer::Read(LPVOID lpBuf,UINT nCount){
+	UINT CImage::CSectorReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		UINT nBytesToRead=nCount;
@@ -105,7 +99,7 @@
 		return nBytesToRead-nCount;
 	}
 
-	void CImage::CDiskSerializer::Write(LPCVOID lpBuf,UINT nCount){
+	void CImage::CSectorReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		bool writtenWithoutCrcError=true; // assumption
@@ -135,15 +129,44 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
+	BYTE CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+		// wrapper around CImage::GetAvailableRevolutionCount
+		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
+	}
+
+	void CImage::CSectorReaderWriter::SetCurrentRevolution(Revolution::TType rev){
+		// selects Revolution from which to retrieve Sector data
+		const bool revDifferent=rev!=revolution;
+		revolution=rev;
+		if (revDifferent)
+			pParentHexaEditor->RepaintData();
+	}
+
+
+
+
+	
+
+
+
+
+
+
+
+	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
+		// ctor
+		: CSectorReaderWriter( pParentHexaEditor, image, dataTotalLength )
+		, currTrack(0)
+		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
+	}
+
+
+
+
 	HRESULT CImage::CDiskSerializer::Clone(IStream **ppstm){
 		if (ppstm){
 			*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();
 			return S_OK;
 		}else
 			return E_INVALIDARG;
-	}
-
-	BYTE CImage::CDiskSerializer::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
-		// wrapper around CImage::GetAvailableRevolutionCount
-		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}

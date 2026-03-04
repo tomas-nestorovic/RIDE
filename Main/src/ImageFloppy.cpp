@@ -296,13 +296,6 @@ using namespace Yahel;
 				bChsValid=__getPhysicalAddress__( result, &currTrack, &sector.indexOnTrack, &sector.offset );
 				return result;
 			}
-			void SetCurrentRevolution(Revolution::TType rev) override{
-				// selects Revolution from which to retrieve Sector data
-				const bool revDifferent=rev!=revolution;
-				revolution=rev;
-				if (revDifferent)
-					pParentHexaEditor->RepaintData();
-			}
 			TPhysicalAddress GetCurrentPhysicalAddress() const override{
 				// returns the current Sector's PhysicalAddress
 				TSectorId ids[FDD_SECTORS_MAX];

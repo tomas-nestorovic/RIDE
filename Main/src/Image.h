@@ -837,16 +837,33 @@
 			CTrackReaderWriter &Offset(TLogTime dt);
 		};
 
-		class CDiskSerializer abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
+		class CSectorReaderWriter abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 		protected:
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
-			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 			Revolution::TType revolution;
 			struct{ // Sector (inferred from Position) to currently read from or write to
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset; // pointer into Sector data
 			} sector; // call 'Seek' to modify this structure
+
+			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength);
+		public:
+			// CFile methods
+			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
+			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
+
+			// other
+			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
+			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
+			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+			void SetCurrentRevolution(Revolution::TType rev);
+			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
+		};
+
+		class CDiskSerializer abstract:public CSectorReaderWriter{
+		protected:
+			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
 
 			CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions);
 		public:
@@ -858,19 +875,10 @@
 
 			const BYTE &nDiscoveredRevolutions;
 
-			// CFile methods
-			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
-			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
-
 			// IStream methods
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override sealed;
 
 			// other
-			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
-			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
-			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
-			virtual void SetCurrentRevolution(Revolution::TType rev)=0;
-			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 			virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const=0;
 			virtual void SetTrackScannerStatus(TScannerStatus status)=0;
