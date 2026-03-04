@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,LONG dataTotalLength,const BYTE &nDiscoveredRevolutions)
+	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image) , currTrack(0)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions)
