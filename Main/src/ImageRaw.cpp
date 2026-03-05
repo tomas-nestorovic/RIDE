@@ -796,10 +796,12 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
+	static const BYTE nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
+
 	CComPtr<CImage::CDiskSerializer> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
-		static const BYTE nDiscoveredRawRevolutions=1;
+		//static const BYTE nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
 		class CSerializer sealed:public CDiskSerializer{
 			const CImageRaw *const image;
 
