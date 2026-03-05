@@ -803,14 +803,20 @@ trackNotFound:
 		class CSerializer sealed:public CDiskSerializer{
 			const CImageRaw *const image;
 
-			void __getPhysicalAddress__(TPosition logPos,TTrack &rOutTrack,BYTE &rOutSectorIndex,PWORD pOutOffset) const{
+			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const{
 				// determines the PhysicalAddress that contains the specified LogicalPosition
 				const auto s=div( position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
 				if (pOutOffset)
 					*pOutOffset=s.rem;
 				const auto t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
-				rOutTrack=t.quot;
-				rOutSectorIndex=t.rem;
+				outSectorIndex=t.rem;
+				const auto h=div( t.quot, image->nHeads ); // Quot = # of Cylinders to skip, Rem = Head in a Cylinder
+				outChs.cylinder=h.quot;
+				outChs.head=h.rem;
+				outChs.sectorId.cylinder=h.quot;
+				outChs.sectorId.side=image->sideMap[h.rem];
+				outChs.sectorId.sector=image->firstSectorNumber+sector.indexOnTrack;
+				outChs.sectorId.lengthCode=image->sectorLengthCode;
 			}
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
@@ -827,15 +833,7 @@ trackNotFound:
 			#endif
 				// sets the actual Position in the Serializer
 				const auto result=__super::Seek(lOff,nFrom);
-				__getPhysicalAddress__( result, currTrack, sector.indexOnTrack, &sector.offset );
-				return result;
-			}
-			TPhysicalAddress GetCurrentPhysicalAddress() const override{
-				// returns the current Sector's PhysicalAddress
-				const div_t h=::div( currTrack, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
-				const TPhysicalAddress result={	h.quot, h.rem,
-												{ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sector.indexOnTrack, image->sectorLengthCode }
-											};
+				GetPhysicalAddress( result, sector, sector.indexOnTrack, &sector.offset );
 				return result;
 			}
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
@@ -876,14 +874,12 @@ trackNotFound:
 			LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 				if (logPos%image->sectorLength==0){
-					TTrack track; BYTE sectorIndex;
-					__getPhysicalAddress__( logPos, track, sectorIndex, nullptr );
-					const div_t h=::div( track, image->nHeads ); // Quotient = # of Cylinders to skip, Remainder = Head in a Cylinder
-					const TSectorId tmp={ h.quot, image->sideMap[h.rem], image->firstSectorNumber+sectorIndex, image->sectorLengthCode };
+					TPhysicalAddress chs; BYTE sectorIndex;
+					GetPhysicalAddress( logPos, chs, sectorIndex, nullptr );
 					#ifdef UNICODE
-						return ::lstrcpyn( labelBuffer, tmp.ToString(), labelBufferCharsMax );
+						return ::lstrcpyn( labelBuffer, chs.sectorId.ToString(), labelBufferCharsMax );
 					#else
-						::MultiByteToWideChar( CP_ACP, 0, tmp.ToString(),-1, labelBuffer,labelBufferCharsMax );
+						::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
 						return labelBuffer;
 					#endif
 				}else

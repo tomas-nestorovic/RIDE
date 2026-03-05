@@ -5,6 +5,7 @@
 		: pParentHexaEditor(pParentHexaEditor) , image(image)
 		, revolution(Revolution::ANY_GOOD) {
 		this->dataTotalLength=dataTotalLength;
+		static_cast<TPhysicalAddress &>(sector)=TPhysicalAddress::Invalid;
 		sector.indexOnTrack=0, sector.offset=0;
 	}
 
@@ -17,7 +18,7 @@
 		UINT nBytesToRead=nCount;
 		bool readWithoutError=true; // assumption
 		for( WORD w; true; ){
-			const TPhysicalAddress &&chs=GetCurrentPhysicalAddress();
+			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const BYTE nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
 				PCSectorData data[Revolution::MAX];
@@ -104,7 +105,7 @@
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		bool writtenWithoutCrcError=true; // assumption
 		for( WORD w; true; ){
-			const TPhysicalAddress &&chs=GetCurrentPhysicalAddress();
+			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
 			TFdcStatus sr; // in/out
 			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. writing Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
@@ -156,7 +157,6 @@
 	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
 		: CSectorReaderWriter( pParentHexaEditor, image, dataTotalLength )
-		, currTrack(0)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
 	}
 

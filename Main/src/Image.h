@@ -199,6 +199,7 @@
 		TTrack GetTrackNumber() const;
 		TTrack GetTrackNumber(THead nHeads) const;
 		CString GetTrackIdDesc(THead nHeads=0) const;
+		inline bool IsValid() const{ return *this; }
 		inline void Invalidate(){ *this=Invalid; }
 	} &RCPhysicalAddress;
 
@@ -842,7 +843,7 @@
 			CHexaEditor *const pParentHexaEditor;
 			const PImage image;
 			Revolution::TType revolution;
-			struct{ // Sector (inferred from Position) to currently read from or write to
+			struct:public TPhysicalAddress{ // call 'Seek' to modify this structure
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset; // pointer into Sector data
 			} sector; // call 'Seek' to modify this structure
@@ -856,15 +857,13 @@
 			// other
 			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
+			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			void SetCurrentRevolution(Revolution::TType rev);
-			virtual TPhysicalAddress GetCurrentPhysicalAddress() const=0;
 		};
 
 		class CDiskSerializer abstract:public CSectorReaderWriter{
 		protected:
-			TTrack currTrack; // Track (inferred from Position) to currently read from or write to
-
 			CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
