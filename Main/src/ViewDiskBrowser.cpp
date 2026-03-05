@@ -106,7 +106,7 @@ using namespace Yahel;
 
 	void CDiskBrowserView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		f=IMAGE->CreateDiskSerializer(this);
+		f.Attach( IMAGE->CreateDiskSerializer(this).Detach() ); // the assignment operator doesn't function here
 		Update( f, f, f->GetLength() );
 		const auto lastKnownScannerStatus=f->GetTrackScannerStatus(); // getting last known explicit status (e.g. by the user) ...
 		if (lastKnownScannerStatus!=CImage::CDiskSerializer::TScannerStatus::UNAVAILABLE)
