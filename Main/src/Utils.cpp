@@ -2730,7 +2730,7 @@ namespace Utils{
 		#ifdef _DEBUG
 			return ::lstrcat( ::lstrcpy(buffer,_T("file://c:/Documents and Settings/Tom/Plocha/ride/www/")), documentName );
 		#else
-			return ::lstrcat( ::lstrcpy(buffer,_T("http://nestorovic.hyperlink.cz/ride/")), documentName );
+			return ::lstrcat( ::lstrcpy(buffer,_T("http://nestorovic.eu/ride/")), documentName );
 		#endif
 	}
 
