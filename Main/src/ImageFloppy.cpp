@@ -254,7 +254,7 @@ using namespace Yahel;
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}
 
-			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,PBYTE pOutSectorIndexOnTrack,PWORD pOutSectorOffset) const{
+			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutSectorOffset) const override{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 				outChs=TPhysicalAddress::Invalid; // assumption
@@ -267,17 +267,15 @@ using namespace Yahel;
 					do{
 						while (trackHexaInfos[--track].logicalPosition>logPos);
 						TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
-						if (TSector nSectors=__scanTrack__( track, ids, lengths )){
+						if (outSectorIndex=__scanTrack__( track, ids, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Position
 							TPosition pos=trackHexaInfos[track+1].logicalPosition;
-							while (( pos-=lengths[--nSectors] )>logPos);
+							while (( pos-=lengths[--outSectorIndex] )>logPos);
 							if (pOutSectorOffset)
 								*pOutSectorOffset=logPos-pos;
-							if (pOutSectorIndexOnTrack)
-								*pOutSectorIndexOnTrack=nSectors;
 							outChs.cylinder=track>>1;
 							outChs.head=track&1;
-							outChs.sectorId=ids[nSectors];
+							outChs.sectorId=ids[outSectorIndex];
 							return;
 						}//else
 							// empty Track - skipping it
@@ -292,7 +290,7 @@ using namespace Yahel;
 			#endif
 				// sets the actual Position in the Serializer
 				const auto result=__super::Seek(lOff,nFrom);
-				GetPhysicalAddress( result, sector, &sector.indexOnTrack, &sector.offset );
+				GetPhysicalAddress( result, sector, sector.indexOnTrack, &sector.offset );
 				return result;
 			}
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
@@ -353,8 +351,8 @@ using namespace Yahel;
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (!dataTotalLength)
 					return 0;
-		}		TPhysicalAddress chs;
-				GetPhysicalAddress(logPos,chs,nullptr,nullptr); // guaranteed to always succeed
+		}		TPhysicalAddress chs; BYTE iSector;
+				GetPhysicalAddress(logPos,chs,iSector,nullptr); // guaranteed to always succeed
 				const TTrack track=chs.GetTrackNumber(2);
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
@@ -407,7 +405,7 @@ using namespace Yahel;
 			void GetRecordInfo(TPosition logPos,PPosition pOutRecordStartLogPos,PPosition pOutRecordLength,bool *pOutDataReady) override{
 				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 				TPhysicalAddress chs; BYTE iSector;
-				GetPhysicalAddress( logPos, chs, &iSector, nullptr );
+				GetPhysicalAddress( logPos, chs, iSector, nullptr );
 				if (!chs)
 					return;
 				const TTrack track=chs.GetTrackNumber(2);
@@ -458,31 +456,6 @@ using namespace Yahel;
 							request.bufferEvent.SetEvent();
 						}
 					}
-				}
-			}
-			LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
-				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-				TPhysicalAddress chs; BYTE iSector; WORD offset;
-				GetPhysicalAddress( logPos, chs, &iSector, &offset );
-				if (!chs || offset)
-					return nullptr;
-				switch (const Revolution::TType dirtyRev=image->GetDirtyRevolution(chs,iSector)){
-					case Revolution::NONE:
-						#ifdef UNICODE
-							return ::lstrcpyn( labelBuffer, chs.sectorId.ToString(), labelBufferCharsMax );
-						#else
-							::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
-							return labelBuffer;
-						#endif
-					default:
-						#ifdef UNICODE
-							::wnsprintf( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, chs.sectorId.ToString() );
-						#else
-							WCHAR idStrW[80];
-							::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, idStrW,ARRAYSIZE(idStrW) );
-							::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, idStrW );
-						#endif
-						return labelBuffer;
 				}
 			}
 		};

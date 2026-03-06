@@ -143,6 +143,31 @@
 			pParentHexaEditor->RepaintData();
 	}
 
+	LPCWSTR CImage::CSectorReaderWriter::GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
+		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
+		TPhysicalAddress chs; BYTE iSector; WORD offset;
+		GetPhysicalAddress( pos, chs, iSector, &offset );
+		if (!chs || offset)
+			return nullptr;
+		switch (const Revolution::TType dirtyRev=image->GetDirtyRevolution(chs,iSector)){
+			case Revolution::NONE:
+				#ifdef UNICODE
+					return ::lstrcpyn( labelBuffer, chs.sectorId.ToString(), labelBufferCharsMax );
+				#else
+					::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
+					return labelBuffer;
+				#endif
+			default:
+				#ifdef UNICODE
+					::wnsprintf( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, chs.sectorId.ToString() );
+				#else
+					WCHAR idStrW[80];
+					::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, idStrW,ARRAYSIZE(idStrW) );
+					::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, idStrW );
+				#endif
+				return labelBuffer;
+		}
+	}
 
 
 

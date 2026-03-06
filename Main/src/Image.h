@@ -854,12 +854,16 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 
+			// Yahel::Stream::IAdvisor methods
+			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override sealed;
+
 			// other
 			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			void SetCurrentRevolution(Revolution::TType rev);
+			virtual void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const=0;
 		};
 
 		class CDiskSerializer abstract:public CSectorReaderWriter{

@@ -873,20 +873,6 @@ trackNotFound:
 				if (pOutDataReady)
 					*pOutDataReady=true;
 			}
-			LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
-				// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-				if (logPos%image->sectorLength==0){
-					TPhysicalAddress chs; BYTE sectorIndex;
-					GetPhysicalAddress( logPos, chs, sectorIndex, nullptr );
-					#ifdef UNICODE
-						return ::lstrcpyn( labelBuffer, chs.sectorId.ToString(), labelBufferCharsMax );
-					#else
-						::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, labelBuffer,labelBufferCharsMax );
-						return labelBuffer;
-					#endif
-				}else
-					return nullptr;
-			}
 		};
 		// - returning a Serializer class instance
 		CComPtr<CDiskSerializer> tmp;
