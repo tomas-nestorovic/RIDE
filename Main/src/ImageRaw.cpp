@@ -805,9 +805,9 @@ trackNotFound:
 		class CSerializer sealed:public CDiskSerializer{
 			const CImageRaw *const image;
 
-			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const{
+			void GetPhysicalAddress(TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override{
 				// determines the PhysicalAddress that contains the specified LogicalPosition
-				const auto s=div( position, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
+				const auto s=div( pos, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
 				if (pOutOffset)
 					*pOutOffset=s.rem;
 				const auto t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
