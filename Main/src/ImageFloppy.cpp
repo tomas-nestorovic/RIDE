@@ -341,8 +341,7 @@ using namespace Yahel;
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (!dataTotalLength)
 					return 0;
-		}		TPhysicalAddress chs; BYTE iSector;
-				GetPhysicalAddress(logPos,chs,iSector,nullptr); // guaranteed to always succeed
+		}		const TPhysicalAddress &&chs=static_cast<CDiskSerializer *>(this)->GetPhysicalAddress(logPos); // guaranteed to always succeed
 				const TTrack track=chs.GetTrackNumber(2);
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;

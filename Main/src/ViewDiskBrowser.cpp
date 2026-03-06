@@ -188,16 +188,14 @@ using namespace Yahel;
 			case ID_SELECT_CURRENT_CYLINDER:{
 				// selecting current Cylinder and placing Cursor at the end of the selection
 				auto pos=GetCaretPosition();
-				f->Seek(pos,CFile::begin);
-				const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
+				const TPhysicalAddress &&currChs=f->GetPhysicalAddress(pos);
 				TPosition selectionA;
 				do{
 					selectionA=pos;
 					if (!pos) // if first Sector in the Image reached ...
 						break; // ... then this is the beginning of current Track or Cylinder
 					f->GetRecordInfo( --pos, &pos, nullptr, nullptr );
-					f->Seek(pos,CFile::begin);
-				}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
+				}while (!::memcmp( &currChs, &f->GetPhysicalAddress(pos), nBytesToCompare ));
 				auto selectionZ=selectionA;
 				do{
 					if (selectionZ>=f->GetLength()) // if we would be beyond the last Sector in the Image ...
@@ -205,8 +203,7 @@ using namespace Yahel;
 					TPosition sectorLength;
 					f->GetRecordInfo( selectionZ, nullptr, &sectorLength, nullptr );
 					selectionZ+=sectorLength;
-					f->Seek(selectionZ,CFile::begin);
-				}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));					
+				}while (!::memcmp( &currChs, &f->GetPhysicalAddress(selectionZ), nBytesToCompare ));
 				SetSelection( selectionA, selectionZ );
 				return true;
 			}
@@ -217,16 +214,14 @@ using namespace Yahel;
 			case ID_NAVIGATE_PREVIOUSCYLINDER:{
 				// moving Cursor at the beginning of previous Cylinder
 				auto pos=GetCaretPosition();
-				f->Seek(pos-1,CFile::begin);
-				const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
+				const TPhysicalAddress &&currChs=f->GetPhysicalAddress(pos-1);
 				TPosition targetPos;
 				do{
 					targetPos=pos;
 					if (!pos) // if first Sector in the Image reached ...
 						break; // ... then this is the beginning of current Track or Cylinder
 					f->GetRecordInfo( --pos, &pos, nullptr, nullptr );
-					f->Seek(pos,CFile::begin);
-				}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
+				}while (!::memcmp( &currChs, &f->GetPhysicalAddress(pos), nBytesToCompare ));
 				SetSelection( targetPos, targetPos );
 				return true;
 			}
@@ -237,23 +232,22 @@ using namespace Yahel;
 			case ID_NAVIGATE_NEXTCYLINDER:{
 				// moving Cursor at the beginning of next Cylinder
 				auto pos=GetCaretPosition();
-				f->Seek(pos,CFile::begin);
-				const TPhysicalAddress currChs=f->GetCurrentPhysicalAddress();
+				const TPhysicalAddress &&currChs=f->GetPhysicalAddress(pos);
 				do{
 					if (pos>=f->GetLength()) // if we would be beyond the last Sector in the Image ...
 						break; // ... then this is the end of the current Track or Cylinder
 					TPosition sectorLength;
 					f->GetRecordInfo( pos, &pos, &sectorLength, nullptr );
 					pos+=sectorLength;
-					f->Seek(pos,CFile::begin);
-				}while (!::memcmp( &currChs, &f->GetCurrentPhysicalAddress(), nBytesToCompare ));
+				}while (!::memcmp( &currChs, &f->GetPhysicalAddress(pos), nBytesToCompare ));
 				SetSelection( pos, pos );
 				return true;
 			}
 			case ID_NAVIGATE_SECTOR:{
 				// moving Cursor at the beginning of user-selected Sector
-				// . seeking at the Cursor Position to determine the PhysicalAddress
-				f->Seek( GetCaretPosition(), CFile::begin );
+				// . retrieving PhysicalAddress at Caret LogicalPosition
+				TPhysicalAddress chs; BYTE iSector;
+				f->GetPhysicalAddress( GetCaretPosition(), chs, iSector, nullptr );
 				// . defining the Dialog
 				class CGoToSectorDialog sealed:public Utils::CRideDialog{
 					const Utils::CRideFont &symbolFont;
@@ -349,7 +343,7 @@ using namespace Yahel;
 						, sectorDoubleClicked(false)
 						, sectorIndexOnTrack(rSectorIndexOnTrack) , chs(rChs) {
 					}
-				} d( IMAGE, f->GetCurrentSectorIndexOnTrack(), f->GetCurrentPhysicalAddress() );
+				} d( IMAGE, iSector, chs );
 				// . showing the Dialog and processing its result
 				if (d.DoModal()==IDOK){
 					const auto pos=f->GetSectorStartPosition(d.chs,d.sectorIndexOnTrack);
@@ -357,16 +351,16 @@ using namespace Yahel;
 				}
 				return true;
 			}
-			case ID_TIME:
+			case ID_TIME:{
 				// display of low-level Track timing
-				f->Seek( GetCaretPosition(), CFile::begin );
+				TPhysicalAddress chs; BYTE iSector; WORD offset;
+				f->GetPhysicalAddress( GetCaretPosition(), chs, iSector, &offset );
 				IMAGE->ShowModalTrackTimingAt(
-					f->GetCurrentPhysicalAddress(),
-					f->GetCurrentSectorIndexOnTrack(),
-					f->GetPositionInCurrentSector(),
+					chs, iSector, offset,
 					revolution<Revolution::MAX ? revolution : Revolution::ANY_GOOD
 				);
 				return true;
+			}
 			case ID_CREATOR:
 				// command sent by CDiskSerializer to inform that new Tracks have been scanned
 				// . seeking to particular PhysicalAddress

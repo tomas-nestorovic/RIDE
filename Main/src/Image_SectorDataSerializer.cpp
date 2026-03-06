@@ -154,6 +154,12 @@
 			pParentHexaEditor->RepaintData();
 	}
 
+	TPhysicalAddress CImage::CSectorReaderWriter::GetPhysicalAddress(Yahel::TPosition pos) const{
+		TPhysicalAddress chs; BYTE iSector;
+		GetPhysicalAddress( pos, chs, iSector, nullptr );
+		return chs;
+	}
+
 	LPCWSTR CImage::CSectorReaderWriter::GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
 		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
 		TPhysicalAddress chs; BYTE iSector; WORD offset;

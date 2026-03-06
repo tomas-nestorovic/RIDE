@@ -869,6 +869,7 @@
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			void SetCurrentRevolution(Revolution::TType rev);
 			virtual void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const=0;
+			TPhysicalAddress GetPhysicalAddress(Yahel::TPosition pos) const;
 		};
 
 		class CDiskSerializer abstract:public CSectorReaderWriter{
