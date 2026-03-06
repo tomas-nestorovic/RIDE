@@ -283,16 +283,6 @@ using namespace Yahel;
 			}
 
 			// CDiskSerializer methods
-			#if _MFC_VER>=0x0A00
-			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override{
-			#else
-			LONG Seek(LONG lOff,UINT nFrom) override{
-			#endif
-				// sets the actual Position in the Serializer
-				const auto result=__super::Seek(lOff,nFrom);
-				GetPhysicalAddress( result, sector, sector.indexOnTrack, &sector.offset );
-				return result;
-			}
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const BYTE track=chs.cylinder*2+chs.head;

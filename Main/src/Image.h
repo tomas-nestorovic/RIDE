@@ -851,6 +851,11 @@
 			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength);
 		public:
 			// CFile methods
+		#if _MFC_VER>=0x0A00
+			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override sealed;
+		#else
+			LONG Seek(LONG lOff,UINT nFrom) override sealed;
+		#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 

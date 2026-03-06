@@ -12,6 +12,17 @@
 
 
 
+#if _MFC_VER>=0x0A00
+	ULONGLONG CImage::CSectorReaderWriter::Seek(LONGLONG lOff,UINT nFrom){
+#else
+	LONG CImage::CSectorReaderWriter::Seek(LONG lOff,UINT nFrom){
+#endif
+		// sets the actual Position in the Serializer
+		const auto result=__super::Seek(lOff,nFrom);
+		GetPhysicalAddress( result, sector, sector.indexOnTrack, &sector.offset );
+		return result;
+	}
+
 	UINT CImage::CSectorReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
