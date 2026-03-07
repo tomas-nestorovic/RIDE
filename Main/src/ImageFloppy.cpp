@@ -222,7 +222,8 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CDiskSerializer( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
+				: CSectorReaderWriter( pParentHexaEditor, image, image->scannedTracks.dataTotalLength )
+				, CDiskSerializer( image->scannedTracks.nDiscoveredRevolutions )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor

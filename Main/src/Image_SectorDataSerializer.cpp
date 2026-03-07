@@ -188,6 +188,66 @@
 
 
 
+
+
+
+
+
+
+
+
+	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(TSector nSectors,WORD sectorLength,BYTE sectorLengthCode,TSector firstSectorNumber)
+		// ctor
+		: CSectorReaderWriter( nullptr, nullptr, 0 )
+		, nSectors(nSectors) , firstSectorNumber(firstSectorNumber)
+		, sectorLength(sectorLength) , sectorLengthCode(sectorLengthCode) {
+	}
+
+
+
+
+	void CImage::CSameLengthSectorReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const{
+		// determines the PhysicalAddress that contains the specified LogicalPosition
+		const auto &&s=div( pos, sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
+		if (pOutOffset)
+			*pOutOffset=s.rem;
+		const auto &&t=div( s.quot, nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
+		outSectorIndex=t.rem;
+		const auto &&h=div( t.quot, image->GetHeadCount() ); // Quot = # of Cylinders to skip, Rem = Head in a Cylinder
+		outChs.cylinder=h.quot;
+		outChs.head=h.rem;
+		outChs.sectorId.cylinder=h.quot;
+		outChs.sectorId.side=image->sideMap[h.rem];
+		outChs.sectorId.sector=firstSectorNumber+sector.indexOnTrack;
+		outChs.sectorId.lengthCode=sectorLengthCode;
+	}
+
+	Yahel::TRow CImage::CSameLengthSectorReaderWriter::LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow){
+		// computes and returns the row containing the specified LogicalPosition
+		const auto &&d=div( logPos, sectorLength );
+		const auto nRowsPerRecord=Utils::RoundDivUp( sectorLength, nBytesInRow );
+		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
+	}
+
+	Yahel::TPosition CImage::CSameLengthSectorReaderWriter::RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow){
+		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
+		const auto nRowsPerRecord=Utils::RoundDivUp( sectorLength, nBytesInRow );
+		const auto &&d=div( row, nRowsPerRecord );
+		return d.quot*sectorLength + d.rem*nBytesInRow;
+	}
+
+	void CImage::CSameLengthSectorReaderWriter::GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady){
+		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
+		if (pOutRecordStartLogPos)
+			*pOutRecordStartLogPos = logPos/sectorLength*sectorLength;
+		if (pOutRecordLength)
+			*pOutRecordLength = sectorLength;
+		if (pOutDataReady)
+			*pOutDataReady=true;
+	}
+
+
+
 	
 
 
@@ -196,9 +256,9 @@
 
 
 
-	CImage::CDiskSerializer::CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
+	CImage::CDiskSerializer::CDiskSerializer(const BYTE &nDiscoveredRevolutions)
 		// ctor
-		: CSectorReaderWriter( pParentHexaEditor, image, dataTotalLength )
+		: CSectorReaderWriter( nullptr, nullptr, 0 )
 		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
 	}
 

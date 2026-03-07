@@ -872,9 +872,25 @@
 			TPhysicalAddress GetPhysicalAddress(Yahel::TPosition pos) const;
 		};
 
-		class CDiskSerializer abstract:public CSectorReaderWriter{
+		class CSameLengthSectorReaderWriter abstract:virtual public CSectorReaderWriter{
 		protected:
-			CDiskSerializer(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions);
+			const TSector nSectors, firstSectorNumber;
+			const WORD sectorLength;
+			const BYTE sectorLengthCode;
+
+			CSameLengthSectorReaderWriter(TSector nSectors,WORD sectorLength,BYTE sectorLengthCode,TSector firstSectorNumber);
+
+			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override;
+		public:
+			// Yahel::Stream::IAdvisor methods
+			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
+			Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow) override;
+			void GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
+		};
+
+		class CDiskSerializer abstract:virtual public CSectorReaderWriter{
+		protected:
+			CDiskSerializer(const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)

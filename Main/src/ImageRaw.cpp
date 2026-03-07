@@ -802,35 +802,19 @@ trackNotFound:
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		//static const BYTE nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
-		class CSerializer sealed:public CDiskSerializer{
-			const CImageRaw *const image;
-
-			void GetPhysicalAddress(TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override{
-				// determines the PhysicalAddress that contains the specified LogicalPosition
-				const auto s=div( pos, image->sectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
-				if (pOutOffset)
-					*pOutOffset=s.rem;
-				const auto t=div( s.quot, image->nSectors ); // Quot = # of Tracks to skip, Rem = the zero-based Sector index on a Track yet to be computed
-				outSectorIndex=t.rem;
-				const auto h=div( t.quot, image->nHeads ); // Quot = # of Cylinders to skip, Rem = Head in a Cylinder
-				outChs.cylinder=h.quot;
-				outChs.head=h.rem;
-				outChs.sectorId.cylinder=h.quot;
-				outChs.sectorId.side=image->sideMap[h.rem];
-				outChs.sectorId.sector=image->firstSectorNumber+sector.indexOnTrack;
-				outChs.sectorId.lengthCode=image->sectorLengthCode;
-			}
+		class CSerializer sealed:public CDiskSerializer,public CSameLengthSectorReaderWriter{
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CDiskSerializer( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions )
-				, image(image) {
+				: CSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, 0, 0 )
+				, CSameLengthSectorReaderWriter( image->nSectors, image->sectorLength, image->sectorLengthCode, image->firstSectorNumber )
+				, CDiskSerializer( nDiscoveredRawRevolutions ) {
 			}
 
 			// CDiskSerializer methods
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
-				return (  TPosition(chs.cylinder*image->nHeads+chs.head)*image->nSectors + chs.sectorId.sector-image->firstSectorNumber  ) * image->sectorLength;
+				return TPosition( chs.GetTrackNumber()*nSectors + chs.sectorId.sector-firstSectorNumber )*sectorLength;
 			}
 			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const override{
 				// returns Track scanner Status, if any
@@ -839,29 +823,6 @@ trackNotFound:
 			void SetTrackScannerStatus(TScannerStatus status) override{
 				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
 				//nop
-			}
-
-			// Yahel::Stream::IAdvisor methods
-			TRow LogicalPositionToRow(TPosition logPos,WORD nBytesInRow) override{
-				// computes and returns the row containing the specified LogicalPosition
-				const auto d=div( logPos, image->sectorLength );
-				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
-				return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
-			}
-			TPosition RowToLogicalPosition(TRow row,WORD nBytesInRow) override{
-				// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
-				const TRow nRowsPerRecord=Utils::RoundDivUp( image->sectorLength, nBytesInRow );
-				const auto d=::div( row, nRowsPerRecord );
-				return d.quot*image->sectorLength + d.rem*nBytesInRow;
-			}
-			void GetRecordInfo(TPosition logPos,PPosition pOutRecordStartLogPos,PPosition pOutRecordLength,bool *pOutDataReady) override{
-				// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
-				if (pOutRecordStartLogPos)
-					*pOutRecordStartLogPos = logPos/image->sectorLength*image->sectorLength;
-				if (pOutRecordLength)
-					*pOutRecordLength = image->sectorLength;
-				if (pOutDataReady)
-					*pOutDataReady=true;
 			}
 		};
 		// - returning a Serializer class instance
