@@ -133,7 +133,7 @@ using namespace Yahel;
 							image->BufferTrackData(
 								req.track>>1, req.track&1, req.revolution,
 								ids, sectorIdAndPositionIdentity,
-								ps->__scanTrack__( req.track, ids, nullptr )
+								ps->ScanTrack( req.track, ids, nullptr )
 							);
 						else
 							// all Revolutions wanted
@@ -141,7 +141,7 @@ using namespace Yahel;
 								image->BufferTrackData(
 									req.track>>1, req.track&1, (Revolution::TType)rev,
 									ids, sectorIdAndPositionIdentity,
-									ps->__scanTrack__( req.track, ids, nullptr )
+									ps->ScanTrack( req.track, ids, nullptr )
 								);
 						EXCLUSIVELY_LOCK(ps->request); // synchronizing with dtor
 						if (ps->workerStatus!=TScannerStatus::UNAVAILABLE) // should we terminate?
@@ -192,9 +192,9 @@ using namespace Yahel;
 				TPosition Update(const CSerializer &s){
 					// updates the Track info and returns the LogicalPosition at which this Track ends
 					// . retrieving the Sectors lengths via ScanTrack (though Track already scanned by the TrackWorker)
-					const BYTE track=this-s.trackHexaInfos;
+					const TTrack track=this-s.trackHexaInfos;
 					WORD lengths[FDD_SECTORS_MAX];
-					TSector nSectors=s.__scanTrack__( track, nullptr, lengths );
+					TSector nSectors=s.ScanTrack( track, nullptr, lengths );
 					// . updating the state - the results are stored in the NEXT structure
 					auto &scannedTracks=s.GetFloppyImage().scannedTracks;
 					EXCLUSIVELY_LOCK(scannedTracks);
@@ -210,7 +210,7 @@ using namespace Yahel;
 			} trackHexaInfos[FDD_CYLINDERS_MAX*2+1];
 			WORD lastKnownHexaRowLength;
 
-			TSector __scanTrack__(TTrack track,PSectorId ids,PWORD lengths) const{
+			TSector ScanTrack(TTrack track,PSectorId ids,PWORD lengths) const{
 				// a wrapper around CImage::ScanTrack
 				const TSector nSectors=image->ScanTrack( track>>1, track&1, nullptr, ids, lengths );
 				if (lengths)
@@ -230,8 +230,8 @@ using namespace Yahel;
 				::ZeroMemory( trackHexaInfos, sizeof(trackHexaInfos) );
 				// . repopulating ScannedTracks
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
-				for( BYTE t=0; t<image->scannedTracks.n; t++ ){
-					__scanTrack__( t, nullptr, nullptr );
+				for( TTrack t=0; t<image->scannedTracks.n; t++ ){
+					ScanTrack( t, nullptr, nullptr );
 					dataTotalLength=trackHexaInfos[t].Update(*this);
 				}
 				image->scannedTracks.dataTotalLength=dataTotalLength;
@@ -267,7 +267,7 @@ using namespace Yahel;
 					do{
 						while (trackHexaInfos[--track].logicalPosition>logPos);
 						TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
-						if (outSectorIndex=__scanTrack__( track, ids, lengths )){
+						if (outSectorIndex=ScanTrack( track, ids, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Position
 							TPosition pos=trackHexaInfos[track+1].logicalPosition;
 							while (( pos-=lengths[--outSectorIndex] )>logPos);
@@ -285,14 +285,14 @@ using namespace Yahel;
 			// CDiskSerializer methods
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
-				const BYTE track=chs.cylinder*2+chs.head;
+				const TTrack track=chs.GetTrackNumber(2);
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (track>=scannedTracks.n)
 					return scannedTracks.dataTotalLength;
 		}		TPosition result=trackHexaInfos[track].logicalPosition;
 				TSectorId ids[FDD_SECTORS_MAX]; WORD lengths[FDD_SECTORS_MAX];
-				for( TSector s=0,const nSectors=__scanTrack__(track,ids,lengths); s<nSectors; result+=lengths[s++] )
+				for( TSector s=0,const nSectors=ScanTrack(track,ids,lengths); s<nSectors; result+=lengths[s++] )
 					if (nSectorsToSkip)
 						nSectorsToSkip--;
 					else if (ids[s]==chs.sectorId) // Sector IDs are equal
@@ -334,7 +334,7 @@ using namespace Yahel;
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
-					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
+					for( TTrack t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
 				// . returning the result
 				if (logPos>=scannedTracks.dataTotalLength)
@@ -346,7 +346,7 @@ using namespace Yahel;
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 				WORD lengths[FDD_SECTORS_MAX];
-				TSector nSectors=__scanTrack__( track, nullptr, lengths );
+				TSector nSectors=ScanTrack( track, nullptr, lengths );
 				do{
 					const WORD length=lengths[--nSectors];
 					pos-=length;
@@ -359,12 +359,12 @@ using namespace Yahel;
 				if (row<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				BYTE track;
+				TTrack track;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
-					for( BYTE t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
+					for( TTrack t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
 				// . returning the result
 				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
@@ -376,7 +376,7 @@ using namespace Yahel;
 					do{
 						while (trackHexaInfos[--track].nRowsAtLogicalPosition>row);
 						WORD lengths[FDD_SECTORS_MAX];
-						if (TSector nSectors=__scanTrack__( track, nullptr, lengths )){
+						if (TSector nSectors=ScanTrack( track, nullptr, lengths )){
 							// found an non-empty Track - guaranteed to contain the requested Row
 							TPosition logPos=trackHexaInfos[track+1].logicalPosition;
 							TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
@@ -400,7 +400,7 @@ using namespace Yahel;
 				const TTrack track=chs.GetTrackNumber(2);
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
-					TSector nSectors=__scanTrack__( track, nullptr, lengths );
+					TSector nSectors=ScanTrack( track, nullptr, lengths );
 					TPosition result=trackHexaInfos[track+1].logicalPosition;
 					while (( result-=lengths[--nSectors] )>logPos);
 					if (pOutRecordStartLogPos)
@@ -410,7 +410,7 @@ using namespace Yahel;
 				}
 				if (pOutDataReady){
 					TSectorId ids[(TSector)-1];
-					__scanTrack__( track, ids, nullptr );
+					ScanTrack( track, ids, nullptr );
 					switch (revolution){
 						case Revolution::ANY_GOOD:
 							*pOutDataReady=true; // assumption (all Revolutions already attempted, none holding healthy data)

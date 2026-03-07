@@ -6,7 +6,7 @@
 			static const TScannerState Initial;
 
 			CDiskSerializer::TScannerStatus scannerStatus;
-			BYTE n;
+			TTrack n;
 			bool allScanned;
 			Yahel::TPosition dataTotalLength;
 			BYTE nDiscoveredRevolutions;
