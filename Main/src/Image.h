@@ -848,8 +848,16 @@
 				WORD offset; // pointer into Sector data
 			} sector; // call 'Seek' to modify this structure
 
-			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength);
+			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions);
 		public:
+			enum TScannerStatus:BYTE{
+				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
+				PAUSED, // Track scanner exists but is suspended (same example as above)
+				UNAVAILABLE // Track scanner doesn't exist (e.g. a CImageRaw descendant)
+			};
+
+			const BYTE &nDiscoveredRevolutions;
+
 			// CFile methods
 		#if _MFC_VER>=0x0A00
 			ULONGLONG Seek(LONGLONG lOff,UINT nFrom) override sealed;
@@ -858,6 +866,9 @@
 		#endif
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
+
+			// IStream methods
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
 
 			// Yahel::Stream::IAdvisor methods
 			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override sealed;
@@ -868,17 +879,26 @@
 			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			void SetCurrentRevolution(Revolution::TType rev);
+			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
+			virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const;
+			virtual void SetTrackScannerStatus(TScannerStatus status);
 			virtual void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const=0;
 			TPhysicalAddress GetPhysicalAddress(Yahel::TPosition pos) const;
 		};
 
-		class CSameLengthSectorReaderWriter abstract:virtual public CSectorReaderWriter{
-		protected:
-			const TSector nSectors, firstSectorNumber;
-			const WORD sectorLength;
-			const BYTE sectorLengthCode;
+		struct TSameLengthSectorParams{
+			TSector nSectors, firstSectorNumber;
+			WORD sectorLength;
+			BYTE sectorLengthCode;
 
-			CSameLengthSectorReaderWriter(TSector nSectors,WORD sectorLength,BYTE sectorLengthCode,TSector firstSectorNumber);
+			inline TSameLengthSectorParams()
+				: nSectors(0) {
+			}
+		};
+
+		class CSameLengthSectorReaderWriter abstract:public CSectorReaderWriter,protected TSameLengthSectorParams{
+		protected:
+			CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
 
 			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override;
 		public:
@@ -886,27 +906,6 @@
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
 			Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow) override;
 			void GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
-		};
-
-		class CDiskSerializer abstract:virtual public CSectorReaderWriter{
-		protected:
-			CDiskSerializer(const BYTE &nDiscoveredRevolutions);
-		public:
-			enum TScannerStatus:BYTE{
-				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
-				PAUSED, // Track scanner exists but is suspended (same example as above)
-				UNAVAILABLE // Track scanner doesn't exist (e.g. a CImageRaw descendant)
-			};
-
-			const BYTE &nDiscoveredRevolutions;
-
-			// IStream methods
-			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override sealed;
-
-			// other
-			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
-			virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const=0;
-			virtual void SetTrackScannerStatus(TScannerStatus status)=0;
 		};
 
 		static Utils::CPtrList<PCProperties> Known; // list of known Images (registered in CRideApp::InitInstance)
@@ -977,7 +976,7 @@
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual TStdWinError MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig=false);
-		virtual CComPtr<CDiskSerializer> CreateDiskSerializer(CHexaEditor *pParentHexaEditor)=0;
+		virtual CComPtr<CSectorReaderWriter> CreateDiskSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual CString ListUnsupportedFeatures() const;
 		void SetRedrawToAllViews(bool redraw) const;

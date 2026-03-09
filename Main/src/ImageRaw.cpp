@@ -23,7 +23,7 @@ using namespace Yahel;
 		// ctor
 		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
-		, nCylinders(0) , nSectors(0) // = not initialized - see SetMediumTypeAndGeometry
+		, nCylinders(0) // = not initialized - see SetMediumTypeAndGeometry
 		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
@@ -798,35 +798,25 @@ trackNotFound:
 
 	static const BYTE nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
 
-	CComPtr<CImage::CDiskSerializer> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	CComPtr<CImage::CSectorReaderWriter> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		//static const BYTE nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
-		class CSerializer sealed:public CDiskSerializer,public CSameLengthSectorReaderWriter{
+		class CSerializer sealed:public CSameLengthSectorReaderWriter{
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, 0, 0 )
-				, CSameLengthSectorReaderWriter( image->nSectors, image->sectorLength, image->sectorLengthCode, image->firstSectorNumber )
-				, CDiskSerializer( nDiscoveredRawRevolutions ) {
+				: CSameLengthSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions, *image ) {
 			}
 
-			// CDiskSerializer methods
+			// CSectorReaderWriter methods
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				return TPosition( chs.GetTrackNumber()*nSectors + chs.sectorId.sector-firstSectorNumber )*sectorLength;
 			}
-			TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls) const override{
-				// returns Track scanner Status, if any
-				return TScannerStatus::UNAVAILABLE; // no scanner needed, the Image has implicit structure
-			}
-			void SetTrackScannerStatus(TScannerStatus status) override{
-				// suspends/resumes Track scanner, if any (if none, simply ignores the request)
-				//nop
-			}
 		};
 		// - returning a Serializer class instance
-		CComPtr<CDiskSerializer> tmp;
+		CComPtr<CSectorReaderWriter> tmp;
 		tmp.p=new CSerializer(pParentHexaEditor,this);
 		return tmp;
 	}

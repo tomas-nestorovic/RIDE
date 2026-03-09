@@ -28,7 +28,7 @@ using namespace Yahel;
 
 
 	const CFloppyImage::TScannerState CFloppyImage::TScannerState::Initial={
-		CDiskSerializer::TScannerStatus::RUNNING,
+		CSectorReaderWriter::TScannerStatus::RUNNING,
 		0, // # of Tracks scanned thus far
 		false, // not all Tracks scanned yet
 		0, // total length of data discovered thus far
@@ -103,11 +103,11 @@ using namespace Yahel;
 		return ERROR_SUCCESS;
 }	}
 
-	CComPtr<CImage::CDiskSerializer> CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	CComPtr<CImage::CSectorReaderWriter> CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the Serializer class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
-		class CSerializer sealed:public CDiskSerializer{
+		class CSerializer sealed:public CSectorReaderWriter{
 			inline CFloppyImage &GetFloppyImage() const{
 				return *(CFloppyImage *)image;
 			}
@@ -222,8 +222,7 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorReaderWriter( pParentHexaEditor, image, image->scannedTracks.dataTotalLength )
-				, CDiskSerializer( image->scannedTracks.nDiscoveredRevolutions )
+				: CSectorReaderWriter( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
 				// . initialization
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
@@ -283,7 +282,7 @@ using namespace Yahel;
 					}while (true);
 			}
 
-			// CDiskSerializer methods
+			// CSectorReaderWriter methods
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 				const TTrack track=chs.GetTrackNumber(2);
@@ -342,7 +341,7 @@ using namespace Yahel;
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (!dataTotalLength)
 					return 0;
-		}		const TPhysicalAddress &&chs=static_cast<CDiskSerializer *>(this)->GetPhysicalAddress(logPos); // guaranteed to always succeed
+		}		const TPhysicalAddress &&chs=static_cast<CSectorReaderWriter *>(this)->GetPhysicalAddress(logPos); // guaranteed to always succeed
 				const TTrack track=chs.GetTrackNumber(2);
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
@@ -450,7 +449,7 @@ using namespace Yahel;
 			}
 		};
 		// - returning a Serializer class instance
-		CComPtr<CDiskSerializer> tmp;
+		CComPtr<CSectorReaderWriter> tmp;
 		tmp.p=new CSerializer(pParentHexaEditor,this);
 		return tmp;
 	}

@@ -5,7 +5,7 @@
 		struct TScannerState{
 			static const TScannerState Initial;
 
-			CDiskSerializer::TScannerStatus scannerStatus;
+			CSectorReaderWriter::TScannerStatus scannerStatus;
 			TTrack n;
 			bool allScanned;
 			Yahel::TPosition dataTotalLength;
@@ -32,7 +32,7 @@
 		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override;
-		CComPtr<CDiskSerializer> CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override sealed;
+		CComPtr<CSectorReaderWriter> CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override sealed;
 		TLogTime EstimateNanosecondsPerOneByte() const override;
 		virtual void EstimateTrackTiming(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,BYTE gap3,PLogTime startTimesNanoseconds) const;
 	};

@@ -1,9 +1,10 @@
 #include "stdafx.h"
 
-	CImage::CSectorReaderWriter::CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength)
+	CImage::CSectorReaderWriter::CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions)
 		// ctor
 		: pParentHexaEditor(pParentHexaEditor) , image(image)
-		, revolution(Revolution::ANY_GOOD) {
+		, revolution(Revolution::ANY_GOOD)
+		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
 		this->dataTotalLength=dataTotalLength;
 		static_cast<TPhysicalAddress &>(sector)=TPhysicalAddress::Invalid;
 		sector.indexOnTrack=0, sector.offset=0;
@@ -141,6 +142,14 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
+	HRESULT CImage::CSectorReaderWriter::Clone(IStream **ppstm){
+		if (ppstm){
+			*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();
+			return S_OK;
+		}else
+			return E_INVALIDARG;
+	}
+
 	BYTE CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
 		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
@@ -152,6 +161,15 @@
 		revolution=rev;
 		if (revDifferent)
 			pParentHexaEditor->RepaintData();
+	}
+
+	CImage::CSectorReaderWriter::TScannerStatus CImage::CSectorReaderWriter::GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
+		// returns Track scanner Status, if any
+		return TScannerStatus::UNAVAILABLE; // no scanner needed - assumed all data are available (e.g. raw-sectored Image)
+	}
+	void CImage::CSectorReaderWriter::SetTrackScannerStatus(TScannerStatus status){
+		// suspends/resumes Track scanner, if any (if none, simply ignores the request)
+		//nop
 	}
 
 	TPhysicalAddress CImage::CSectorReaderWriter::GetPhysicalAddress(Yahel::TPosition pos) const{
@@ -196,11 +214,10 @@
 
 
 
-	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(TSector nSectors,WORD sectorLength,BYTE sectorLengthCode,TSector firstSectorNumber)
+	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp)
 		// ctor
-		: CSectorReaderWriter( nullptr, nullptr, 0 )
-		, nSectors(nSectors) , firstSectorNumber(firstSectorNumber)
-		, sectorLength(sectorLength) , sectorLengthCode(sectorLengthCode) {
+		: CSectorReaderWriter( pParentHexaEditor, image, dataTotalLength, nDiscoveredRevolutions )
+		, TSameLengthSectorParams(slsp) {
 	}
 
 
@@ -244,31 +261,4 @@
 			*pOutRecordLength = sectorLength;
 		if (pOutDataReady)
 			*pOutDataReady=true;
-	}
-
-
-
-	
-
-
-
-
-
-
-
-	CImage::CDiskSerializer::CDiskSerializer(const BYTE &nDiscoveredRevolutions)
-		// ctor
-		: CSectorReaderWriter( nullptr, nullptr, 0 )
-		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
-	}
-
-
-
-
-	HRESULT CImage::CDiskSerializer::Clone(IStream **ppstm){
-		if (ppstm){
-			*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();
-			return S_OK;
-		}else
-			return E_INVALIDARG;
 	}

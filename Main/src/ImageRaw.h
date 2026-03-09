@@ -1,12 +1,10 @@
 #ifndef IMAGERAW_H
 #define IMAGERAW_H
 	
-	class CImageRaw:public CImage{
+	class CImageRaw:public CImage,private CImage::TSameLengthSectorParams{
 		TCylinder nCylinders;
 		Utils::CSharedPodArray<PVOID,TCylinder> bufferOfCylinders;
 		THead nHeads;
-		TSector nSectors,firstSectorNumber;
-		BYTE sectorLengthCode;	WORD sectorLength;
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
 		PSectorData __getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const;
@@ -42,7 +40,7 @@
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
-		CComPtr<CDiskSerializer> CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override;
+		CComPtr<CSectorReaderWriter> CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override;
 	};
 
 #endif // IMAGERAW_H
