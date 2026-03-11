@@ -139,7 +139,7 @@ using namespace Yahel;
 #else
 	DWORD CHexaEditor::CYahelStreamFile::GetPosition() const{
 #endif
-		// returns the actual Position in the Serializer
+		// returns the actual Position
 		return position;
 	}
 
@@ -148,7 +148,7 @@ using namespace Yahel;
 #else
 	LONG CHexaEditor::CYahelStreamFile::Seek(LONG lOff,UINT nFrom){
 #endif
-		// sets the actual Position in the Serializer
+		// sets the actual Position
 		switch ((SeekPosition)nFrom){
 			case SeekPosition::current:
 				lOff+=position;

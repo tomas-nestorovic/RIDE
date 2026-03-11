@@ -800,17 +800,17 @@ trackNotFound:
 
 	CComPtr<CImage::CSectorReaderWriter> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
-		// - defining the Serializer class
+		// - defining the class
 		//static const BYTE nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
 		class CSerializer sealed:public CSameLengthSectorReaderWriter{
 		public:
-			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
+			CSerializer(CImageRaw *image)
 				// ctor
-				: CSameLengthSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, *image ) {
+				: CSameLengthSectorReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, *image ) {
 			}
 		};
 		// - returning a Serializer class instance
 		CComPtr<CSectorReaderWriter> tmp;
-		tmp.p=new CSerializer(pParentHexaEditor,this);
+		tmp.p=new CSerializer(this);
 		return tmp;
 	}

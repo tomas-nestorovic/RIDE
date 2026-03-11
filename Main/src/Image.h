@@ -849,7 +849,7 @@
 				WORD offset; // pointer to Sector data (always holds 'padding.a<=offset')
 			} sector; // call 'Seek' to modify this structure
 
-			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions);
+			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
@@ -857,6 +857,7 @@
 				UNAVAILABLE // Track scanner doesn't exist (e.g. a CImageRaw descendant)
 			};
 
+			const PImage image;
 			const BYTE &nDiscoveredRevolutions;
 
 			// CFile methods
@@ -879,7 +880,8 @@
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
 			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
-			void SetCurrentRevolution(Revolution::TType rev);
+			inline Revolution::TType GetCurrentRevolution() const{ return revolution; }
+			inline void SetCurrentRevolution(Revolution::TType rev){ revolution=rev; }
 			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
 			virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const;
 			virtual void SetTrackScannerStatus(TScannerStatus status);
@@ -901,7 +903,7 @@
 		protected:
 			const WORD usableSectorLength;
 
-			CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
+			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
 		public:
 			// Yahel::Stream::IAdvisor methods
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;

@@ -105,9 +105,11 @@ using namespace Yahel;
 
 	CComPtr<CImage::CSectorReaderWriter> CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
-		// - defining the Serializer class
+		// - defining the class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
 		class CSerializer sealed:public CSectorReaderWriter{
+			CHexaEditor *const pParentHexaEditor;
+
 			inline CFloppyImage &GetFloppyImage() const{
 				return *(CFloppyImage *)image;
 			}
@@ -222,8 +224,9 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorReaderWriter( pParentHexaEditor, image, image->scannedTracks.dataTotalLength, image->scannedTracks.nDiscoveredRevolutions )
+				: CSectorReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions )
 				// . initialization
+				, pParentHexaEditor(pParentHexaEditor)
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
 				, workerStatus(TScannerStatus::PAUSED) // set to Unavailable to terminate Worker's labor
 				, lastKnownHexaRowLength(pParentHexaEditor->GetBytesPerRow()) {

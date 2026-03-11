@@ -12,6 +12,7 @@
 		CComPtr<CImage::CSectorReaderWriter> f;
 		Revolution::TType revolution;
 
+		void SetCurrentRevolution(Revolution::TType rev);
 		void UpdateStatusBar();
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void OnDestroy();

@@ -2,9 +2,9 @@
 
 	const Yahel::TInterval<char> CImage::CSectorReaderWriter::NoPadding(0,0);
 
-	CImage::CSectorReaderWriter::CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions)
+	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions)
 		// ctor
-		: pParentHexaEditor(pParentHexaEditor) , image(image)
+		: image(image)
 		, revolution(Revolution::ANY_GOOD)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
 		this->dataTotalLength=dataTotalLength;
@@ -21,7 +21,7 @@
 #else
 	LONG CImage::CSectorReaderWriter::Seek(LONG lOff,UINT nFrom){
 #endif
-		// sets the actual Position in the Serializer
+		// sets the actual Position
 		const auto result=__super::Seek(lOff,nFrom);
 		GetPhysicalAddress( result, sector, sector.indexOnTrack, &sector.offset );
 		return result;
@@ -121,6 +121,8 @@
 		bool writtenWithoutCrcError=true; // assumption
 		for( WORD w; true; ){
 			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
+			if (!chs) // invalid PhysicalAddress? (may be for descendants, e.g. error in FAT for FileReaderWriter)
+				break;
 			TFdcStatus sr; // in/out
 			if (const PSectorData sectorData=image->GetSectorData(chs,sector.indexOnTrack,Revolution::CURRENT,&w,&sr)){ // Revolution.Current = freezing the state of data (eventually erroneous)
 				if (!w) // e.g. writing Sector with LengthCode 231 - such Sector has by default no data (a pointer to zero-length data has been returned by GetSectorData)
@@ -191,9 +193,7 @@
 				#ifdef UNICODE
 					::wnsprintf( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, chs.sectorId.ToString() );
 				#else
-					WCHAR idStrW[80];
-					::MultiByteToWideChar( CP_ACP, 0, chs.sectorId.ToString(),-1, idStrW,ARRAYSIZE(idStrW) );
-					::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %s", dirtyRev+1, idStrW );
+					::wnsprintfW( labelBuffer, labelBufferCharsMax, L"\x25d9Rev%d %S", dirtyRev+1, chs.sectorId.ToString() );
 				#endif
 				return labelBuffer;
 		}
@@ -209,7 +209,7 @@
 
 
 
-	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp)
+	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp)
 		// ctor
 		: CSectorReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions )
 		, TSameLengthSectorParams(slsp)

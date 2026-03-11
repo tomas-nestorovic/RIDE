@@ -60,6 +60,15 @@ using namespace Yahel;
 		return *dbView;
 	}
 
+	void CDiskBrowserView::SetCurrentRevolution(Revolution::TType rev){
+		// selects Revolution from which to retrieve Sector data
+		const bool revDifferent=rev!=f->GetCurrentRevolution();
+		revolution=rev; // remember the Revolution for when this Tab is switched back to
+		f->SetCurrentRevolution(rev);
+		if (revDifferent)
+			RepaintData();
+	}
+
 	void CDiskBrowserView::UpdateStatusBar(){
 		// repopulates each pane in the StatusBar (if any)
 		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
@@ -87,7 +96,7 @@ using namespace Yahel;
 			return -1;
 		// - displaying the content
 		OnUpdate(nullptr,0,nullptr);
-		f->SetCurrentRevolution(revolution);
+		SetCurrentRevolution(revolution);
 		instance->Attach(*this);
 		// - recovering the Scroll position and repainting the view (by setting its editability)
 		//SetScrollPos( SB_VERT, iScrollY ); //TODO: Uncomment when scroll position is represented as absolute position in content, not as a row
@@ -153,11 +162,11 @@ using namespace Yahel;
 		switch (cmd){
 			case ID_AUTO:
 				// selecting any Revolution with healthy data
-				f->SetCurrentRevolution( revolution=Revolution::ANY_GOOD );
+				SetCurrentRevolution( Revolution::ANY_GOOD );
 				UpdateStatusBar();
 				return true;
 			case ID_INTERLEAVE:
-				f->SetCurrentRevolution( revolution=Revolution::ALL_INTERSECTED );
+				SetCurrentRevolution( Revolution::ALL_INTERSECTED );
 				UpdateStatusBar();
 				return true;
 			case ID_DEFAULT1:
@@ -170,7 +179,7 @@ using namespace Yahel;
 			case ID_DEFAULT8:
 				// selecting particular disk Revolution
 				if (cmd-ID_DEFAULT1<f->nDiscoveredRevolutions) // do we have such Revolution?
-					f->SetCurrentRevolution( revolution=(Revolution::TType)(cmd-ID_DEFAULT1) );
+					SetCurrentRevolution( (Revolution::TType)(cmd-ID_DEFAULT1) );
 				UpdateStatusBar();
 				return true;
 			case ID_BUFFER:
