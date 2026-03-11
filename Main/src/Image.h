@@ -840,15 +840,16 @@
 
 		class CSectorReaderWriter abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 		protected:
-			CHexaEditor *const pParentHexaEditor;
-			const PImage image;
+			static const Yahel::TInterval<char> NoPadding;
+
 			Revolution::TType revolution;
 			struct:public TPhysicalAddress{ // call 'Seek' to modify this structure
+				Yahel::TInterval<char> padding; // respectively at the beginning (NEGATIVE!) and end of EACH Sector, regardless of Sector size; e.g. (-2,1) = two padding Bytes at the start and one padding Byte at the end of EACH Sector
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
-				WORD offset; // pointer into Sector data
+				WORD offset; // pointer to Sector data (always holds 'padding.a<=offset')
 			} sector; // call 'Seek' to modify this structure
 
-			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions);
+			CSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions);
 		public:
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
@@ -898,14 +899,18 @@
 
 		class CSameLengthSectorReaderWriter abstract:public CSectorReaderWriter,protected TSameLengthSectorParams{
 		protected:
-			CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
+			const WORD usableSectorLength;
 
-			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override;
+			CSameLengthSectorReaderWriter(CHexaEditor *pParentHexaEditor,PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
 		public:
 			// Yahel::Stream::IAdvisor methods
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
 			Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow) override;
 			void GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
+
+			// other
+			Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override;
+			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override;
 		};
 
 		static Utils::CPtrList<PCProperties> Known; // list of known Images (registered in CRideApp::InitInstance)

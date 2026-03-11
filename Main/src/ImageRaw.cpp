@@ -806,13 +806,7 @@ trackNotFound:
 		public:
 			CSerializer(CHexaEditor *pParentHexaEditor,CImageRaw *image)
 				// ctor
-				: CSameLengthSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, nDiscoveredRawRevolutions, *image ) {
-			}
-
-			// CSectorReaderWriter methods
-			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
-				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
-				return TPosition( chs.GetTrackNumber()*nSectors + chs.sectorId.sector-firstSectorNumber )*sectorLength;
+				: CSameLengthSectorReaderWriter( pParentHexaEditor, image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, *image ) {
 			}
 		};
 		// - returning a Serializer class instance
