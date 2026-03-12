@@ -257,6 +257,14 @@ using namespace Yahel;
 				::WaitForSingleObject( trackWorker, INFINITE );
 			}
 
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{
+				if (ppstm){
+					*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();;
+					return S_OK;
+				}else
+					return E_INVALIDARG;
+			}
+
 			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutSectorOffset) const override{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;

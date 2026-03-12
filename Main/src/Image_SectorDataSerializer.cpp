@@ -147,14 +147,6 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
-	HRESULT CImage::CSectorReaderWriter::Clone(IStream **ppstm){
-		if (ppstm){
-			*ppstm=image->CreateDiskSerializer(pParentHexaEditor).Detach();
-			return S_OK;
-		}else
-			return E_INVALIDARG;
-	}
-
 	BYTE CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
 		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );

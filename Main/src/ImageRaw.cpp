@@ -808,6 +808,14 @@ trackNotFound:
 				// ctor
 				: CSameLengthSectorReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, *image ) {
 			}
+
+			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{
+				if (ppstm){
+					*ppstm=new CSerializer(*this);
+					return S_OK;
+				}else
+					return E_INVALIDARG;
+			}
 		};
 		// - returning a Serializer class instance
 		CComPtr<CSectorReaderWriter> tmp;

@@ -869,9 +869,6 @@
 			UINT Read(LPVOID lpBuf,UINT nCount) override sealed;
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 
-			// IStream methods
-			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
-
 			// Yahel::Stream::IAdvisor methods
 			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override sealed;
 
