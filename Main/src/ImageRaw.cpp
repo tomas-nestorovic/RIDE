@@ -798,7 +798,7 @@ trackNotFound:
 
 	static const BYTE nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
 
-	CComPtr<CImage::CSectorReaderWriter> CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	CImage::CSectorReaderWriter::CComPtr CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
 		//static const BYTE nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
@@ -818,7 +818,7 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		CComPtr<CSectorReaderWriter> tmp;
+		CSectorReaderWriter::CComPtr tmp;
 		tmp.p=new CSerializer(this);
 		return tmp;
 	}

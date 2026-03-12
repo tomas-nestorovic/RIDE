@@ -851,6 +851,8 @@
 
 			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions);
 		public:
+			typedef ATL::CComPtr<CSectorReaderWriter> CComPtr;
+
 			enum TScannerStatus:BYTE{
 				RUNNING, // Track scanner exists and is running (e.g. parallel thread that scans Tracks on real FDD)
 				PAUSED, // Track scanner exists but is suspended (same example as above)
@@ -980,7 +982,7 @@
 		virtual TStdWinError PresumeHealthyTrackStructure(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,BYTE gap3,BYTE fillerByte);
 		virtual TStdWinError UnformatTrack(TCylinder cyl,THead head)=0;
 		virtual TStdWinError MineTrack(TCylinder cyl,THead head,bool autoStartLastConfig=false);
-		virtual CComPtr<CSectorReaderWriter> CreateDiskSerializer(CHexaEditor *pParentHexaEditor)=0;
+		virtual CSectorReaderWriter::CComPtr CreateDiskSerializer(CHexaEditor *pParentHexaEditor)=0;
 		virtual TStdWinError CreateUserInterface(HWND hTdi);
 		virtual CString ListUnsupportedFeatures() const;
 		void SetRedrawToAllViews(bool redraw) const;

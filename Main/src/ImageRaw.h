@@ -40,7 +40,7 @@
 		TStdWinError Reset() override;
 		TStdWinError FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector _nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled) override;
 		TStdWinError UnformatTrack(TCylinder cyl,THead head) override;
-		CComPtr<CSectorReaderWriter> CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override;
+		CSectorReaderWriter::CComPtr CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override;
 	};
 
 #endif // IMAGERAW_H

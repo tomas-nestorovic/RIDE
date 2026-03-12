@@ -103,7 +103,7 @@ using namespace Yahel;
 		return ERROR_SUCCESS;
 }	}
 
-	CComPtr<CImage::CSectorReaderWriter> CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	CImage::CSectorReaderWriter::CComPtr CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
@@ -460,7 +460,7 @@ using namespace Yahel;
 			}
 		};
 		// - returning a Serializer class instance
-		CComPtr<CSectorReaderWriter> tmp;
+		CSectorReaderWriter::CComPtr tmp;
 		tmp.p=new CSerializer(pParentHexaEditor,this);
 		return tmp;
 	}

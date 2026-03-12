@@ -5,7 +5,7 @@
 		DECLARE_MESSAGE_MAP()
 	private:
 		CDos::PCFile fileToSeekTo;
-		CComPtr<CDos::CFileReaderWriter> f;
+		CImage::CSectorReaderWriter::CComPtr f;
 
 		afx_msg int OnCreate(LPCREATESTRUCT lpcs);
 		afx_msg void ToggleWriteProtection();

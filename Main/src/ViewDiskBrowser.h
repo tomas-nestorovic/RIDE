@@ -9,7 +9,7 @@
 			BYTE nSectorsToSkip;
 		} seekTo;
 		Yahel::TRow iScrollY; // ScrollBar position
-		CComPtr<CImage::CSectorReaderWriter> f;
+		CImage::CSectorReaderWriter::CComPtr f;
 		Revolution::TType revolution;
 
 		void SetCurrentRevolution(Revolution::TType rev);
