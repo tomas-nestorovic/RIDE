@@ -872,7 +872,7 @@
 			void Write(LPCVOID lpBuf,UINT nCount) override sealed;
 
 			// Yahel::Stream::IAdvisor methods
-			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override sealed;
+			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 
 			// other
 			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
@@ -895,6 +895,9 @@
 
 			inline TSameLengthSectorParams()
 				: nSectors(0) {
+			}
+			inline TSameLengthSectorParams(TSector nSectors,WORD sectorLength)
+				: nSectors(nSectors) , sectorLength(sectorLength) {
 			}
 		};
 

@@ -231,11 +231,7 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
-			const WORD sectorLength; // e.g. for Spectrum Tape, the SectorLength may temporarily be faked to correctly segment a display Headers, and then reset to normal to correctly display Tape data; this is the backup of the eventually faked value
-			const BYTE dataBeginOffsetInSector,dataEndOffsetInSector;
-		protected:
-			Yahel::TPosition recordLength;
+		class CFileReaderWriter:public CImage::CSameLengthSectorReaderWriter{
 		public:
 			class CHexaEditor:public ::CHexaEditor{
 				int GetCustomCommandMenuFlags(WORD cmd) const override;
@@ -244,29 +240,19 @@
 				CHexaEditor(PVOID param);
 			};
 
-			CImage *const image;
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
-			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/edit particular Sector in the Image (e.g. Boot Sector)
-			~CFileReaderWriter();
-
-			// CFile methods
-			UINT Read(LPVOID lpBuf,UINT nCount) override;
-			void Write(LPCVOID lpBuf,UINT nCount) override;
+			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs); // ctor to read/edit particular Sector of the Image (e.g. Boot Sector)
 
 			// IStream methods
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
 
 			// Yahel::Stream::IAdvisor methods
-			void GetRecordInfo(Yahel::TPosition pos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
-			Yahel::TRow LogicalPositionToRow(Yahel::TPosition pos,WORD nStreamBytesInRow) override;
-			Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nStreamBytesInRow) override;
 			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 
 			// others
-			const TPhysicalAddress &GetCurrentPhysicalAddress() const;
-			WORD GetPositionInCurrentSector() const;
+			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override sealed;
 		};
 
 		enum TGetFileSizeOptions:BYTE{

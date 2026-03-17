@@ -7,6 +7,7 @@ using namespace Yahel;
 	#define DOS		IMAGE->dos
 
 	class CDirectoryEntriesReaderWriter sealed:public CDos::CFileReaderWriter{
+		Yahel::TPosition deLength;
 	public:
 		CDirectoryEntriesReaderWriter(const CDos *dos,CDos::PCFile directory)
 			// ctor
@@ -14,9 +15,9 @@ using namespace Yahel;
 			: CDos::CFileReaderWriter(dos,directory,true) {
 			// - determining the DirectoryEntry size in Bytes
 			if (const auto pdt=dos->BeginDirectoryTraversal(directory))
-				recordLength=pdt->entrySize;
+				deLength=pdt->entrySize;
 			else
-				recordLength=Stream::MaximumRecordLength;
+				deLength=Stream::MaximumRecordLength;
 		}
 
 		HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{
@@ -30,7 +31,7 @@ using namespace Yahel;
 
 		LPCWSTR GetRecordLabelW(TPosition logPos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override{
 			// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-			auto d=div( logPos, (TPosition)recordLength );
+			auto &&d=div( logPos, deLength );
 			if (!d.rem){
 				const CDirEntriesView *const pdev=(CDirEntriesView *)param;
 				if (const auto pdt=pdev->DOS->BeginDirectoryTraversal(pdev->directory)){
@@ -46,7 +47,7 @@ using namespace Yahel;
 						}
 				}
 			}
-			return nullptr; // no description exists for the DirectoryEntry
+			return nullptr; // no description for this LogicalPosition
 		}
 	};
 
