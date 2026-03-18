@@ -129,15 +129,12 @@
 					break;
 				writtenWithoutCrcError&=sr.IsWithoutError();
 				w-=sector.offset+sector.padding.z;
-				if (w<nCount){
-					::memcpy(sectorData+sector.offset,lpBuf,w);
-					lpBuf=(PCBYTE)lpBuf+w, nCount-=w;
-					image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
-					Seek(w,SeekPosition::current);
-				}else{
-					::memcpy(sectorData+sector.offset,lpBuf,nCount);
-					image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
-					Seek(nCount,SeekPosition::current);
+				const WORD n=std::min( nCount, (UINT)w );
+				::memcpy( sectorData+sector.offset, lpBuf, n );
+				image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
+				Seek( n, SeekPosition::current );
+				lpBuf=(PCBYTE)lpBuf+n, nCount-=n;
+				if (!nCount){
 					::SetLastError( writtenWithoutCrcError ? ERROR_SUCCESS : ERROR_CRC );
 					return;
 				}
