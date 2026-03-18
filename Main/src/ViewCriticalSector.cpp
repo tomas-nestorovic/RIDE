@@ -25,36 +25,12 @@
 
 
 
-	CCriticalSectorView::CSectorReaderWriter::CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs)
-		// ctor
-		: CDos::CFileReaderWriter(dos,chs) {
-	}
-
-	void CCriticalSectorView::CSectorReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
-		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
-		__super::Write(lpBuf,nCount);
-		pCurrentlyShown->OnSectorChanging();
-	}
-
-	HRESULT CCriticalSectorView::CSectorReaderWriter::Clone(IStream **ppstm){
-		// creates an exact copy of this object
-		if (ppstm){
-			*ppstm=new CSectorReaderWriter(*this);
-			return S_OK;
-		}else
-			return E_INVALIDARG;
-	}
-
-
-
-
-
-
-
-
-
 
 	#define PROPGRID_WIDTH_DEFAULT	250
+
+	static void OnDataWritten(const Yahel::TPosInterval &i){
+		CCriticalSectorView::pCurrentlyShown->OnSectorChanging();
+	}
 
 	CCriticalSectorView::CCriticalSectorView(PDos dos,RCPhysicalAddress rChs)
 		// ctor
@@ -62,7 +38,7 @@
 		: tab(0,0,0,dos->image,this) , splitX(PROPGRID_WIDTH_DEFAULT)
 		, hexaEditor(*this) {
 		// - reset of HexaEditor's content
-		fSectorData.Attach( new CSectorReaderWriter(dos,rChs) );
+		fSectorData.Attach( new CDos::CFileReaderWriter(dos,rChs,OnDataWritten) );
 		const TPhysicalAddress &chs=GetPhysicalAddress();
 		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
 		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );

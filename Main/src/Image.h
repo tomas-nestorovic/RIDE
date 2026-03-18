@@ -826,6 +826,10 @@
 		};
 
 		class CSectorReaderWriter abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
+		public:
+			typedef void (* FOnWritten)(const Yahel::TPosInterval &);
+		private:
+			const FOnWritten onWritten;
 		protected:
 			static const Yahel::TInterval<char> NoPadding;
 
@@ -836,7 +840,7 @@
 				WORD offset; // pointer to Sector data (always holds 'padding.a<=offset')
 			} sector; // call 'Seek' to modify this structure
 
-			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions);
+			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten);
 		public:
 			typedef ATL::CComPtr<CSectorReaderWriter> CComPtr;
 
@@ -892,7 +896,7 @@
 		protected:
 			const WORD usableSectorLength;
 
-			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp);
+			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp);
 		public:
 			// Yahel::Stream::IAdvisor methods
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;

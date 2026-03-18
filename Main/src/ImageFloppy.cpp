@@ -224,7 +224,7 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions )
+				: CSectorReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions, nullptr )
 				// . initialization
 				, pParentHexaEditor(pParentHexaEditor)
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )

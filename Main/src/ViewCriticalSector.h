@@ -14,23 +14,12 @@
 		afx_msg void ToggleWriteProtection();
 		void __updateLookOfControls__();
 	protected:
-		class CSectorReaderWriter:public CDos::CFileReaderWriter{
-		public:
-			CSectorReaderWriter(PCDos dos,RCPhysicalAddress chs);
-
-			// CFile methods
-			void Write(LPCVOID lpBuf,UINT nCount) override;
-			// IStream methods
-			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
-		};
-
-		CComPtr<CSectorReaderWriter> fSectorData;
+		ATL::CComPtr<CDos::CFileReaderWriter> fSectorData;
 		CWnd propGrid;
 		CDos::CFileReaderWriter::CHexaEditor hexaEditor;
 
 		CCriticalSectorView(PDos dos,RCPhysicalAddress rChs);
 
-		virtual void OnSectorChanging() const;
 		void OnDraw(CDC *pDC) override sealed;
 		void OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint) override;
 		void PostNcDestroy() override;
@@ -45,6 +34,7 @@
 		RCPhysicalAddress GetPhysicalAddress() const;
 		void ChangeToSector(RCPhysicalAddress rChs);
 		void MarkSectorAsDirty() const;
+		virtual void OnSectorChanging() const;
 	};
 
 #endif // CRITICALSECTORVIEW_H

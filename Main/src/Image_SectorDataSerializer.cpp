@@ -2,10 +2,11 @@
 
 	const Yahel::TInterval<char> CImage::CSectorReaderWriter::NoPadding(0,0);
 
-	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions)
+	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten)
 		// ctor
 		: image(image)
 		, revolution(Revolution::ANY_GOOD)
+		, onWritten(onWritten)
 		, nDiscoveredRevolutions(nDiscoveredRevolutions) {
 		this->dataTotalLength=dataTotalLength;
 		static_cast<TPhysicalAddress &>(sector)=TPhysicalAddress::Invalid;
@@ -132,6 +133,8 @@
 				const WORD n=std::min( nCount, (UINT)w );
 				::memcpy( sectorData+sector.offset, lpBuf, n );
 				image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
+				if (onWritten)
+					onWritten(  Yahel::TPosInterval( position, position+n )  );
 				Seek( n, SeekPosition::current );
 				lpBuf=(PCBYTE)lpBuf+n, nCount-=n;
 				if (!nCount){
@@ -198,9 +201,9 @@
 
 
 
-	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,const TSameLengthSectorParams &slsp)
+	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp)
 		// ctor
-		: CSectorReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions )
+		: CSectorReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions, onWritten )
 		, TSameLengthSectorParams(slsp)
 		, usableSectorLength(slsp.sectorLength-padding.GetLength()) {
 	}

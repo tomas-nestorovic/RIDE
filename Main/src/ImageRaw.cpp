@@ -806,7 +806,7 @@ trackNotFound:
 		public:
 			CSerializer(CImageRaw *image)
 				// ctor
-				: CSameLengthSectorReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, *image ) {
+				: CSameLengthSectorReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
 			}
 
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{

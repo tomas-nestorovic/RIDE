@@ -12,18 +12,20 @@
 					wholeSectors ? 0 : dos->properties->dataEndOffsetInSector
 				),
 				nDiscoveredRevolutions,
+				nullptr,
 				CImage::TSameLengthSectorParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,file) {
 	}
 
-	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs)
+	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,FOnWritten onWritten)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
 		: CImage::CSameLengthSectorReaderWriter(
 				dos->image,
 				dos->formatBoot.sectorLength,
 				NoPadding,
 				nDiscoveredRevolutions,
+				onWritten,
 				CImage::TSameLengthSectorParams( 1, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,chs) {
