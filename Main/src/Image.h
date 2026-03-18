@@ -537,12 +537,11 @@
 			} *PCMetaStringParseEvent;
 
 			typedef const struct TDataParseEvent:public TParseEvent{
-				typedef struct TByteInfo{
+				typedef struct TByteInfo:public Bit::TFlags{
 					struct{
 						BYTE value;
 						WORD wEncoded;
 					} org;
-					bool bad; // the Value is potentially wrong due to underlying low-level timing
 					TLogTime dtStart; // offset against ParseEvent's start
 				} *PByteInfo;
 
@@ -625,19 +624,7 @@
 
 			class CBitSequence sealed{
 			public:
-				struct TBitBase abstract{
-					union{
-						struct{
-							BYTE value:1; // recognized 0 or 1 from the underlying low-level timing
-							BYTE fuzzy:1; // the Value is likely different in each Revolution
-							BYTE cosmeticFuzzy:1; // the Value is not wrong but should be displayed so for cosmetic reasons
-							BYTE bad:1; // the Value is potentially wrong due to underlying low-level timing
-						};
-						BYTE flags;
-					};
-					TLogTime time;
-				};
-				typedef const struct TBit sealed:public TBitBase{
+				typedef const struct TBit sealed:public Bit::TTimed{
 					int uid; // unique identifier (unused by default, set by caller)
 
 					inline bool operator==(const TBit &r) const{ return value==r.value; }
@@ -645,7 +632,7 @@
 				} *PCBit;
 				
 				template <typename T>
-				struct TData sealed:public TBitBase{
+				struct TData sealed:public Bit::TTimed{
 					T value; // '__super::value' now used to indicate validity of this Data
 
 					TData(){ flags=0; } // initialized as invalid

@@ -133,7 +133,7 @@ using namespace Charting;
 									rc.right=te.timeline.GetClientUnits(piw[1].time);
 									EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id ){
-										::FillRect( dc, &rc, iwBrushes[piw->bad][i++&1] );
+										::FillRect( dc, &rc, iwBrushes[piw->IsBad()][i++&1] );
 										if (app.IsInGodMode()){
 											TCHAR uid[8];
 											::DrawText( dc, _itot(piw->uid%100,uid,10), -1, &rc, DT_SINGLELINE|DT_CENTER );
@@ -790,16 +790,16 @@ using namespace Charting;
 			auto &badBlocks=rte.iwInfo.badBlocks;
 			BYTE iwStatuses=0; // last 8 InspectionWindows statuses (0 = ok, 1 = bad)
 			for each( auto &bit in bits ){
-				if (bit.bad){
+				if (bit.IsBad()){
 					const TLogTime tBitEnd=(&bit)[1].time;
 					if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
 						badBlocks.GetTail().tEnd=tBitEnd; // extending an existing BadBlock
-						(&bit)[-1].bad=true; // involving the previous InspectionWindow into the BadBlock
+						(&bit)[-1].bad=true; // involve the previous InspectionWindow in the BadBlock
 					}else
 						badBlocks.AddTail(  TLogTimeInterval( bit.time, tBitEnd )  );
 				}
 				bit.uid=INT_MIN; // Bits across various Revolutions not yet linked
-				iwStatuses = (iwStatuses<<1) | (BYTE)bit.bad;
+				iwStatuses = (iwStatuses<<1) | (BYTE)bit.IsBad();
 			}
 			rte.timeEditor.SetInspectionWindows(bits);
 			if (!app.IsInGodMode()) // normal user?

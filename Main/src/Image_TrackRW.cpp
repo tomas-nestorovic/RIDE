@@ -1511,7 +1511,7 @@
 			if (const auto &&d=bits.GetWord(nDataBytes)){
 				auto &rbi=pbi[nDataBytes];
 				rbi.dtStart=dt, dt=d.time-peData.tStart;
-				rbi.bad=d.bad;
+				rbi.flags=d.flags;
 				peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(
 					rbi.org.wEncoded = d.value
 				);
@@ -1600,7 +1600,7 @@
 				auto &next=pbi[i+1].org;
 				if (org.wEncoded&1 && next.wEncoded>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
 					next.value=~next.value; // updated clock bits
-				rbi.bad=false;
+				rbi.MarkHealthy();
 			}
 		}
 		// - write new CRC16 to temporary storage

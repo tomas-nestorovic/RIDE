@@ -198,6 +198,7 @@ struct TLogTimeInterval{
 
 #include "Utils.h"
 typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
+#include "Bit.h"
 #include "BackgroundAction.h"
 #include "Diff.h"
 #include "MainWindow.h"

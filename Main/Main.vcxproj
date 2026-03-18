@@ -196,6 +196,7 @@
     <ClInclude Include="..\..\puvodni\zaloha\dvd\virtualizace\diskety\fdrawcmd.h" />
     <ClInclude Include="res\resource.h" />
     <ClInclude Include="src\BackgroundAction.h" />
+    <ClInclude Include="src\Bit.h" />
     <ClInclude Include="src\BSDOS.h" />
     <ClInclude Include="src\CapsBase.h" />
     <ClInclude Include="src\Charting.h" />

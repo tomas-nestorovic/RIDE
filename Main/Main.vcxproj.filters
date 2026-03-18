@@ -82,6 +82,9 @@
     <Filter Include="Header Files\Image\Tabs">
       <UniqueIdentifier>{dae2664b-d191-4f69-9a58-0646eb67ecdf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Image\Foundation">
+      <UniqueIdentifier>{2ae3616d-dc23-4820-b549-faeb0cf50b5f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stdafx.h">
@@ -236,6 +239,9 @@
     </ClInclude>
     <ClInclude Include="src\XmlDocs.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Bit.h">
+      <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
