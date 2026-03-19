@@ -897,9 +897,9 @@
 				const TLogTime iwTimeHalf=tr.GetCurrentProfile().iwTime/2;
 				const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
 				//ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
-				p->bad=absDiff*100>iwTimeHalf*oneOkPercent;
+				p->badTiming=absDiff*100>iwTimeHalf*oneOkPercent;
 			}
-			p->bad|=!tr.IsLastReadBitHealthy();
+			p->badEncoding=!tr.IsLastReadBitHealthy();
 			p+= p[-1].time<p->time; // may not be the case if Decoder went over Index and got reset
 		}
 		p->time=p[-1].time; // auxiliary terminal Bit

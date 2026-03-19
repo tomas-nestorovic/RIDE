@@ -794,7 +794,7 @@ using namespace Charting;
 					const TLogTime tBitEnd=(&bit)[1].time;
 					if (iwStatuses&3){ // between this and the previous bad InspectionWindow is at most one ok InspectionWindow
 						badBlocks.GetTail().tEnd=tBitEnd; // extending an existing BadBlock
-						(&bit)[-1].bad=true; // involve the previous InspectionWindow in the BadBlock
+						(&bit)[-1].badCosmetic=true; // involve the previous InspectionWindow in the BadBlock
 					}else
 						badBlocks.AddTail(  TLogTimeInterval( bit.time, tBitEnd )  );
 				}

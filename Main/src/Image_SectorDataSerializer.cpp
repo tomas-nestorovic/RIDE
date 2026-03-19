@@ -89,7 +89,7 @@
 					if (pbi && revolution<Revolution::MAX){ // info on Bad Bytes applicable only to particular Revolution
 						pbi+=sector.offset;
 						for( w=0; w<n; w++ )
-							if (pbi++->bad){ // a Bad Byte encountered
+							if (pbi++->IsBad()){ // a Bad Byte encountered
 								nBytesToRead+=w-nCount; // include just good part of this Sector and drop the rest of the query
 								if (!nBytesToRead){ // nothing read yet ?
 									nBytesToRead=++w; // output just this single Bad Byte
