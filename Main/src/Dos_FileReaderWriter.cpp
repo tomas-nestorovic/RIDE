@@ -16,6 +16,7 @@
 				CImage::TSameLengthSectorParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,file) {
+		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
 	}
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,FOnWritten onWritten)
@@ -29,6 +30,7 @@
 				CImage::TSameLengthSectorParams( 1, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,chs) {
+		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
 	}
 
 

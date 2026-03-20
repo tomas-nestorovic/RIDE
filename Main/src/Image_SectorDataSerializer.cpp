@@ -12,6 +12,7 @@
 		static_cast<TPhysicalAddress &>(sector)=TPhysicalAddress::Invalid;
 		sector.indexOnTrack=0, sector.offset=0;
 		sector.padding=padding;
+		badByteMask.flags=-1;
 	}
 
 
@@ -89,7 +90,7 @@
 					if (pbi && revolution<Revolution::MAX){ // info on Bad Bytes applicable only to particular Revolution
 						pbi+=sector.offset;
 						for( w=0; w<n; w++ )
-							if (pbi++->IsBad()){ // a Bad Byte encountered
+							if (pbi++->flags&badByteMask.flags){ // a relevantly Bad Byte encountered
 								nBytesToRead+=w-nCount; // include just good part of this Sector and drop the rest of the query
 								if (!nBytesToRead){ // nothing read yet ?
 									nBytesToRead=++w; // output just this single Bad Byte

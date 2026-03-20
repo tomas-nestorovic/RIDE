@@ -839,6 +839,7 @@
 				BYTE indexOnTrack; // zero-based index of the Sector on the Track (to distinguish among duplicate-ID Sectors)
 				WORD offset; // pointer to Sector data (always holds 'padding.a<=offset')
 			} sector; // call 'Seek' to modify this structure
+			Bit::TFlags badByteMask;
 
 			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten);
 		public:
