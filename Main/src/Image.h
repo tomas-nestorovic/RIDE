@@ -32,100 +32,6 @@
 
 	#define DEVICE_NAME_CHARS_MAX 48
 
-	namespace Revolution{
-		enum TType:BYTE{
-			// constants to address one particular Revolution
-			R0			=0,
-			R1, R2, R3, R4, R5, R6, R7,
-			MAX,
-			// constants to select Revolution
-			CURRENT		=MAX,	// don't calibrate the head, settle with any (already buffered) Data, even erroneous
-			NEXT,				// don't calibrate the head, settle with any (newly buffered) Data, even erroneous
-			ANY_GOOD,			// do anything that doesn't involve the user to get flawless data
-			NONE,
-			// constants to describe quantities
-			QUANTITY_FIRST,
-			INFINITY,
-			// the following constants should be ignored by all containers
-			ALL_INTERSECTED
-		};
-	}
-
-	namespace Medium{
-		enum TType:BYTE{
-			UNKNOWN			=(BYTE)-1,
-			FLOPPY_HD_350	=1, // 3.5" HD
-			FLOPPY_HD_525	=2, // 5.25" HD in 360 RPM drive
-			FLOPPY_HD_ANY	=FLOPPY_HD_350|FLOPPY_HD_525,
-			FLOPPY_DD		=4, // 3" DD or 3.5" DD or 5.25" DD in 300 RPM drive
-			FLOPPY_DD_525	=8, // 5.25" DD in 360 RPM drive
-			FLOPPY_DD_ANY	=FLOPPY_DD|FLOPPY_DD_525,
-			FLOPPY_ANY		=FLOPPY_HD_ANY|FLOPPY_DD_ANY,
-			HDD_RAW			=16,
-			ANY				=HDD_RAW|FLOPPY_ANY
-		};
-
-		#pragma pack(1)
-		struct TIwProfile{
-			TLogTime iwTimeDefault; // inspection window default size
-			TLogTime iwTime; // inspection window size; a "1" is expected in its centre
-			TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
-
-			TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent=0);
-
-			void ClampIwTime();
-			inline TLogTime PeekNextIwTime(TLogTime tIwCurr) const{ return tIwCurr+iwTime; }
-		};
-
-		#pragma pack(1)
-		typedef const struct TProperties sealed{
-			static const TProperties FLOPPY_HD_350;
-			static const TProperties FLOPPY_HD_525;
-			static const TProperties FLOPPY_DD;
-			static const TProperties FLOPPY_DD_525;
-
-			LPCTSTR description;
-			PropGrid::Integer::TUpDownLimits cylinderRange, headRange, sectorRange; // supported range of Cylinders/Heads/Sectors (min and max)
-			BYTE rps; // Revolutions per second
-			TLogTime revolutionTime; // single revolution time [nanoseconds]
-			TLogTime cellTime; // single recorded data cell time [nanoseconds]
-			DWORD nCells; // RevolutionTime/CellTime
-
-			bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;
-			bool IsAcceptableCountOfCells(DWORD nCellsQueried) const;
-			inline TIwProfile CreateIwProfile(BYTE iwTimeTolerancePercent=4) const{ return TIwProfile(cellTime,iwTimeTolerancePercent); }
-		} *PCProperties;
-
-		LPCTSTR GetDescription(TType mediumType);
-		PCProperties GetProperties(TType mediumType);
-	}
-
-	namespace Codec{
-		typedef BYTE TTypeSet;
-
-		typedef const struct TProperties sealed{
-			LPCTSTR description;
-			struct{
-				BYTE d,k;
-			} RLL; // Run-length Limited, https://en.wikipedia.org/wiki/Run-length_limited
-		} *PCProperties;
-
-		typedef enum TType:TTypeSet{
-			UNKNOWN		=0,
-			MFM			=1,
-			FM			=2,
-			//AMIGA		=4,
-			//GCR		=8,
-			FLOPPY_IBM	=/*FM|*/MFM,
-			FLOPPY_ANY	=FLOPPY_IBM,//|AMIGA|GCR
-			ANY			=FLOPPY_ANY
-		} *PType;
-
-		PCProperties GetProperties(TType codec);
-		LPCTSTR GetDescription(TType codec);
-		TType FirstFromMany(TTypeSet set);
-	}
-
 	typedef struct TFormat sealed{
 		static const TFormat Unknown;
 
@@ -327,7 +233,7 @@
 			WORD sectorLengthMin,sectorLengthMax;
 			bool isReadOnly;
 
-			bool IsRealDevice() const;
+			inline bool IsRealDevice() const{ return filter==nullptr; }
 		} *PCProperties;
 
 		class CSettings sealed:public CMapStringToString{

@@ -2,6 +2,8 @@
 
 namespace Bit
 {
+	typedef DWORD N; // count
+
 	struct TFlags{
 		union{
 			struct{

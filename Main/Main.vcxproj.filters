@@ -85,6 +85,9 @@
     <Filter Include="Header Files\Image\Foundation">
       <UniqueIdentifier>{2ae3616d-dc23-4820-b549-faeb0cf50b5f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Image\Foundation">
+      <UniqueIdentifier>{af914b81-a6d4-4046-bbf2-c3e1169c4de8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stdafx.h">
@@ -241,6 +244,15 @@
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Bit.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Revolution.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Codec.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Medium.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
   </ItemGroup>
@@ -508,6 +520,12 @@
     </ClCompile>
     <ClCompile Include="src\XmlDocs.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Codec.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Medium.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

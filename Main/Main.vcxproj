@@ -200,6 +200,7 @@
     <ClInclude Include="src\BSDOS.h" />
     <ClInclude Include="src\CapsBase.h" />
     <ClInclude Include="src\Charting.h" />
+    <ClInclude Include="src\Codec.h" />
     <ClInclude Include="src\CtRaw.h" />
     <ClInclude Include="src\Debug.h" />
     <ClInclude Include="src\DialogEmptySpaceFilling.h" />
@@ -218,6 +219,8 @@
     <ClInclude Include="src\Greaseweazle.h" />
     <ClInclude Include="src\HexaEditor.h" />
     <ClInclude Include="src\HFE.h" />
+    <ClInclude Include="src\Medium.h" />
+    <ClInclude Include="src\Revolution.h" />
     <ClInclude Include="src\XmlDocs.h" />
     <ClInclude Include="src\IPF.h" />
     <ClInclude Include="src\KryoFluxBase.h" />
@@ -255,6 +258,7 @@
     <ClCompile Include="src\CapsBase.cpp" />
     <ClCompile Include="src\CapsBase_Precomp.cpp" />
     <ClCompile Include="src\Charting.cpp" />
+    <ClCompile Include="src\Codec.cpp" />
     <ClCompile Include="src\CtRaw.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogRealDeviceSelection.cpp" />
@@ -287,6 +291,7 @@
     <ClCompile Include="src\HexaEditor.cpp" />
     <ClCompile Include="src\CapsBase_Mining.cpp" />
     <ClCompile Include="src\HFE.cpp" />
+    <ClCompile Include="src\Medium.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
     <ClCompile Include="src\Image_TrackEditor.cpp" />
