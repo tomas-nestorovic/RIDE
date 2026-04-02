@@ -887,8 +887,9 @@ namespace Medium{
 						// . toggling WriteProtection
 						ToggleWriteProtection();
 						// . refreshing known windows that depend on Image's WriteProtection flag
-						if (CDos::CHexaPreview::pSingleInstance) 
-							static_cast<CDos::CHexaPreview *>(CDos::CHexaPreview::pSingleInstance)->hexaEditor.SetEditable(!writeProtected);
+						if (CDos::CHexaPreview::pSingleInstance)
+							if (CDos::CHexaPreview::pSingleInstance->fileManager.tab.image==this)
+								static_cast<CDos::CHexaPreview *>(CDos::CHexaPreview::pSingleInstance)->hexaEditor.SetEditable(!writeProtected);
 						return TRUE;
 					case ID_IMAGE_SETTINGS:
 						EditSettings(false);
