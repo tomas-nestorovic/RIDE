@@ -221,6 +221,7 @@
     <ClInclude Include="src\HFE.h" />
     <ClInclude Include="src\Medium.h" />
     <ClInclude Include="src\Revolution.h" />
+    <ClInclude Include="src\Time.h" />
     <ClInclude Include="src\XmlDocs.h" />
     <ClInclude Include="src\IPF.h" />
     <ClInclude Include="src\KryoFluxBase.h" />

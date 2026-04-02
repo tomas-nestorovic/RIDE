@@ -130,51 +130,6 @@ typedef struct TLogPoint{
 } *PLogPoint;
 typedef const TLogPoint *PCLogPoint;
 
-typedef TLogValue TLogTime,*PLogTime; // time in nanoseconds
-typedef const TLogTime *PCLogTime;
-
-struct TLogTimeInterval{
-	union{
-		struct{
-			TLogTime tStart; // inclusive
-			TLogTime tEnd; // exclusive
-		};
-		TLogTime tArray[2];
-	};
-
-	static const TLogTimeInterval Invalid;
-
-	inline TLogTimeInterval(){}
-	inline TLogTimeInterval(TLogTime tStart,TLogTime tEnd)
-		: tStart(tStart) , tEnd(tEnd) {
-	}
-
-	inline operator bool() const{
-		return tStart<tEnd; // non-empty?
-	}
-	inline TLogTime GetLength() const{
-		return tEnd-tStart;
-	}
-	inline bool Contains(TLogTime t) const{
-		return tStart<=t && t<tEnd;
-	}
-	inline TLogTimeInterval Add(TLogTime dt) const{
-		return TLogTimeInterval( tStart+dt, tEnd+dt );
-	}
-	inline TLogTimeInterval Inflate(TLogTime dt) const{
-		return TLogTimeInterval( tStart-dt, tEnd+dt );
-	}
-	inline TLogTimeInterval Intersect(const TLogTimeInterval &ti) const{
-		return TLogTimeInterval( std::max(tStart,ti.tStart), std::min(tEnd,ti.tEnd) );
-	}
-	inline TLogTimeInterval Unite(const TLogTimeInterval &ti) const{
-		return TLogTimeInterval( std::min(tStart,ti.tStart), std::max(tEnd,ti.tEnd) );
-	}
-	inline void Offset(TLogTime dt){
-		tStart+=dt, tEnd+=dt;
-	}
-};
-
 #pragma warning( disable : 4228 ) // non-standard language extension
 #pragma warning( disable : 4341 ) // pre-C++14 enums shouldn't be signed
 
@@ -186,16 +141,12 @@ struct TLogTimeInterval{
 #define COLOR_RED	0xff
 #define COLOR_BLUE	0xff0000
 
-#define TIME_NANO(n)	(n)
-#define TIME_MICRO(u)	((u)*1000)
-#define TIME_MILLI(m)	((m)*1000000)
-#define TIME_SECOND(s)	((s)*1000000000)
-
 #define TXT_EXTENSION	_T(".txt")
 #define TXT_FILTER		_T("Plain text (*") TXT_EXTENSION _T(")|*") TXT_EXTENSION _T("|")
 
 #define STR_CANCEL		_T("Cancel")
 
+#include "Time.h"
 #include "Utils.h"
 typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
 #include "Bit.h"

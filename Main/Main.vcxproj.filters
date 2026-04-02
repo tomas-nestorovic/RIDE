@@ -252,6 +252,9 @@
     <ClInclude Include="src\Codec.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Time.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
     <ClInclude Include="src\Medium.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
