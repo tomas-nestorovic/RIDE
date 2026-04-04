@@ -40,4 +40,25 @@ namespace Codec
 		inline TLogTime PeekNextIwTime(TLogTime tIwCurr) const{ return tIwCurr+iwTime; }
 	};
 
+
+
+
+	namespace Impl
+	{
+		namespace MFM
+		{
+			enum:Checksum::W{
+				CRC_A1A1A1=0xcdb4 // CRC of 0xa1, 0xa1, 0xa1
+			};
+
+			extern bool g_prevDataBit;
+
+			WORD EncodeByte(BYTE byte);
+			DWORD EncodeWord(WORD w); // big-endian Word assumed
+
+			BYTE DecodeByte(WORD w);
+			WORD DecodeWord(DWORD dw);
+		}
+	}
+
 }

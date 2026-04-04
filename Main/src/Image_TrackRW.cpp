@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Charting.h"
+namespace MFM=Codec::Impl::MFM;
 
 	CImage::CTrackReaderBuffers::CTrackReaderBuffers(PLogTimesInfo pLti)
 		// ctor
@@ -1353,51 +1354,13 @@
 
 
 
-	namespace MFM{
-
-		constexpr Checksum::W CRC_A1A1A1=0xcdb4; // CRC of 0xa1, 0xa1, 0xa1
-
-		static bool g_prevDataBit;
-
-		static WORD EncodeByte(BYTE byte){
-			WORD result=0;
-			for( WORD mask=0x8000; mask!=0; byte<<=1,mask>>=1 )
-				if ((char)byte<0){ // current bit is a "1"
-					mask>>=1; // clock is a "0"
-					g_prevDataBit=true, result|=mask; // data is a "1"
-				}else{ // current bit is a "0"
-					result|=!g_prevDataBit*mask, mask>>=1; // insert "1" clock if previous data bit was a "0"
-					g_prevDataBit=false; // data is a "0"
-				}
-			return result;
-		}
-		static DWORD EncodeWord(WORD w){ // big-endian Word assumed
-			const WORD high=EncodeByte( HIBYTE(w) );
-			const WORD low =EncodeByte( LOBYTE(w) );
-			return	MAKELONG( low, high );
-		}
-
-		static BYTE DecodeByte(WORD w){
-			BYTE result=0;
-			for( BYTE n=8; n-->0; w<<=1,w<<=1 )
-				result=(result<<1)|((w&0x4000)!=0);
-			return result;
-		}
-		static WORD DecodeWord(DWORD dw){
-			WORD result=0;
-			for( BYTE n=16; n-->0; dw<<=1,dw<<=1 )
-				result=(result<<1)|((dw&0x40000000)!=0);
-			return result;
-		}
-
-		static bool IsWellEncodedSequence(WORD bits){
+		static bool IsWellEncodedMfmSequence(WORD bits){
 			// see comment at 'CTrackReader::lastReadBits'
 			if ((bits&3)==3) // last valid bit is "1"?
 				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
 			else
 				return (BYTE)bits!=0xaa; // four valid consecutive "0"s are forbidden
 		}
-	}
 
 	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
@@ -1650,7 +1613,7 @@
 			case Codec::FM:
 				return true;
 			case Codec::MFM:
-				return MFM::IsWellEncodedSequence( lastReadBits );
+				return IsWellEncodedMfmSequence( lastReadBits );
 			default:
 				ASSERT(FALSE); // we shouldn't end up here - check if all Codecs are included in the Switch statement!
 				return false;

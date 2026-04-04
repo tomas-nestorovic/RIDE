@@ -61,4 +61,47 @@ namespace Codec
 			iwTime=iwTimeMax;
 	}
 
+
+
+
+
+	namespace Impl
+	{
+		namespace MFM
+		{
+			bool g_prevDataBit;
+
+			WORD EncodeByte(BYTE byte){
+				WORD result=0;
+				for( WORD mask=0x8000; mask!=0; byte<<=1,mask>>=1 )
+					if ((char)byte<0){ // current bit is a "1"
+						mask>>=1; // clock is a "0"
+						g_prevDataBit=true, result|=mask; // data is a "1"
+					}else{ // current bit is a "0"
+						result|=!g_prevDataBit*mask, mask>>=1; // insert "1" clock if previous data bit was a "0"
+						g_prevDataBit=false; // data is a "0"
+					}
+				return result;
+			}
+			DWORD EncodeWord(WORD w){ // big-endian Word assumed
+				const WORD high=EncodeByte( HIBYTE(w) );
+				const WORD low =EncodeByte( LOBYTE(w) );
+				return	MAKELONG( low, high );
+			}
+
+			BYTE DecodeByte(WORD w){
+				BYTE result=0;
+				for( BYTE n=8; n-->0; w<<=1,w<<=1 )
+					result=(result<<1)|((w&0x4000)!=0);
+				return result;
+			}
+			WORD DecodeWord(DWORD dw){
+				WORD result=0;
+				for( BYTE n=16; n-->0; dw<<=1,dw<<=1 )
+					result=(result<<1)|((dw&0x40000000)!=0);
+				return result;
+			}
+		}
+	}
+
 }
