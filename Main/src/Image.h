@@ -351,7 +351,7 @@
 
 		class CTrackReaderState:public CTrackReaderBuffers{
 		public:
-			struct TProfile sealed:public Medium::TIwProfile{
+			struct TProfile sealed:public Codec::TLimits{
 				TDecoderMethod method;
 				union{
 					struct{

@@ -16,18 +16,6 @@ namespace Medium
 	};
 
 	#pragma pack(1)
-	struct TIwProfile{
-		TLogTime iwTimeDefault; // inspection window default size
-		TLogTime iwTime; // inspection window size; a "1" is expected in its centre
-		TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
-
-		TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent=0);
-
-		void ClampIwTime();
-		inline TLogTime PeekNextIwTime(TLogTime tIwCurr) const{ return tIwCurr+iwTime; }
-	};
-
-	#pragma pack(1)
 	typedef const struct TProperties sealed{
 		static const TProperties FLOPPY_HD_350;
 		static const TProperties FLOPPY_HD_525;
@@ -43,7 +31,7 @@ namespace Medium
 
 		bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;
 		bool IsAcceptableCountOfCells(Bit::N nCellsQueried) const;
-		inline TIwProfile CreateIwProfile(BYTE iwTimeTolerancePercent=4) const{ return TIwProfile(cellTime,iwTimeTolerancePercent); }
+		inline Codec::TLimits CreateCodecLimits(BYTE iwTimeTolerancePercent=4) const{ return Codec::TLimits(cellTime,iwTimeTolerancePercent); }
 	} *PCProperties;
 
 	LPCTSTR GetDescription(TType mediumType);

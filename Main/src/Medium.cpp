@@ -2,26 +2,6 @@
 
 namespace Medium
 {
-	TIwProfile::TIwProfile(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent)
-		// ctor
-		: iwTimeDefault(iwTimeDefault)
-		, iwTime(iwTimeDefault)
-		, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
-		, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 ) {
-	}
-
-	void TIwProfile::ClampIwTime(){
-		// keep the inspection window size within limits
-		if (iwTime<iwTimeMin)
-			iwTime=iwTimeMin;
-		else if (iwTime>iwTimeMax)
-			iwTime=iwTimeMax;
-	}
-
-
-
-
-
 	bool TProperties::IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const{
 		return revolutionTime/10*9<tRevolutionQueried && tRevolutionQueried<revolutionTime/10*11; // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
 	}

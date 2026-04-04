@@ -330,7 +330,7 @@
 	void CImage::CTrackReaderState::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		if ( pLogTimesInfo->mediumProps=Medium::GetProperties(mediumType) )
-			static_cast<Medium::TIwProfile &>(profile)=pLogTimesInfo->mediumProps->CreateIwProfile();
+			static_cast<Codec::TLimits &>(profile)=pLogTimesInfo->mediumProps->CreateCodecLimits();
 		else
 			ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 		profile.Reset();
@@ -1686,14 +1686,14 @@
 
 	CImage::CTrackReaderState::TProfile::TProfile(TDecoderMethod method)
 		// ctor
-		: Medium::TIwProfile(0)
+		: Codec::TLimits(0)
 		, method(method) {
 		Reset();
 	}
 
 	CImage::CTrackReaderState::TProfile::TProfile(const TMetaDataItem &mdi)
 		// ctor
-		: Medium::TIwProfile( mdi.GetBitTimeAvg() )
+		: Codec::TLimits( mdi.GetBitTimeAvg() )
 		, method(TDecoderMethod::METADATA) {
 		methodState.metaData.iCurrBit=-1; // begin "before" the MetaDataItem
 	}
