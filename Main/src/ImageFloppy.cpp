@@ -1,19 +1,6 @@
 #include "stdafx.h"
 using namespace Yahel;
 
-	CFloppyImage::TCrc16 CFloppyImage::GetCrcIbm3740(TCrc16 seed,LPCVOID bytes,WORD nBytes){
-		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		return Checksum::Compute(
-			Checksum::TParams(Checksum::TParams::Ibm3740,seed), bytes, nBytes
-		);
-	}
-
-	CFloppyImage::TCrc16 CFloppyImage::GetCrcIbm3740(LPCVOID bytes,WORD nBytes){
-		// computes and returns CRC-CCITT (0xFFFF) of data with a given Length in Buffer
-		static const Checksum::TParams Params( Checksum::TParams::Ibm3740, 0xffff );
-		return Checksum::Compute( Params, bytes, nBytes );
-	}
-
 	bool CFloppyImage::IsValidSectorLengthCode(BYTE lengthCode){
 		// True <=> SectorLengthCode complies with Simon Owen's recommendation (interval 0..7), otherwise False
 		return (lengthCode&0xf8)==0;

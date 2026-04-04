@@ -18,10 +18,6 @@
 			TScannedTracks();
 		} scannedTracks;
 	public:
-		typedef WORD TCrc16;
-
-		static TCrc16 GetCrcIbm3740(TCrc16 seed,LPCVOID bytes,WORD nBytes);
-		static TCrc16 GetCrcIbm3740(LPCVOID bytes,WORD nBytes);
 		static bool IsValidSectorLengthCode(BYTE lengthCode);
 	protected:
 		Medium::TType floppyType; // DD/HD

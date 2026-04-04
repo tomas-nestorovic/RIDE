@@ -149,6 +149,7 @@ typedef const TLogPoint *PCLogPoint;
 #include "Time.h"
 #include "Utils.h"
 typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
+#include "Checksum.h"
 #include "Bit.h"
 #include "BackgroundAction.h"
 #include "Diff.h"

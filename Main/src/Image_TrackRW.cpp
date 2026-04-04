@@ -1355,7 +1355,7 @@
 
 	namespace MFM{
 
-		constexpr CFloppyImage::TCrc16 CRC_A1A1A1=0xcdb4; // CRC of 0xa1, 0xa1, 0xa1
+		constexpr Checksum::W CRC_A1A1A1=0xcdb4; // CRC of 0xa1, 0xa1, 0xa1
 
 		static bool g_prevDataBit;
 
@@ -1452,8 +1452,8 @@
 			}
 			// . reading and comparing ID Field's CRC
 			DWORD dw;
-			CFloppyImage::TCrc16 crc=0;
-			const bool crcBad=!ReadBits32(dw) || MFM::DecodeWord(dw)!=( crc=CFloppyImage::GetCrcIbm3740(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
+			Checksum::W crc=0;
+			const bool crcBad=!ReadBits32(dw) || MFM::DecodeWord(dw)!=( crc=Checksum::GetCrcIbm3740(MFM::CRC_A1A1A1,&data,sizeof(data)) ); // no or wrong IdField CRC
 			*pOutIdStatuses++ =	crcBad 
 								? TFdcStatus::IdFieldCrcError
 								: TFdcStatus::WithoutError;
@@ -1519,8 +1519,8 @@
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
 				break;
 			}
-		const CFloppyImage::TCrc16 crc=CFloppyImage::GetCrcIbm3740(
-			CFloppyImage::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+		const Checksum::W crc=Checksum::GetCrcIbm3740(
+			Checksum::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, nDataBytes
 		);
 		peData.Finalize( currentTime, profile, nDataBytes );
@@ -1535,7 +1535,7 @@
 			return result;
 		// - comparing Data Field's CRC
 		DWORD dw;
-		const CFloppyImage::TCrc16 crcReported= ReadBits32(dw) ? MFM::DecodeWord(dw) : 0;
+		const Checksum::W crcReported= ReadBits32(dw) ? MFM::DecodeWord(dw) : 0;
 		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents)
@@ -1608,8 +1608,8 @@
 		DWORD dw;
 		if (!ReadBits32(dw)) // Track end encountered (the CRC doesn't fit in the Track)
 			return false;
-		CFloppyImage::TCrc16 crc=CFloppyImage::GetCrcIbm3740(
-			CFloppyImage::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
+		Checksum::W crc=Checksum::GetCrcIbm3740(
+			Checksum::GetCrcIbm3740( MFM::CRC_A1A1A1, &dam, sizeof(dam) ),
 			peData.bytes, peData.GetByteCount()
 		);
 		if (sr.DescribesDataFieldCrcError())

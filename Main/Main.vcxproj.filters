@@ -258,6 +258,9 @@
     <ClInclude Include="src\Medium.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Checksum.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -528,6 +531,9 @@
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
     <ClCompile Include="src\Medium.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Checksum.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>

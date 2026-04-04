@@ -235,7 +235,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 										+
 										4	// Sector ID
 										+
-										sizeof(TCrc16) // Sector ID CRC
+										sizeof(Checksum::W) // Sector ID CRC
 										+
 										22	// Gap2: N Bytes 0x4E
 										+
@@ -247,7 +247,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 										+
 										psi->length// data
 										+
-										sizeof(TCrc16) // data CRC
+										sizeof(Checksum::W) // data CRC
 									) *
 									fdd->fddHead.profile.oneByteLatency; // usually 32 microseconds
 		}
@@ -1931,10 +1931,10 @@ autodetermineLatencies:		// automatic determination of write latency values
 	#define RESERVED_SECTOR_LENGTH_CODE		0
 
 	#define NUMBER_OF_BYTES_OCCUPIED_BY_ID\
-		( SYNCHRONIZATION_BYTES_COUNT + sizeof(TIdAddressMark) + sizeof(FD_ID_HEADER) + sizeof(TCrc16) )
+		( SYNCHRONIZATION_BYTES_COUNT + sizeof(TIdAddressMark) + sizeof(FD_ID_HEADER) + sizeof(Checksum::W) )
 
 	#define NUMBER_OF_OCCUPIED_BYTES(nSectors,sectorLength,gap3,withoutLastGap3)\
-		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(TCrc16) + gap3 )  -  withoutLastGap3*gap3 )
+		( nSectors*( NUMBER_OF_BYTES_OCCUPIED_BY_ID + GAP2_BYTES_COUNT + SYNCHRONIZATION_BYTES_COUNT + sizeof(TDataAddressMark) + sectorLength + sizeof(Checksum::W) + gap3 )  -  withoutLastGap3*gap3 )
 
 	TStdWinError CFDD::FormatTrack(TCylinder cyl,THead head,Codec::TType codec,TSector nSectors,PCSectorId bufferId,PCWORD bufferLength,PCFdcStatus bufferFdcStatus,BYTE gap3,BYTE fillerByte,const volatile bool &cancelled){
 		// formats given Track {Cylinder,Head} to the requested NumberOfSectors, each with corresponding Length and FillerByte as initial content; returns Windows standard i/o error

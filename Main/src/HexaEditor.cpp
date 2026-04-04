@@ -1,5 +1,6 @@
 #include "stdafx.h"
 using namespace Yahel;
+using namespace Yahel::Checksum;
 
 	#define INI_HEXAEDITOR	_T("HexaEdit")
 
@@ -404,16 +405,16 @@ using namespace Yahel;
 
 
 
-	bool CHexaEditor::QueryChecksumParams(Checksum::TParams &outCp) const{
+	bool CHexaEditor::QueryChecksumParams(TParams &outCp) const{
 		return outCp.EditModalWithDefaultEnglishDialog(*this);
 	}
 
-	struct TChecksumParamsEx sealed:public Checksum::TParams{
+	struct TChecksumParamsEx sealed:public TParams{
 		const IInstance &yahel;
 		const TPosInterval range;
 		
-		TChecksumParamsEx(const Checksum::TParams &cp,const TPosInterval &range,const IInstance &yahel)
-			: Checksum::TParams(cp)
+		TChecksumParamsEx(const TParams &cp,const TPosInterval &range,const IInstance &yahel)
+			: TParams(cp)
 			, yahel(yahel) , range(range) {
 		}
 	};
@@ -426,22 +427,22 @@ using namespace Yahel;
 		const auto checksum=cpe.yahel.GetChecksum( cpe, cpe.range, pAction->Cancelled );
 		if (pAction->Cancelled)
 			return pAction->TerminateWithError( ERROR_CANCELLED );
-		if (checksum==Checksum::ErrorSeed)
+		if (checksum==ErrorSeed)
 			return pAction->TerminateWithError( ERROR_FUNCTION_FAILED );
 		cpe.seed=checksum; // reuse the field
 		return pAction->TerminateWithSuccess();
 	}
 
-	Checksum::T CHexaEditor::ComputeChecksum(const Checksum::TParams &cp,const TPosInterval &range) const{
+	T CHexaEditor::ComputeChecksum(const TParams &cp,const TPosInterval &range) const{
 		TChecksumParamsEx cpe( cp, range, *instance );
 		if (const TStdWinError err=CBackgroundActionCancelable( Checksum_thread, &cpe, THREAD_PRIORITY_BELOW_NORMAL ).Perform())
-			return Checksum::ErrorSeed;
+			return ErrorSeed;
 		CString checksumText;
 		checksumText.Format( _T("%d (0x%X)"), cpe.seed, cpe.seed ); // reused during computation
 		const CString &&msg=Utils::SimpleFormat( _T("The checksum of selected stream is (little endian)\n\n%s\n\nCopy to clipboard?"), checksumText );
 		if (Utils::QuestionYesNo( msg, MB_DEFBUTTON2 ))
 			Utils::SetClipboardString( checksumText );
-		return Checksum::ErrorSeed; // don't do default processing
+		return ErrorSeed; // don't do default processing
 	}
 
 
