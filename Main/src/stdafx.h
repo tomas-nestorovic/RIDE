@@ -146,9 +146,8 @@ typedef const TLogPoint *PCLogPoint;
 
 #define STR_CANCEL		_T("Cancel")
 
-#include "Time.h"
 #include "Utils.h"
-typedef Utils::CSharedPodArray<TLogTime,DWORD> CSharedLogTimes;
+#include "Time.h"
 #include "Checksum.h"
 #include "Bit.h"
 #include "BackgroundAction.h"

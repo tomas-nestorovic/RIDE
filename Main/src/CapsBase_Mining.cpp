@@ -164,7 +164,7 @@ using namespace Charting;
 				if (minedTrackDeltaTiming.length<trw.GetTimesCount())
 					minedTrackDeltaTiming.Realloc( trw.GetTimesCount()+1000 ); // avoid excessive reallocations by allowing some reserve
 				PLogPoint pxy=minedTrackDeltaTiming;
-				for( DWORD i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
+				for( Time::N i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
 					pxy->x=trackTiming[i];
 					pxy->y=trackTiming[i]-trackTiming[i-1];
 				}
@@ -344,8 +344,8 @@ using namespace Charting;
 				, minedIndexPen( 2, COLOR_BLUE )
 				, di(
 					CChartView::TMargin::Default, graphics.list, ARRAYSIZE(graphics.list), Utils::CRideFont::StdBold,
-					's', INT_MIN, Utils::CTimeline::TimePrefixes,
-					's', INT_MIN, Utils::CTimeline::TimePrefixes
+					's', INT_MIN, Time::Prefixes,
+					's', INT_MIN, Time::Prefixes
 					)
 				, scatterPlotView(di)
 				, miningRunning(false) {

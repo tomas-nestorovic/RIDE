@@ -536,6 +536,9 @@
     <ClCompile Include="src\Checksum.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
+    <ClCompile Include="src\Time.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

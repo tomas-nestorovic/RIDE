@@ -603,7 +603,7 @@ namespace Utils{
 
 		static long GetPixelDistance(int nUnitsA,int nUnitsZ);
 
-		CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,const CRideFont &font=CRideFont::Std);
+		CAxis(TLogValue logLength,TLogValue logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign=TVerticalAlign::TOP,const CRideFont &font=CRideFont::Std);
 
 		// any value that is 'long' is in device pixels (incl. 'POINT' and 'RECT' structs!)
 		// any value that is 'int' is in device units (e.g. for drawing)
@@ -638,15 +638,6 @@ namespace Utils{
 		int ValueToReadableString(TLogValue logValue,PTCHAR buffer) const;
 		CString ValueToReadableString(TLogValue logValue) const;
 		inline CString CursorValueToReadableString() const{ return ValueToReadableString(logCursorPos); }
-	};
-
-	class CTimeline:public CAxis{
-	public:
-		static const TCHAR TimePrefixes[];
-
-		CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor);
-
-		inline TLogTime GetTime(int nUnits) const{ return GetValue(nUnits); }
 	};
 
 	struct TRationalNumber{

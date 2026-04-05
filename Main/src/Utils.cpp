@@ -1103,7 +1103,7 @@ namespace Utils{
 	const TCHAR CAxis::CountPrefixes[]=_T("   kkkMMMGGG"); // no-prefix, thousand, million, billion
 	const CRideFont CAxis::FontWingdings( FONT_WINGDINGS, 120 );
 
-	CAxis::CAxis(TLogValue logLength,TLogTime logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign,const CRideFont &font)
+	CAxis::CAxis(TLogValue logLength,TLogValue logValuePerUnit,TCHAR unit,LPCTSTR unitPrefixes,BYTE initZoomFactor,TVerticalAlign ticksAndLabelsAlign,const CRideFont &font)
 		// ctor
 		: logLength(logLength+1) , logValuePerUnit(logValuePerUnit)
 		, logCursorPos(-1) // cursor indicator hidden
@@ -1361,22 +1361,6 @@ namespace Utils{
 		ValueToReadableString( logValue, buffer );
 		return buffer;
 	}
-
-
-
-
-
-
-
-
-
-
-	CTimeline::CTimeline(TLogTime logTimeLength,TLogTime logTimePerUnit,BYTE initZoomFactor)
-		// ctor
-		: CAxis( logTimeLength, logTimePerUnit, 's', TimePrefixes, initZoomFactor ) {
-	}
-
-	const TCHAR CTimeline::TimePrefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix
 
 
 

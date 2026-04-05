@@ -330,9 +330,9 @@
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				const CSharedLogTimes logTimes;
+				const Time::CSharedArray logTimes;
 
-				CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
+				CLogTimesInfo(Time::N nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
 
 				inline UINT GetRefCount() const{ return nRefs; }
 				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
@@ -375,7 +375,7 @@
 				void Reset();
 			};
 		protected:
-			DWORD iNextTime,nLogTimes;
+			Time::N iNextTime,nLogTimes;
 			BYTE iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
@@ -604,7 +604,7 @@
 			}
 
 			inline
-			DWORD GetTimesCount() const{
+			Time::N GetTimesCount() const{
 				// returns the number of recorded LogicalTimes
 				return nLogTimes;
 			}
@@ -700,8 +700,8 @@
 		public:
 			static const CTrackReaderWriter Invalid;
 
-			CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
-			CTrackReaderWriter(DWORD nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
+			CTrackReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
+			CTrackReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 			CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes=true);
 			CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter);
 			CTrackReaderWriter(const CTrackReader &tr);
@@ -712,16 +712,16 @@
 				return logTimes;
 			}
 
-			DWORD GetBufferCapacity() const;
+			Time::N GetBufferCapacity() const;
 			void AddTime(TLogTime logTime);
-			void AddTimes(PCLogTime logTimes,DWORD nLogTimes);
+			void AddTimes(PCLogTime logTimes,Time::N nLogTimes);
 			void AddByte(TLogTimeInterval &inOutAt,BYTE b);
 			void AddWord(TLogTimeInterval &inOutAt,WORD w);
 			void AddDWord(TLogTimeInterval &inOutAt,DWORD dw);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const TMetaDataItem &mdi);
 			void SetRawDeviceData(TId dataId,const Utils::CSharedBytes &data);
-			void TrimToTimesCount(DWORD nKeptLogTimes);
+			void TrimToTimesCount(Time::N nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();
 			bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr);

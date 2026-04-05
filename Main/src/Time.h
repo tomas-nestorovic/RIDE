@@ -2,8 +2,13 @@
 
 namespace Time
 {
+	typedef DWORD N; // index or count
+
 	typedef TLogValue T,*P; // time in nanoseconds
 	typedef const T *PC;
+	typedef Utils::CSharedPodArray<T,N> CSharedArray;
+
+	extern const TCHAR Prefixes[];
 
 	struct TInterval{
 		union{
@@ -47,6 +52,14 @@ namespace Time
 		}
 	};
 
+
+
+	class CTimeline:public Utils::CAxis{
+	public:
+		CTimeline(T logTimeLength,T logTimePerUnit,BYTE initZoomFactor);
+
+		inline T GetTime(int nUnits) const{ return GetValue(nUnits); }
+	};
 }
 
 

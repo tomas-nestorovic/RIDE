@@ -378,7 +378,7 @@ nextTrial:	;
 		if (trw.RewindToIndex(0))
 			return ERROR_INVALID_DATA;
 		// - extracting first N non-compensated fluxes from the Track
-		DWORD nTimes=trw.GetTimesCount();
+		Time::N nTimes=trw.GetTimesCount();
 		const BYTE nOrigTimes=8;
 		if (nTimes<nOrigTimes) // a Track must consist of at least N fluxes
 			return ERROR_INVALID_DATA;
@@ -388,7 +388,7 @@ nextTrial:	;
 		for( BYTE i=1; i<nOrigTimes; i++ )
 			origFluxes[i]=pt[i]-pt[i-1];
 		// - application
-		for( DWORD i=0; i<nTimes; i++,pt++ )
+		for( Time::N i=0; i<nTimes; i++,pt++ )
 			switch (methodVersion){
 				case Identity:
 					return ERROR_SUCCESS;
@@ -427,7 +427,7 @@ nextTrial:	;
 			}
 		// - assuring that all fluxes are after pre-compensation still chronologically ordered
 		TLogTime tPrev=*( pt=trw.GetBuffer() );
-		for( DWORD i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
+		for( Time::N i=1,j=1; i<nTimes; j++ ) // i = "target" position, j = "source" position
 			if (pt[j]<tPrev){
 				// no - the J-th flux should already been processed, meaning the Previous flux was a "tachyon" one!
 				ASSERT(FALSE);

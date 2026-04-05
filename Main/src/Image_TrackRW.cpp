@@ -161,7 +161,7 @@ namespace MFM=Codec::Impl::MFM;
 
 	#define LOGTIMES_COUNT_EXTRA	1
 
-	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(DWORD nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
+	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(Time::N nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex)
 		// "ctor"
 		: TLogTimesInfoData( defaultDecoder, resetDecoderOnIndex )
 		, logTimes( nLogTimesMax+LOGTIMES_COUNT_EXTRA )
@@ -223,9 +223,9 @@ namespace MFM=Codec::Impl::MFM;
 			iNextTime=0;
 			currentTime=logTime;
 		}else{
-			DWORD L=0, R=nLogTimes;
+			Time::N L=0, R=nLogTimes;
 			do{
-				const DWORD M=(L+R)/2;
+				const Time::N M=(L+R)/2;
 				if (logTimes[L]<=logTime && logTime<logTimes[M])
 					R=M;
 				else
@@ -828,21 +828,23 @@ namespace MFM=Codec::Impl::MFM;
 
 	void CImage::CTrackReader::SaveCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
-		for( DWORD i=0; i<nLogTimes; i++ )
+		static_assert( sizeof(Time::N)<=sizeof(int), "" );
+		for( Time::N i=0; i<nLogTimes; i++ )
 			Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i] );		
 	}
 
 	void CImage::CTrackReader::SaveDeltaCsv(LPCTSTR filename) const{
 		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 		TLogTime tPrev=0;
-		for( DWORD i=0; i<nLogTimes; tPrev=logTimes[i++] )
+		static_assert( sizeof(Time::N)<=sizeof(int), "" );
+		for( Time::N i=0; i<nLogTimes; tPrev=logTimes[i++] )
 			Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i]-tPrev );		
 	}
 
 #ifdef _DEBUG
 	void CImage::CTrackReader::VerifyChronology() const{
 		TLogTime tPrev=INT_MIN;
-		for( DWORD i=0; i<nLogTimes; i++ )
+		for( Time::N i=0; i<nLogTimes; i++ )
 			if (logTimes[i]<0)
 				Utils::Information("negative");
 			else if (logTimes[i]<=tPrev)
@@ -1685,7 +1687,7 @@ namespace MFM=Codec::Impl::MFM;
 
 	const CImage::CTrackReaderWriter CImage::CTrackReaderWriter::Invalid( 0, CTrackReader::TDecoderMethod::NONE, false ); // TrackReader invalid right from its creation
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: CTrackReader(
 			new CLogTimesInfo( nLogTimesMax, method, resetDecoderOnIndex ),
@@ -1704,7 +1706,7 @@ namespace MFM=Codec::Impl::MFM;
 		}
 	}
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(DWORD nLogTimes,Medium::TType mediumType)
+	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CTrackReader(
 			new CLogTimesInfo( nLogTimes, TDecoderMethod::KEIR_FRASER, true ),
@@ -1727,7 +1729,7 @@ namespace MFM=Codec::Impl::MFM;
 		: CTrackReader(tr) {
 	}
 
-	DWORD CImage::CTrackReaderWriter::GetBufferCapacity() const{
+	Time::N CImage::CTrackReaderWriter::GetBufferCapacity() const{
 		return pLogTimesInfo->logTimes.length-LOGTIMES_COUNT_EXTRA;
 	}
 	
@@ -1739,7 +1741,7 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,DWORD nLogTimes){
+	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
 		if (this->logTimes+this->nLogTimes==logTimes)
@@ -1789,7 +1791,7 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::TrimToTimesCount(DWORD nKeptLogTimes){
+	void CImage::CTrackReaderWriter::TrimToTimesCount(Time::N nKeptLogTimes){
 		// discards some tail LogicalTimes, keeping only specified amount of them
 		ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
 		nLogTimes=nKeptLogTimes;
@@ -1887,7 +1889,7 @@ namespace MFM=Codec::Impl::MFM;
 		SetCurrentTime(clearTimes.tEnd);
 		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
 		// - replacing the LogicalTimes
-		const DWORD nNewLogTimes=nLogTimes+writeTimes.GetTimesCount()-nLogTimesToClear;
+		const Time::N nNewLogTimes=nLogTimes+writeTimes.GetTimesCount()-nLogTimesToClear;
 		if (nNewLogTimes>GetBufferCapacity())
 			return false;
 		::memmove(
@@ -1920,7 +1922,7 @@ namespace MFM=Codec::Impl::MFM;
 		}
 	}
 
-	static DWORD InterpolateTimes(PLogTime logTimes,DWORD nLogTimes,TLogTime tSrcA,DWORD iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){
+	static Time::N InterpolateTimes(PLogTime logTimes,Time::N nLogTimes,TLogTime tSrcA,Time::N iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){
 		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
 		TLogTime &rtStop=logTimes[nLogTimes],const tStopOrg=rtStop;
 		rtStop=INT_MAX; // stop-condition
@@ -1959,17 +1961,17 @@ namespace MFM=Codec::Impl::MFM;
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
-		const DWORD iModifStart=iNextTime;
-		DWORD iTime=iModifStart;
-		const CSharedLogTimes buffer( GetBufferCapacity() );
+		const Time::N iModifStart=iNextTime;
+		Time::N iTime=iModifStart;
+		const Time::CSharedArray buffer( GetBufferCapacity() );
 		const PLogTime ptModified=buffer;
 		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
 			profile.Reset();
 			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);
-			const DWORD iModifRevStart=iTime;
+			const Time::N iModifRevStart=iTime;
 			// . alignment of LogicalTimes to inspection window centers
-			DWORD nAlignedCells=0;
+			Time::N nAlignedCells=0;
 			if (fitTimesIntoIwMiddles){
 				// alignment wanted
 				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
@@ -1982,7 +1984,7 @@ namespace MFM=Codec::Impl::MFM;
 				// alignment not wanted - just copying the Times in current Revolution
 				while (*this && logTimes[iNextTime]<tNextIndexOrg)
 					ptModified[iTime++]=ReadTime();
-			DWORD iModifRevEnd=iTime;
+			Time::N iModifRevEnd=iTime;
 			// . shortening/prolonging this revolution to correct number of cells
 			if (correctCellCountPerRevolution){
 				ptModified[iModifRevEnd]=INT_MAX; // stop-condition
@@ -2031,9 +2033,9 @@ namespace MFM=Codec::Impl::MFM;
 		for( BYTE i=0; i<GetIndexCount(); i++ )
 			indexPulses[i]=tTotal-indexPulses[i];
 		// - reversing Times
-		for( DWORD i=0; i<nLogTimes/2; i++ )
+		for( Time::N i=0; i<nLogTimes/2; i++ )
 			std::swap( logTimes[i], logTimes[nLogTimes-1-i] );
-		for( DWORD i=0; i<nLogTimes; i++ )
+		for( Time::N i=0; i<nLogTimes; i++ )
 			logTimes[i]=tTotal-logTimes[i];
 		// - reversing MetaData
 		CMetaData metaData;

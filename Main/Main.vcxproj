@@ -295,6 +295,7 @@
     <ClCompile Include="src\CapsBase_Mining.cpp" />
     <ClCompile Include="src\HFE.cpp" />
     <ClCompile Include="src\Medium.cpp" />
+    <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
     <ClCompile Include="src\Image_TrackEditor.cpp" />

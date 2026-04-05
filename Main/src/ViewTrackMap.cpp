@@ -114,7 +114,7 @@
 
 	inline
 	int CTrackMapView::TTrackLength::GetUnitCount(BYTE zoomFactor) const{
-		return	Utils::CTimeline(nBytes,1,zoomFactor).GetUnitCount() + nSectors*SECTOR_MARGIN;
+		return	Time::CTimeline(nBytes,1,zoomFactor).GetUnitCount() + nSectors*SECTOR_MARGIN;
 	}
 
 	BYTE CTrackMapView::TTrackLength::GetZoomFactorToFitWidth(long pixelWidth) const{
@@ -434,7 +434,7 @@
 				POINT timelinePosition={ SECTOR1_X, VIEW_PADDING+font.charHeight };
 				::LPtoDP( dc, &timelinePosition, 1 );
 				::SetViewportOrgEx( dc, timelinePosition.x, timelinePosition.y, nullptr );
-				Utils::CTimeline(
+				Time::CTimeline(
 					longestTrackNanoseconds, IMAGE->EstimateNanosecondsPerOneByte(), zoomLengthFactor
 				).DrawWhole( dc );
 			}else

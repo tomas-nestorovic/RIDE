@@ -63,7 +63,7 @@ using namespace Charting;
 		typedef const TInspectionWindow *PCInspectionWindow;
 		
 		class CTimeEditor sealed:public CScrollView{
-			Utils::CTimeline timeline;
+			Time::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
 			CBitSequence inspectionWindows;
@@ -545,7 +545,7 @@ using namespace Charting;
 				painter.action.Resume();
 			}
 
-			inline const Utils::CTimeline &GetTimeline() const{
+			inline const Time::CTimeline &GetTimeline() const{
 				return timeline;
 			}
 
@@ -1415,8 +1415,8 @@ using namespace Charting;
 										CChartView::TMargin::Default,
 										&graphicsBegin+1, (CChartView::PCGraphics *)&di-&graphicsBegin-1,
 										Utils::CRideFont::StdBold,
-										's', tr.GetTotalTime(), Utils::CTimeline::TimePrefixes,
-										's', INT_MIN, Utils::CTimeline::TimePrefixes
+										's', tr.GetTotalTime(), Time::Prefixes,
+										's', INT_MIN, Time::Prefixes
 									){
 									m_bAutoMenuEnable=FALSE; // we are not set up for that
 								}
@@ -1556,7 +1556,7 @@ using namespace Charting;
 									CChartView::TMargin::Default,
 									graphics, ARRAYSIZE(graphics),
 									Utils::CRideFont::StdBold,
-									's', INT_MIN, Utils::CTimeline::TimePrefixes,
+									's', INT_MIN, Time::Prefixes,
 									'\0', INT_MIN, Utils::CAxis::CountPrefixes
 								)
 							).ShowModal(
