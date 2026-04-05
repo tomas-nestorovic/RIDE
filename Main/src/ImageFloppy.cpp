@@ -1,7 +1,7 @@
 #include "stdafx.h"
 using namespace Yahel;
 
-	bool CFloppyImage::IsValidSectorLengthCode(BYTE lengthCode){
+	bool CFloppyImage::IsValidSectorLengthCode(Sector::LC lengthCode){
 		// True <=> SectorLengthCode complies with Simon Owen's recommendation (interval 0..7), otherwise False
 		return (lengthCode&0xf8)==0;
 	}
@@ -49,13 +49,13 @@ using namespace Yahel;
 
 
 
-	WORD CFloppyImage::GetUsableSectorLength(BYTE sectorLengthCode) const{
+	Sector::L CFloppyImage::GetUsableSectorLength(Sector::LC sectorLengthCode) const{
 		// determines and returns usable portion of a Sector based on supplied LenghtCode and actual FloppyType
 		if (!IsValidSectorLengthCode(sectorLengthCode))
 			return 0; // e.g. only copy-protection marks
-		const WORD officialLength=GetOfficialSectorLength(sectorLengthCode);
+		const Sector::L officialLength=Sector::GetLength(sectorLengthCode);
 		if ((floppyType&Medium::FLOPPY_DD_ANY)!=0 || floppyType==Medium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
-			return std::min( (WORD)6144, officialLength );
+			return std::min( (Sector::L)6144, officialLength );
 		else
 			return officialLength;
 	}

@@ -222,6 +222,7 @@
     <ClInclude Include="src\HFE.h" />
     <ClInclude Include="src\Medium.h" />
     <ClInclude Include="src\Revolution.h" />
+    <ClInclude Include="src\Sector.h" />
     <ClInclude Include="src\Time.h" />
     <ClInclude Include="src\XmlDocs.h" />
     <ClInclude Include="src\IPF.h" />
@@ -295,6 +296,7 @@
     <ClCompile Include="src\CapsBase_Mining.cpp" />
     <ClCompile Include="src\HFE.cpp" />
     <ClCompile Include="src\Medium.cpp" />
+    <ClCompile Include="src\Sector.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Image_SectorDataSerializer.cpp" />

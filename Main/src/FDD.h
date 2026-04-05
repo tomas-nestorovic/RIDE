@@ -39,7 +39,7 @@
 			struct TSectorInfo sealed{
 				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
 				TSectorId id;
-				WORD length;
+				Sector::L length;
 				TLogTime startNanoseconds,endNanoseconds; // counted from the index pulse
 				struct{
 					PSectorData data;

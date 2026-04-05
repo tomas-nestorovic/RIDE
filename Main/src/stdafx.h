@@ -87,17 +87,12 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 	#define constexpr const
 #endif
 
-typedef BYTE *PSectorData;
-typedef const BYTE *PCSectorData;
 typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
 typedef const TCylinder *PCCylinder;
-typedef BYTE THead,*PHead,TSide,*PSide,TSector,*PSector;
+typedef BYTE THead,*PHead,TSide,*PSide;
 typedef const THead *PCHead;
 typedef const TSide *PCSide;
-typedef const TSector *PCSector;
 typedef int TTrack,*PTrack;
-
-struct TPhysicalAddress; // forward
 
 class CImage; // forward
 typedef CImage *PImage;
@@ -154,6 +149,7 @@ typedef const TLogPoint *PCLogPoint;
 #include "Diff.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
+#include "Sector.h"
 #include "ViewTrackMap.h"
 #include "Revolution.h"
 #include "Codec.h"

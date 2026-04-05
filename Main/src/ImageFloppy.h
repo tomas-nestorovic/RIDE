@@ -18,13 +18,13 @@
 			TScannedTracks();
 		} scannedTracks;
 	public:
-		static bool IsValidSectorLengthCode(BYTE lengthCode);
+		static bool IsValidSectorLengthCode(Sector::LC lengthCode);
 	protected:
 		Medium::TType floppyType; // DD/HD
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
 	public:
-		WORD GetUsableSectorLength(BYTE sectorLengthCode) const;
+		Sector::L GetUsableSectorLength(Sector::LC sectorLengthCode) const;
 		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
 		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override;

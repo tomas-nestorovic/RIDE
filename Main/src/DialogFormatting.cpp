@@ -104,7 +104,7 @@
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );
 			DDV_MinMaxUInt( pDX, params.format.sectorLength, propImage->sectorLengthMin, propImage->sectorLengthMax );
 			if (pDX->m_bSaveAndValidate)
-				params.format.sectorLengthCode=CImage::GetSectorLengthCode(params.format.sectorLength);
+				params.format.sectorLengthCode=(TFormat::TLengthCode)Sector::GetLengthCode(params.format.sectorLength);
 			else
 				params.format.sectorLengthCode=dos->formatBoot.sectorLengthCode;
 		DDX_Text( pDX,	ID_INTERLEAVE,params.interleaving);

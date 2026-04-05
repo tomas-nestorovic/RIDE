@@ -261,6 +261,9 @@
     <ClInclude Include="src\Checksum.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Sector.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -537,6 +540,9 @@
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
     <ClCompile Include="src\Time.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sector.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>

@@ -96,7 +96,7 @@
 					// . writing Sector
 					FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM, pit->head, id.cylinder,id.side,id.sector,id.lengthCode, id.sector+1, 1, 0xff };
 					LOG_ACTION(_T("DeviceIoControl fdcCommand"));
-					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,rev.data,length),GetOfficialSectorLength(id.lengthCode), &nBytesTransferred, nullptr )!=0
+					err=::DeviceIoControl( fdd->_HANDLE, fdcCommand, &rwp,sizeof(rwp), ::memcpy(fdd->dataBuffer,rev.data,length),Sector::GetLength(id.lengthCode), &nBytesTransferred, nullptr )!=0
 						? ERROR_SUCCESS
 						: LOG_ERROR(::GetLastError());
 					// . cleaning up after reproduction of requested i/o errors
@@ -133,7 +133,7 @@
 						//nop (already done above when checking if the Track is healthy)
 						// To recap: A healthy Sector has been read, yet it cannot be written back - WE END UP HERE ONLY WHEN DUMPING AN IMAGE TO A FLOPPY WITH "Reformat just bad tracks" TICKED
 						// . reformatting the Track
-						TSectorId bufferId[(BYTE)-1]; WORD bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
+						TSectorId bufferId[(BYTE)-1]; Sector::L bufferLength[(BYTE)-1]; TFdcStatus bufferStatus[(BYTE)-1];
 						for( TSector n=0; n<pit->sectors.length; n++ )
 							bufferId[n]=pit->sectors[n].id, bufferLength[n]=pit->sectors[n].length;
 				{		const Utils::CVarTempReset<PInternalTrack> pit0( fdd->internalTracks[cyl][head], nullptr ); // detaching the Track internal representation for it to be not destroyed during reformatting of the Track
@@ -809,7 +809,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,TLogTime nNanosecondsAfterLastDataByteWritten) const{
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(Sector::L nDataBytesBeforeInterruption,TLogTime nNanosecondsAfterLastDataByteWritten) const{
 		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfNanoseconds; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__"));
 		DWORD nBytesTransferred;
@@ -826,12 +826,12 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const{
+	TStdWinError CFDD::__setTimeBeforeInterruptingTheFdc__(Sector::L nDataBytesBeforeInterruption) const{
 		// registers a request to interrupt the following write/format command after specified NumberOfBytes plus additional NumberOfNanosends; returns Windows standard i/o error
 		return __setTimeBeforeInterruptingTheFdc__( nDataBytesBeforeInterruption, fddHead.profile.controllerLatency );
 	}
 
-	bool CFDD::__bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
+	bool CFDD::__bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,Sector::L sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
 		// True <=> requested Sector found in currently seeked Track and data of the Sector have been buffered in the internal DataBuffer, otherwise False
 		LOG_SECTOR_ACTION(psi,_T("bool CFDD::__bufferSectorData__"));
 		// - taking into account the NumberOfSectorsToSkip
@@ -872,7 +872,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		}
 	}
 
-	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
+	bool CFDD::__bufferSectorData__(RCPhysicalAddress chs,Sector::L sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const{
 		// True <=> requested Sector found in currently seeked Track and data of the Sector have been buffered in the internal DataBuffer, otherwise False
 		return __bufferSectorData__( chs.cylinder, chs.head, &chs.sectorId, sectorLength, pit, nSectorsToSkip, pFdcStatus );
 	}
@@ -921,7 +921,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			for( const TPlanStep *pPlanStep=plan; pPlanStep<planEnd; pPlanStep++ ){
 				TInternalTrack::TSectorInfo &rsi=*pPlanStep->psi;
 				const BYTE index=pPlanStep->indexIntoOutputBuffers;
-				const WORD length = outBufferLengths[index] = rsi.length;
+				const auto length = outBufferLengths[index] = rsi.length;
 				// : selecting Data by Revolution
 				if (rsi.IsModified())
 					// DirtyRevolution is obligatory for any subsequent data requests
@@ -1278,7 +1278,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		TLatencyParams &lp=*(TLatencyParams *)pAction->GetParams();
 		const TCylinder cylMax=lp.cylinder;
-		const WORD testSectorLength=lp.fdd->GetOfficialSectorLength( lp.sectorId.lengthCode );
+		const Sector::L testSectorLength=Sector::GetLength( lp.sectorId.lengthCode );
 		pAction->SetProgressTarget( cylMax+1 );
 		EXCLUSIVELY_LOCK_IMAGE(*lp.fdd); // locking the access so that no one can disturb during the testing
 		for( BYTE nSuccessfullWritings=0; true; ){
@@ -1325,14 +1325,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 			const WORD nsAccuracy; // nanoseconds
 		public:
 			const TSectorId sectorId;
-			const WORD sectorLength;
+			const Sector::L sectorLength;
 			TLogTime nNanoseconds;
 
 			TInterruption(const PBackgroundActionCancelable pAction,const TLatencyParams &lp)
 				// ctor
 				: pAction(pAction)
 				, fdd(lp.fdd)
-				, sectorId(lp.sectorId) , sectorLength(lp.fdd->GetOfficialSectorLength(lp.sectorId.lengthCode))
+				, sectorId(lp.sectorId) , sectorLength(Sector::GetLength(lp.sectorId.lengthCode))
 				, rCyl(lp.cylinder) , rHead(lp.head) // a healthy Track
 				, sectorDataToWrite( ::VirtualAlloc(nullptr,SECTOR_LENGTH_MAX,MEM_COMMIT,PAGE_READWRITE) )
 				, nsAccuracy(lp.nsAccuracy) , nNanoseconds(0) {
@@ -1343,7 +1343,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 				::VirtualFree(sectorDataToWrite,0,MEM_RELEASE);
 			}
 
-			TStdWinError __writeSectorData__(WORD nBytesToWrite) const{
+			TStdWinError __writeSectorData__(Sector::L nBytesToWrite) const{
 				// writes SectorData to the current Track and interrupts the controller after specified NumberOfBytesToWrite and Nanoseconds; returns Windows standard i/o error
 				// : setting controller interruption to the specified NumberOfBytesToWrite and Nanoseconds
 				if (const TStdWinError err=fdd->__setTimeBeforeInterruptingTheFdc__( nBytesToWrite, nNanoseconds ))
@@ -1362,14 +1362,14 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 						return LOG_ERROR(ERROR_NOT_SUPPORTED);
 				}
 			}
-			WORD __getNumberOfWrittenBytes__() const{
+			Sector::L __getNumberOfWrittenBytes__() const{
 				// counts and returns the number of TestBytes actually written in the most recent call to __writeSectorData__
 				::memset( fdd->dataBuffer, ~TEST_BYTE, sectorLength );
 				PCBYTE p=(PCBYTE)fdd->dataBuffer;
 				for( fdd->__bufferSectorData__(rCyl,rHead,&sectorId,sectorLength,&TInternalTrack(fdd,rCyl,rHead,Codec::MFM,1,&sectorId,(PCLogTime)FDD_350_SECTOR_GAP3),0,&TFdcStatus()); *p==TEST_BYTE; p++ );
 				return p-(PCBYTE)fdd->dataBuffer;
 			}
-			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(WORD nBytes){
+			TStdWinError __setInterruptionToWriteSpecifiedNumberOfBytes__(Sector::L nBytes){
 				// sets this Interruption so that the specified NumberOfBytes is written to current Track; returns Windows standard i/o error
 				// : initialization using the default NumberOfNanoseconds
 				nNanoseconds=TIME_MICRO(20);
@@ -1380,7 +1380,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 						return ERROR_CANCELLED;
 					if (const TStdWinError err=__writeSectorData__(nBytes))
 						return err;
-					const WORD nBytesRead=__getNumberOfWrittenBytes__();
+					const Sector::L nBytesRead=__getNumberOfWrittenBytes__();
 					if (nBytesRead<nBytes) // still insufficient # of Bytes written
 						nNanoseconds+=nsAccuracy, nReproductions=0;
 					else if (nBytesRead==nBytes) // written expected # of Bytes
@@ -1396,7 +1396,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 							return ERROR_CANCELLED;
 						if (const TStdWinError err=__writeSectorData__(nBytes))
 							return err;
-						const WORD nBytesRead=__getNumberOfWrittenBytes__();
+						const Sector::L nBytesRead=__getNumberOfWrittenBytes__();
 						if (nBytesRead<=nBytes) // still the correct # of Bytes written
 							nTrials--;
 						else if (nBytesRead==nBytes+1) // already unreliable, eventually writing the next Byte as well
@@ -1420,7 +1420,7 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		for( BYTE c=lp.nRepeats,state=0; c--; ){
 			// . STEP 1: experimentally determining the ControllerLatency
 			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
-			const WORD nBytes=interruption.sectorLength/2;
+			const Sector::L nBytes=interruption.sectorLength/2;
 			if (const TStdWinError err=interruption.__setInterruptionToWriteSpecifiedNumberOfBytes__(nBytes))
 				return LOG_ERROR(pAction->TerminateWithError(err));
 			const TLogTime nControllerNanoseconds=interruption.nNanoseconds;
@@ -1464,7 +1464,7 @@ Utils::Information(buf);}
 			if (pAction->Cancelled) return LOG_ERROR(ERROR_CANCELLED);
 			// . STEP 1: writing two test Sectors
 			static constexpr TSectorId SectorIds[]={ {1,0,1,2}, {1,0,2,2} };
-			static constexpr WORD SectorLengths[]={ 512, 512 };
+			static constexpr Sector::L SectorLengths[]={ 512, 512 };
 			static const TFdcStatus SectorStatuses[]={ TFdcStatus::WithoutError, TFdcStatus::WithoutError };
 	{		const Utils::CVarTempReset<bool> vft0( lp.fdd->params.verifyFormattedTracks, false );
 			if (const TStdWinError err=lp.fdd->FormatTrack( lp.cylinder, lp.head, Codec::MFM, 2, SectorIds, SectorLengths, SectorStatuses, gap3, TEST_BYTE, pAction->Cancelled ))
@@ -1889,11 +1889,11 @@ autodetermineLatencies:		// automatic determination of write latency values
 				LOG_ACTION(_T("format verification"));
 				// : writing FillerByte as test data
 				const FD_ID_HEADER &rih=fmt.Headers[0];
-				WORD sectorBytes=GetUsableSectorLength(rih.size);
+				Sector::L sectorBytes=GetUsableSectorLength(rih.size);
 				__setTimeBeforeInterruptingTheFdc__( sectorBytes, fddHead.profile.controllerLatency+1*fddHead.profile.oneByteLatency ); // "X*" = reserve to guarantee that really all test data written
 				FD_READ_WRITE_PARAMS rwp={ FD_OPTION_MFM|FD_OPTION_SK, chs.head, rih.cyl,rih.head,rih.sector,rih.size, rih.sector+1, 1, 0xff };
 				{	LOG_ACTION(_T("DeviceIoControl IOCTL_FDCMD_WRITE_DATA"));
-					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),GetOfficialSectorLength(rih.size), &nBytesTransferred, nullptr ))
+					if (!::DeviceIoControl( _HANDLE, IOCTL_FDCMD_WRITE_DATA, &rwp,sizeof(rwp), ::memset(dataBuffer,fillerByte,sectorBytes),Sector::GetLength(rih.size), &nBytesTransferred, nullptr ))
 						return LOG_ERROR(::GetLastError());
 				}
 				// . reading test data
@@ -1974,10 +1974,10 @@ error:				return LOG_ERROR(::GetLastError());
 			formatStyle=TFormatStyle::ONE_LONG_SECTOR;
 		else{
 			formatStyle=TFormatStyle::STANDARD; // assumption
-			const WORD referenceLength=*bufferLength;
+			const Sector::L referenceLength=*bufferLength;
 			PCSectorId pid=bufferId; PCWORD pLength=bufferLength; PCFdcStatus pFdcStatus=bufferFdcStatus;
 			for( BYTE n=nSectors; n--; pid++,pLength++,pFdcStatus++ )
-				if (pid->lengthCode!=referenceLengthCode || *pLength!=referenceLength || !*pLength || !pFdcStatus->IsWithoutError() || *pLength!=GetOfficialSectorLength(pid->lengthCode)){
+				if (pid->lengthCode!=referenceLengthCode || *pLength!=referenceLength || !*pLength || !pFdcStatus->IsWithoutError() || *pLength!=Sector::GetLength(pid->lengthCode)){
 					formatStyle=TFormatStyle::CUSTOM;
 					break;
 				}
@@ -2056,7 +2056,7 @@ formatStandardWay:
 				// . creating the PlanOfFormatting
 				#pragma pack(1)
 				struct TFormatStep sealed{
-					BYTE sectorLengthCode;
+					Sector::LC sectorLengthCode;
 					BYTE nSectorsOnTrack, nLastSectorsValid;
 					PCSectorId validSectorIDs;
 					BYTE gap3;
@@ -2067,7 +2067,7 @@ formatStandardWay:
 
 					WORD __getNumberOfNecessaryBytes__() const{
 						// determines and returns the number of Bytes that are necessary to perform this Step
-						return NUMBER_OF_OCCUPIED_BYTES(nSectorsOnTrack,GetOfficialSectorLength(sectorLengthCode),gap3,true);
+						return NUMBER_OF_OCCUPIED_BYTES(nSectorsOnTrack,Sector::GetLength(sectorLengthCode),gap3,true);
 					}
 					void __debug__() const{
 						TCHAR buf[200];
@@ -2082,12 +2082,12 @@ formatStandardWay:
 				PCWORD pLength=bufferLength; PCFdcStatus pFdcStatus=bufferFdcStatus;
 				if (!__mustSectorBeFormattedIndividually__(pFdcStatus)){
 					// there is a sequence of Sectors at the beginning of Track that can be all formatted in a single Step
-					pFormatStep->sectorLengthCode=GetSectorLengthCode(*pLength);
+					pFormatStep->sectorLengthCode=Sector::GetLengthCode(*pLength);
 					pFormatStep->nLastSectorsValid=1;
 					pFormatStep->validSectorIDs=bufferId;
 					pFormatStep->gap3=gap3;
-					for( const WORD refLength=*pLength; --n; pFormatStep->nLastSectorsValid++ ){
-						const WORD length=*++pLength;
+					for( const Sector::L refLength=*pLength; --n; pFormatStep->nLastSectorsValid++ ){
+						const Sector::L length=*++pLength;
 						const TFdcStatus sr=*++pFdcStatus;
 						if (length!=refLength || __mustSectorBeFormattedIndividually__(&sr))
 							break;
@@ -2100,10 +2100,10 @@ formatStandardWay:
 				}else
 					// right the first Sector in the Track must be formatted individually
 					nBytesReserved=0;
-				const WORD reservedSectorLength=GetOfficialSectorLength(RESERVED_SECTOR_LENGTH_CODE);
+				const auto reservedSectorLength=Sector::GetLength(RESERVED_SECTOR_LENGTH_CODE);
 				while (n--){ // for each Sector that must be formatted individually
 					// : treating an unprocessed Sector as a single-item sequence to be formatted in this Step
-					const WORD sectorLength=*pLength++;
+					const Sector::L sectorLength=*pLength++;
 					pFormatStep->sectorLengthCode=RESERVED_SECTOR_LENGTH_CODE;
 					pFormatStep->nLastSectorsValid=1;
 					pFormatStep->validSectorIDs=bufferId;
@@ -2248,7 +2248,7 @@ error:		return LOG_ERROR(::GetLastError());
 		DWORD nBytesTransferred;
 		switch (DRIVER){
 			case DRV_FDRAWCMD:{
-				const BYTE LengthCode=GetSectorLengthCode(16384); // 16kB long Sector that rewrites its own header
+				const Sector::LC LengthCode=Sector::GetLengthCode(16384); // 16kB long Sector that rewrites its own header
 				FD_FORMAT_PARAMS fmt={	FD_OPTION_MFM, head, LengthCode, 1, 50, 0,
 										{cyl,head,0,LengthCode}
 									};

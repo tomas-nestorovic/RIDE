@@ -40,7 +40,7 @@
 		// - reset of HexaEditor's content
 		fSectorData.Attach( new CDos::CFileReaderWriter(dos,rChs,OnDataWritten) );
 		const TPhysicalAddress &chs=GetPhysicalAddress();
-		WORD sectorDataRealLength=CImage::GetOfficialSectorLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
+		Sector::L sectorDataRealLength=Sector::GetLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
 		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
 		hexaEditor.Reset( fSectorData, fSectorData, sectorDataRealLength );
 	}

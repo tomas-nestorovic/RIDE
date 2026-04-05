@@ -35,93 +35,6 @@
 
 
 
-	const TSectorId TSectorId::Invalid={ -1, -1, -1, -1 };
-	
-	TSector TSectorId::CountAppearances(const TSectorId *ids,TSector nIds,const TSectorId &id){
-		// returns the # of appearances of specified ID
-		TSector nAppearances=0;
-		while (nIds--)
-			nAppearances+=*ids++==id;
-		return nAppearances;
-	}
-
-	CString TSectorId::List(PCSectorId ids,TSector nIds,TSector iHighlight,char highlightBullet){
-		// creates and returns a List of Sector IDs in order as provided
-		ASSERT( iHighlight>=nIds || highlightBullet );
-		if (!nIds)
-			return _T("- [none]\r\n");
-		CString list;
-		list.Format( _T("- [%d sectors, chronologically]\r\n"), nIds );
-		for( TSector i=0; i<nIds; i++ ){
-			TCHAR duplicateId[8];
-			if (const TSector nDuplicates=CountAppearances( ids, i, ids[i] ))
-				::wsprintf( duplicateId, _T(" (%d)"), nDuplicates+1 );
-			else
-				*duplicateId='\0';
-			CString tmp;
-			tmp.Format( _T("%c %s%s\r\n"), i!=iHighlight?'-':highlightBullet, ids[i].ToString(), duplicateId );
-			list+=tmp;
-		}
-		return list;
-	}
-
-	bool TSectorId::operator==(const TSectorId &id2) const{
-		// True <=> Sector IDs are equal, otherwise False
-		return	cylinder==id2.cylinder
-				&&
-				side==id2.side
-				&&
-				sector==id2.sector
-				&&
-				lengthCode==id2.lengthCode;
-	}
-
-	TSectorId &TSectorId::operator=(const FD_ID_HEADER &rih){
-		// assigns Simon Owen's definition of ID to this ID and returns it
-		cylinder=rih.cyl, side=rih.head, sector=rih.sector, lengthCode=rih.size;
-		return *this;
-	}
-
-	TSectorId &TSectorId::operator=(const FD_TIMED_ID_HEADER &rtih){
-		// assigns Simon Owen's definition of ID to this ID and returns it
-		cylinder=rtih.cyl, side=rtih.head, sector=rtih.sector, lengthCode=rtih.size;
-		return *this;
-	}
-
-	CString TSectorId::ToString() const{
-		// returns a string describing the Sector's ID
-		CString result;
-		result.Format(_T("ID={%d,%d,%d,%d}"),cylinder,side,sector,lengthCode);
-		return result;
-	}
-
-	const TPhysicalAddress TPhysicalAddress::Invalid={ -1, -1, TSectorId::Invalid };
-
-	bool TPhysicalAddress::operator==(const TPhysicalAddress &chs2) const{
-		// True <=> PhysicalAddresses are equal, otherwise False
-		return	cylinder==chs2.cylinder
-				&&
-				head==chs2.head
-				&&
-				sectorId==chs2.sectorId;
-	}
-	TTrack TPhysicalAddress::GetTrackNumber() const{
-		// determines and returns the Track number based on DOS's current Format
-		return GetTrackNumber( CImage::GetActive()->GetHeadCount() );
-	}
-	CString TPhysicalAddress::GetTrackIdDesc(THead nHeads) const{
-		// returns a string identifying current Track
-		if (!nHeads)
-			nHeads=CImage::GetActive()->GetHeadCount();
-		CString desc;
-		desc.Format( _T("Track %d (Cyl=%d, Head=%d)"), GetTrackNumber(nHeads), cylinder, head );
-		return desc;
-	}
-	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
-		// determines and returns the Track number based on the specified NumberOfHeads
-		return GetTrackNumber( cylinder, head, nHeads );
-	}
-
 
 
 
@@ -304,7 +217,7 @@
 		SetAt( _T("sides"), buf );
 	}
 
-	void CImage::CSettings::AddSectorSize(WORD nBytes){
+	void CImage::CSettings::AddSectorSize(Sector::L nBytes){
 		Add( _T("sector length"), nBytes );
 	}
 
@@ -377,20 +290,6 @@
 		return result;
 	}
 
-	#define LENGTH_CODE_BASE	0x80
-
-	TFormat::TLengthCode CImage::GetSectorLengthCode(WORD sectorLength){
-		// returns the code of the SectorLength
-		BYTE lengthCode=0;
-		while (sectorLength>LENGTH_CODE_BASE) sectorLength>>=1, lengthCode++;
-		return (TFormat::TLengthCode)lengthCode;
-	}
-
-	WORD CImage::GetOfficialSectorLength(BYTE sectorLengthCode){
-		// returns the official size in Bytes of a Sector with the given LengthCode
-		return LENGTH_CODE_BASE<<sectorLengthCode;
-	}
-
 	Utils::CPtrList<CImage::PCProperties> CImage::Known;
 	Utils::CPtrList<CImage::PCProperties> CImage::Devices;
 
@@ -460,8 +359,8 @@
 		cb.Attach(hComboBox);
 			cb.ResetContent();
 			TCHAR desc[8];
-			for( BYTE lengthCode=0; lengthCode<TFormat::TLengthCode::LAST; lengthCode++ )
-				cb.SetItemData( cb.AddString(_itot(GetOfficialSectorLength(lengthCode),desc,10)), lengthCode );
+			for( Sector::LC lengthCode=0; lengthCode<TFormat::TLengthCode::LAST; lengthCode++ )
+				cb.SetItemData( cb.AddString(_itot(Sector::GetLength(lengthCode),desc,10)), lengthCode );
 			cb.EnableWindow();
 			cb.SetCurSel(0);
 		cb.Detach();

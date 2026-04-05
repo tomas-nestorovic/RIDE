@@ -296,7 +296,7 @@
 								break;
 						if (iFound==nSectors && dp.dos->IsStdSector(p.chs)){
 							// a standard Sector missing; add it to the list to later invoke a common error dialog
-							bufferId[nSectors]=id, bufferLength[nSectors]=CImage::GetOfficialSectorLength(id.lengthCode);
+							bufferId[nSectors]=id, bufferLength[nSectors]=Sector::GetLength(id.lengthCode);
 							nSectors++;
 						}
 					}

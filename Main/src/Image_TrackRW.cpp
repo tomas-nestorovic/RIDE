@@ -569,7 +569,7 @@ namespace MFM=Codec::Impl::MFM;
 		WORD nDataEnds=0;
 		for( WORD s=0; s<nSectorsFound; s++ ){
 			CParseEventList peSector;
-			if (!ReadData( pOutFoundSectors[s], pOutIdEnds[s], pOutIdProfiles[s], CImage::GetOfficialSectorLength(pOutFoundSectors[s].lengthCode), nullptr, &peSector ).DescribesMissingDam()
+			if (!ReadData( pOutFoundSectors[s], pOutIdEnds[s], pOutIdProfiles[s], Sector::GetLength(pOutFoundSectors[s].lengthCode), nullptr, &peSector ).DescribesMissingDam()
 				&&
 				*this // not end of Track (aka. data complete)
 			){

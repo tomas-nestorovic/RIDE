@@ -38,8 +38,8 @@
 			BYTE currentRevolution;
 			Revolution::TType dirtyRevolution;
 
-			inline WORD GetOfficialSectorLength() const{
-				return CFloppyImage::GetOfficialSectorLength( id.lengthCode );
+			inline Sector::L GetOfficialSectorLength() const{
+				return Sector::GetLength( id.lengthCode );
 			}
 
 			TLogTime GetAverageIdEndTime(const CTrackReader &tr) const;

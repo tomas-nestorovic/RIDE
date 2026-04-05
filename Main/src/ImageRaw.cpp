@@ -99,7 +99,7 @@ using namespace Yahel;
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
-			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(sizeWithoutGeometry,(DWORD)USHRT_MAX) );
+			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(sizeWithoutGeometry,(DWORD)USHRT_MAX) );
 		// - confirming initial settings
 		if (!EditSettings(true)){ // dialog cancelled?
 			::SetLastError( ERROR_CANCELLED );
@@ -309,7 +309,7 @@ trackNotFound:
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
 		if (pFormat->mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=GetSectorLengthCode( sectorLength=pFormat->sectorLength );
+			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=pFormat->sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				__freeBufferOfCylinders__();
 				const int nSectorsInTotal=fileSize/sectorLength;
@@ -339,7 +339,7 @@ trackNotFound:
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
-				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=GetSectorLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
+				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 				bufferOfCylinders=Utils::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
@@ -615,7 +615,7 @@ trackNotFound:
 			THead nHeads;
 			TSide sideNumbers[(THead)-1];
 			TSector nSectors,firstSectorNumber;
-			BYTE sectorLengthCode;
+			Sector::LC sectorLengthCode;
 
 			CSettingsDialog(CImageRaw &rawImage,bool initialEditing)
 				// ctor
@@ -647,7 +647,7 @@ trackNotFound:
 					fmt.nHeads=nHeads;
 					fmt.nSectors=nSectors;
 					fmt.sectorLengthCode=(TFormat::TLengthCode)sectorLengthCode;
-					fmt.sectorLength=GetOfficialSectorLength(sectorLengthCode);
+					fmt.sectorLength=Sector::GetLength(sectorLengthCode);
 				return rawImage.SetMediumTypeAndGeometry( &fmt, sideNumbers, firstSectorNumber );
 			}
 		} d( *this, initialEditing );

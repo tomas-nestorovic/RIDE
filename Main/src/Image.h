@@ -46,7 +46,7 @@
 		TCylinder nCylinders;
 		THead nHeads;
 		TSector nSectors;
-		enum TLengthCode:BYTE{
+		enum TLengthCode:Sector::LC{
 			LENGTHCODE_128	=0,
 			LENGTHCODE_256	=1,
 			LENGTHCODE_512	=2,
@@ -57,7 +57,7 @@
 			LENGTHCODE_16384=7,
 			LAST
 		} sectorLengthCode;
-		WORD sectorLength;
+		Sector::L sectorLength;
 		WORD clusterSize; // in Sectors
 
 		inline operator bool() const{ return !operator==(Unknown); }
@@ -67,47 +67,6 @@
 		TTrack GetCountOfAllTracks() const;
 	} *PFormat;
 	typedef const TFormat *PCFormat,&RCFormat;
-
-	#pragma pack(1)
-	typedef struct TSectorId sealed{
-		static const TSectorId Invalid;
-
-		static TSector CountAppearances(const TSectorId *ids,TSector nIds,const TSectorId &id);
-		static CString List(const TSectorId *ids,TSector nIds,TSector iHighlight=-1,char highlightBullet='\0');
-
-		TCylinder cylinder;
-		TSide side;
-		TSector sector;
-		BYTE lengthCode;
-
-		bool operator==(const TSectorId &id2) const;
-		inline bool operator!=(const TSectorId &id2) const{ return !operator==(id2); }
-		TSectorId &operator=(const FD_ID_HEADER &rih);
-		TSectorId &operator=(const FD_TIMED_ID_HEADER &rtih);
-
-		CString ToString() const;
-	} *PSectorId;
-	typedef const TSectorId *PCSectorId,&RCSectorId;
-
-	#pragma pack(1)
-	typedef const struct TPhysicalAddress{
-		static const TPhysicalAddress Invalid;
-
-		inline static TTrack GetTrackNumber(TCylinder cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
-
-		TCylinder cylinder;
-		THead head;
-		TSectorId sectorId;
-
-		inline operator bool() const{ return *this!=Invalid; }
-		bool operator==(const TPhysicalAddress &chs2) const;
-		inline bool operator!=(const TPhysicalAddress &chs2) const{ return !operator==(chs2); }
-		TTrack GetTrackNumber() const;
-		TTrack GetTrackNumber(THead nHeads) const;
-		CString GetTrackIdDesc(THead nHeads=0) const;
-		inline bool IsValid() const{ return *this; }
-		inline void Invalidate(){ *this=Invalid; }
-	} &RCPhysicalAddress;
 
 	enum TDataStatus{
 		NOT_READY	=0,		// querying data via CImage::GetTrackData may lead to delay (e.g. application freezes if called from main thread)
@@ -230,7 +189,7 @@
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
 			Medium::TType supportedMedia;
 			Codec::TType supportedCodecs;
-			WORD sectorLengthMin,sectorLengthMax;
+			Sector::L sectorLengthMin,sectorLengthMax;
 			bool isReadOnly;
 
 			inline bool IsRealDevice() const{ return filter==nullptr; }
@@ -254,7 +213,7 @@
 			void AddRevolutionCount(BYTE n);
 			void AddSectorCount(TSector n);
 			void AddSides(PCSide list,THead n);
-			void AddSectorSize(WORD nBytes);
+			void AddSectorSize(Sector::L nBytes);
 			void Add40TrackDrive(bool value);
 			void AddDoubleTrackStep(bool isDouble,bool userForced);
 			void AddBaudRate(int baudRate);
@@ -823,8 +782,6 @@
 		static BYTE PopulateComboBoxWithCompatibleMedia(HWND hComboBox,WORD dosSupportedMedia,PCProperties imageProperties);
 		static BYTE PopulateComboBoxWithCompatibleCodecs(HWND hComboBox,WORD dosSupportedCodecs,PCProperties imageProperties);
 		static void PopulateComboBoxWithSectorLengths(HWND hComboBox);
-		static TFormat::TLengthCode GetSectorLengthCode(WORD sectorLength);
-		static WORD GetOfficialSectorLength(BYTE sectorLengthCode);
 		static UINT AFX_CDECL SaveAllModifiedTracks_thread(PVOID _pCancelableAction);
 
 		const PCProperties properties;
