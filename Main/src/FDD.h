@@ -48,8 +48,8 @@
 					inline bool HasDataReady() const{ return data!=nullptr || fdcStatus.DescribesMissingDam(); }
 					inline bool HasGoodDataReady() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
 				} revolutions[Revolution::MAX]; // a First-In-First-Out buffer of Revolutions
-				BYTE nRevolutions;
-				BYTE currentRevolution;
+				Revolution::N nRevolutions;
+				Revolution::N currentRevolution;
 				Revolution::TType dirtyRevolution;
 
 				inline bool IsModified() const{ return dirtyRevolution!=Revolution::NONE; }
@@ -129,7 +129,7 @@
 		BOOL OnOpenDocument(LPCTSTR) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
-		BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
+		Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
 		TStdWinError SeekHeadsHome() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;

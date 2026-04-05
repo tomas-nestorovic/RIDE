@@ -719,7 +719,7 @@
 			if (bestRev.hasDataOverIndex){
 				const auto &firstSector=*pit->sectors.begin();
 				TLogTime tOverhang=INT_MAX;
-				for( BYTE r=0; r<firstSector.nRevolutions; r++ ){
+				for( Revolution::N r=0; r<firstSector.nRevolutions; r++ ){
 					TLogTime tIdEnd=firstSector.revolutions[r].idEndTime;
 					if (tIdEnd>0){ // Sector found in the Revolution?
 						tIdEnd-=pit->GetIndexTime(r); // relative to the Revolution beginning
@@ -819,7 +819,7 @@
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
 			return CTrackReaderWriter::Invalid;
-		const BYTE nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (BYTE)Revolution::MAX )+1; // N+1 indices = N full revolutions
+		const Revolution::N nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (Revolution::N)Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 			while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
 				if (const auto n=Read( p, nBytesFree )){

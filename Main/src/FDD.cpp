@@ -667,7 +667,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return 2; // latest PC floppy drives had two Heads
 	}
 
-	BYTE CFDD::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	Revolution::N CFDD::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return Revolution::INFINITY;
 	}
@@ -1969,7 +1969,7 @@ error:				return LOG_ERROR(::GetLastError());
 			ONE_LONG_SECTOR,
 			CUSTOM
 		} formatStyle;
-		const BYTE referenceLengthCode=bufferId->lengthCode;
+		const Sector::LC referenceLengthCode=bufferId->lengthCode;
 		if (nSectors==1 && referenceLengthCode>GetMaximumSectorLengthCode())
 			formatStyle=TFormatStyle::ONE_LONG_SECTOR;
 		else{

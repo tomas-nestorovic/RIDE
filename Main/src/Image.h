@@ -210,7 +210,7 @@
 			void AddAuto(LPCTSTR name);
 			void AddCylinderCount(TCylinder n);
 			void AddHeadCount(THead n);
-			void AddRevolutionCount(BYTE n);
+			void AddRevolutionCount(Revolution::N n);
 			void AddSectorCount(TSector n);
 			void AddSides(PCSide list,THead n);
 			void AddSectorSize(Sector::L nBytes);
@@ -706,7 +706,7 @@
 			} sector; // call 'Seek' to modify this structure
 			Bit::TFlags badByteMask;
 
-			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten);
+			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten);
 		public:
 			typedef ATL::CComPtr<CSectorReaderWriter> CComPtr;
 
@@ -717,7 +717,7 @@
 			};
 
 			const PImage image;
-			const BYTE &nDiscoveredRevolutions;
+			const Revolution::N &nDiscoveredRevolutions;
 
 			// CFile methods
 		#if _MFC_VER>=0x0A00
@@ -735,7 +735,7 @@
 			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
-			BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+			Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			inline Revolution::TType GetCurrentRevolution() const{ return revolution; }
 			inline void SetCurrentRevolution(Revolution::TType rev){ revolution=rev; }
 			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
@@ -762,7 +762,7 @@
 		protected:
 			const WORD usableSectorLength;
 
-			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp);
+			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp);
 		public:
 			// Yahel::Stream::IAdvisor methods
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
@@ -805,7 +805,7 @@
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;
 		TTrack GetTrackCount() const;
-		virtual BYTE GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+		virtual Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 		virtual TStdWinError SeekHeadsHome() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;

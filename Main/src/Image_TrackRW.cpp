@@ -556,7 +556,7 @@ namespace MFM=Codec::Impl::MFM;
 	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		constexpr int StepGranularity=1000;
-		const BYTE nFullRevolutions=std::max( 0, GetIndexCount()-1 );
+		const Revolution::N nFullRevolutions=std::max( 0, GetIndexCount()-1 );
 		ap.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
@@ -714,11 +714,11 @@ namespace MFM=Codec::Impl::MFM;
 			// . extraction of bits from each full Revolution
 			const CBitSequence &&allBits=CreateBitSequence(); // factors in Decoder reset on Indices
 			CBitSequence revolutionBits[Revolution::MAX];
-			for( BYTE i=0; i<nFullRevolutions; i++ )
+			for( Revolution::N i=0; i<nFullRevolutions; i++ )
 				revolutionBits[i]=CBitSequence( allBits, GetFullRevolutionTimeInterval(i) );
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Utils::CSharedPodArray<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
-			for( BYTE i=0; i<nFullRevolutions-1; ){
+			for( Revolution::N i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[++i];
 				auto &ses=shortesEditScripts[i];
@@ -732,7 +732,7 @@ namespace MFM=Codec::Impl::MFM;
 				iRev.InheritFlagsFrom( jRev, ses, ses.length );
 			}
 			// . backward comparison of Revolutions, from the last to the first
-			for( BYTE i=nFullRevolutions; i>1; )
+			for( Revolution::N i=nFullRevolutions; i>1; )
 				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
 					// : conversion to dual script
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
@@ -745,7 +745,7 @@ namespace MFM=Codec::Impl::MFM;
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
-			for( BYTE r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
+			for( Revolution::N r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
 				const CBitSequence &rev=revolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();

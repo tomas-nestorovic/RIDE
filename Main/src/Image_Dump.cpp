@@ -245,7 +245,7 @@
 			TTrack track;
 			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
-			BYTE revolution;
+			Revolution::N revolution;
 			struct{
 				TFdcStatus automaticallyAcceptedErrors;
 				bool anyErrorsOnUnknownSectors;
@@ -387,7 +387,7 @@
 					){
 						// | reading SourceSector particular Revolution
 						LOG_SECTOR_ACTION(&p.chs.sectorId,_T("reading"));
-						const BYTE nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
+						const auto nRevsAvailable=dp.source->GetAvailableRevolutionCount( p.chs.cylinder, p.chs.head );
 						if (sPrev!=p.s) // is this the first trial?
 							p.revolution=Revolution::R0;
 						else if (nRevsAvailable<=Revolution::MAX){ // is the # of Revolutions limited?
@@ -479,7 +479,7 @@
 								rFdcStatus.GetDescriptionsOfSetBits(bitDescriptions);
 								TCHAR buf[1024],*p=buf+::wsprintf(buf,_T("Cannot read sector with %s on source Track %d.\r\n"),(LPCTSTR)rp.chs.sectorId.ToString(),rp.track);
 								const Revolution::TType dirtyRevolution=dp.source->GetDirtyRevolution(rp.chs,rp.s);
-								const BYTE nRevolutions=dp.source->GetAvailableRevolutionCount( rp.chs.cylinder, rp.chs.head );
+								const auto nRevolutions=dp.source->GetAvailableRevolutionCount( rp.chs.cylinder, rp.chs.head );
 								if (nRevolutions==1)
 									p+=::lstrlen( ::lstrcpy(p,_T("Single revolution.\r\n")) );
 								else if (dirtyRevolution==Revolution::NONE) // not yet modified or Unknown Sector queried

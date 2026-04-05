@@ -2,7 +2,7 @@
 
 	const Yahel::TInterval<char> CImage::CSectorReaderWriter::NoPadding(0,0);
 
-	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten)
+	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten)
 		// ctor
 		: image(image)
 		, revolution(Revolution::ANY_GOOD)
@@ -37,10 +37,10 @@
 		for( WORD w; true; ){
 			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
 			if (revolution==Revolution::ALL_INTERSECTED){
-				const BYTE nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
+				const auto nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
 				PCSectorData data[Revolution::MAX];
 				bool allRevolutionsIdentical=true; // assumption
-				for( BYTE rev=0; rev<nAvailableRevolutions; rev++ ){
+				for( Revolution::N rev=0; rev<nAvailableRevolutions; rev++ ){
 					data[rev]=image->GetSectorData( chs, sector.indexOnTrack, (Revolution::TType)rev, &w );
 					allRevolutionsIdentical&=data[rev]!=nullptr;
 				}
@@ -54,7 +54,7 @@
 				w-=sector.offset+sector.padding.z;
 				for( WORD i=sector.offset,const iEnd=i+std::min((UINT)w,nCount); i<iEnd; i++ ){
 					const BYTE reference=data[0][i];
-					for( BYTE rev=1; rev<nAvailableRevolutions; allRevolutionsIdentical&=data[rev++][i]==reference );
+					for( Revolution::N rev=1; rev<nAvailableRevolutions; allRevolutionsIdentical&=data[rev++][i]==reference );
 					if (allRevolutionsIdentical)
 						*(PBYTE)lpBuf=reference, lpBuf=(PBYTE)lpBuf+sizeof(reference);
 					else{
@@ -148,9 +148,9 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
-	BYTE CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	Revolution::N CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
-		return	std::min( (BYTE)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
+		return	std::min( (Revolution::N)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}
 
 	CImage::CSectorReaderWriter::TScannerStatus CImage::CSectorReaderWriter::GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
@@ -202,7 +202,7 @@
 
 
 
-	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const BYTE &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp)
+	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp)
 		// ctor
 		: CSectorReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions, onWritten )
 		, TSameLengthSectorParams(slsp)

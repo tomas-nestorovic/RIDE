@@ -200,7 +200,7 @@
 		Add( _T("heads"), n );
 	}
 
-	void CImage::CSettings::AddRevolutionCount(BYTE n){
+	void CImage::CSettings::AddRevolutionCount(Revolution::N n){
 		Add( _T("revolutions"), n );
 	}
 
@@ -710,7 +710,7 @@
 		return GetCylinderCount()*GetHeadCount();
 	}
 
-	BYTE CImage::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	Revolution::N CImage::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return 1;
 	}
