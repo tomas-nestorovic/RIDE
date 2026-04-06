@@ -14,8 +14,10 @@ using namespace Yahel;
 
 
 
+	typedef Sector::CReaderWriter::TScannerStatus TScannerStatus;
+
 	const CFloppyImage::TScannerState CFloppyImage::TScannerState::Initial={
-		CSectorReaderWriter::TScannerStatus::RUNNING,
+		TScannerStatus::RUNNING,
 		0, // # of Tracks scanned thus far
 		false, // not all Tracks scanned yet
 		0, // total length of data discovered thus far
@@ -90,11 +92,11 @@ using namespace Yahel;
 		return ERROR_SUCCESS;
 }	}
 
-	CImage::CSectorReaderWriter::CComPtr CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	Sector::CReaderWriter::CComPtr CFloppyImage::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
-		class CSerializer sealed:public CSectorReaderWriter{
+		class CSerializer sealed:public Sector::CReaderWriter{
 			CHexaEditor *const pParentHexaEditor;
 
 			inline CFloppyImage &GetFloppyImage() const{
@@ -211,7 +213,7 @@ using namespace Yahel;
 			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
-				: CSectorReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions, nullptr )
+				: Sector::CReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions, nullptr )
 				// . initialization
 				, pParentHexaEditor(pParentHexaEditor)
 				, trackWorker( __trackWorker_thread__, this, THREAD_PRIORITY_IDLE )
@@ -252,7 +254,7 @@ using namespace Yahel;
 					return E_INVALIDARG;
 			}
 
-			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutSectorOffset) const override{
+			void GetPhysicalAddress(TPosition logPos,TPhysicalAddress &outChs,TSector &outSectorIndex,Sector::PL pOutSectorOffset) const override{
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 				outChs=TPhysicalAddress::Invalid; // assumption
@@ -339,7 +341,7 @@ using namespace Yahel;
 					return trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition;
 				if (!dataTotalLength)
 					return 0;
-		}		const TPhysicalAddress &&chs=static_cast<CSectorReaderWriter *>(this)->GetPhysicalAddress(logPos); // guaranteed to always succeed
+		}		const TPhysicalAddress &&chs=__super::GetPhysicalAddress(logPos); // guaranteed to always succeed
 				const TTrack track=chs.GetTrackNumber(2);
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
@@ -447,7 +449,7 @@ using namespace Yahel;
 			}
 		};
 		// - returning a Serializer class instance
-		CSectorReaderWriter::CComPtr tmp;
+		Sector::CReaderWriter::CComPtr tmp;
 		tmp.p=new CSerializer(pParentHexaEditor,this);
 		return tmp;
 	}

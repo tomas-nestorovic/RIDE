@@ -1,10 +1,10 @@
 #include "stdafx.h"
 
-	static const BYTE nDiscoveredRevolutions=1;
+	static const TRev nDiscoveredRevolutions=1;
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: CImage::CSameLengthSectorReaderWriter(
+		: Sector::CSameLengthReaderWriter(
 				dos->image,
 				wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file),
 				Yahel::TInterval<char>(
@@ -13,7 +13,7 @@
 				),
 				nDiscoveredRevolutions,
 				nullptr,
-				CImage::TSameLengthSectorParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
+				Sector::TSameLengthParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,file) {
 		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
@@ -21,13 +21,13 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,FOnWritten onWritten)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: CImage::CSameLengthSectorReaderWriter(
+		: Sector::CSameLengthReaderWriter(
 				dos->image,
 				dos->formatBoot.sectorLength,
 				NoPadding,
 				nDiscoveredRevolutions,
 				onWritten,
-				CImage::TSameLengthSectorParams( 1, dos->formatBoot.sectorLength )
+				Sector::TSameLengthParams( 1, dos->formatBoot.sectorLength )
 			)
 		, fatPath(dos,chs) {
 		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
@@ -40,7 +40,7 @@
 
 
 
-	void CDos::CFileReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const{
+	void CDos::CFileReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,Sector::N &outSectorIndex,Sector::PL pOutOffset) const{
 		// returns the PhysicalAddress currently seeked to
 		const auto &&d=div( pos, usableSectorLength );
 		if (const CDos::CFatPath::PCItem p=fatPath.GetItem(d.quot)){ // Sector exists

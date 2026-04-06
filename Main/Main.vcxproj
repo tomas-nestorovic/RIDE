@@ -299,7 +299,7 @@
     <ClCompile Include="src\Sector.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
-    <ClCompile Include="src\Image_SectorDataSerializer.cpp" />
+    <ClCompile Include="src\Sector_RW.cpp" />
     <ClCompile Include="src\Image_TrackEditor.cpp" />
     <ClCompile Include="src\Image_TrackRW.cpp" />
     <ClCompile Include="src\IPF.cpp" />

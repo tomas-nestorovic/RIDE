@@ -798,15 +798,15 @@ trackNotFound:
 
 	static const TRev nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
 
-	CImage::CSectorReaderWriter::CComPtr CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
+	Sector::CReaderWriter::CComPtr CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
 		//static const TRev nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
-		class CSerializer sealed:public CSameLengthSectorReaderWriter{
+		class CSerializer sealed:public Sector::CSameLengthReaderWriter{
 		public:
 			CSerializer(CImageRaw *image)
 				// ctor
-				: CSameLengthSectorReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
+				: Sector::CSameLengthReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
 			}
 
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{
@@ -818,7 +818,7 @@ trackNotFound:
 			}
 		};
 		// - returning a Serializer class instance
-		CSectorReaderWriter::CComPtr tmp;
+		Sector::CReaderWriter::CComPtr tmp;
 		tmp.p=new CSerializer(this);
 		return tmp;
 	}

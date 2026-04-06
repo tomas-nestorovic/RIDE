@@ -231,7 +231,7 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter:public CImage::CSameLengthSectorReaderWriter{
+		class CFileReaderWriter:public Sector::CSameLengthReaderWriter{
 		public:
 			class CHexaEditor:public ::CHexaEditor{
 				int GetCustomCommandMenuFlags(WORD cmd) const override;
@@ -243,7 +243,7 @@
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
-			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,FOnWritten onWritten=nullptr); // ctor to read/edit particular Sector of the Image (e.g. Boot Sector)
+			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,Sector::CReaderWriter::FOnWritten onWritten=nullptr); // ctor to read/edit particular Sector of the Image (e.g. Boot Sector)
 
 			// IStream methods
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;
@@ -252,7 +252,7 @@
 			LPCWSTR GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const override;
 
 			// others
-			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const override sealed;
+			void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,TSector &outSectorIndex,Sector::PL pOutOffset) const override sealed;
 		};
 
 		enum TGetFileSizeOptions:BYTE{

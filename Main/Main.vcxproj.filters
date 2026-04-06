@@ -416,9 +416,6 @@
     <ClCompile Include="src\TRDOS505.cpp">
       <Filter>Source Files\Dos\Spectrum\TRDOS</Filter>
     </ClCompile>
-    <ClCompile Include="src\Image_SectorDataSerializer.cpp">
-      <Filter>Source Files\Image</Filter>
-    </ClCompile>
     <ClCompile Include="src\BSDOS.cpp">
       <Filter>Source Files\Dos\Spectrum\BSDOS</Filter>
     </ClCompile>
@@ -543,6 +540,9 @@
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
     <ClCompile Include="src\Sector.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Sector_RW.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
-	const Yahel::TInterval<char> CImage::CSectorReaderWriter::NoPadding(0,0);
+namespace Sector
+{
+	const Yahel::TInterval<char> CReaderWriter::NoPadding(0,0);
 
-	CImage::CSectorReaderWriter::CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten)
+	CReaderWriter::CReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten)
 		// ctor
 		: image(image)
 		, revolution(Revolution::ANY_GOOD)
@@ -19,9 +21,9 @@
 
 
 #if _MFC_VER>=0x0A00
-	ULONGLONG CImage::CSectorReaderWriter::Seek(LONGLONG lOff,UINT nFrom){
+	ULONGLONG CReaderWriter::Seek(LONGLONG lOff,UINT nFrom){
 #else
-	LONG CImage::CSectorReaderWriter::Seek(LONG lOff,UINT nFrom){
+	LONG CReaderWriter::Seek(LONG lOff,UINT nFrom){
 #endif
 		// sets the actual Position
 		const auto result=__super::Seek(lOff,nFrom);
@@ -29,12 +31,12 @@
 		return result;
 	}
 
-	UINT CImage::CSectorReaderWriter::Read(LPVOID lpBuf,UINT nCount){
+	UINT CReaderWriter::Read(LPVOID lpBuf,UINT nCount){
 		// tries to read given NumberOfBytes into the Buffer, starting with current Position; returns the number of Bytes actually read (increments the Position by this actually read number of Bytes)
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		UINT nBytesToRead=nCount;
 		bool readWithoutError=true; // assumption
-		for( WORD w; true; ){
+		for( L w; true; ){
 			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
 			if (revolution==Revolution::ALL_INTERSECTED){
 				const auto nAvailableRevolutions=GetAvailableRevolutionCount(chs.cylinder,chs.head);
@@ -52,13 +54,13 @@
 					else
 						break;
 				w-=sector.offset+sector.padding.z;
-				for( WORD i=sector.offset,const iEnd=i+std::min((UINT)w,nCount); i<iEnd; i++ ){
+				for( L i=sector.offset,iEnd=i+std::min((UINT)w,nCount); i<iEnd; i++ ){
 					const BYTE reference=data[0][i];
 					for( TRev rev=1; rev<nAvailableRevolutions; allRevolutionsIdentical&=data[rev++][i]==reference );
 					if (allRevolutionsIdentical)
 						*(PBYTE)lpBuf=reference, lpBuf=(PBYTE)lpBuf+sizeof(reference);
 					else{
-						const WORD nIdentical=i-sector.offset;
+						const L nIdentical=i-sector.offset;
 						Seek( nIdentical, SeekPosition::current );
 						::SetLastError(ERROR_SUCCESS);
 						return nIdentical+nBytesToRead-nCount; // returning only the ok part to not mix readable and unreadable data
@@ -75,7 +77,7 @@
 			}else{
 				if (revolution>=Revolution::MAX)
 					revolution=Revolution::ANY_GOOD;
-				TFdcStatus sr; PByteInfo pbi; // in/out
+				TFdcStatus sr; CImage::PByteInfo pbi; // in/out
 				const PCSectorData sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr, nullptr, &pbi );
 				if (!sectorData || !w){ // A|B, B = DAM not found, B = e.g. reading Sector with LengthCode 231 (has by default no data, a pointer to zero-length data has been returned by GetSectorData)
 					// no data for this Sector
@@ -86,7 +88,7 @@
 				}else{
 					// some (good or bad) data exist for this Sector
 					w-=sector.offset+sector.padding.z;
-					const WORD n=std::min( nCount, (UINT)w );
+					const L n=std::min( nCount, (UINT)w );
 					if (pbi && revolution<Revolution::MAX){ // info on Bad Bytes applicable only to particular Revolution
 						pbi+=sector.offset;
 						for( w=0; w<n; w++ )
@@ -117,11 +119,11 @@
 		return nBytesToRead-nCount;
 	}
 
-	void CImage::CSectorReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
+	void CReaderWriter::Write(LPCVOID lpBuf,UINT nCount){
 		// tries to write given NumberOfBytes from the Buffer to the current Position (increments the Position by the number of Bytes actually written)
 		nCount=std::min( nCount, UINT(dataTotalLength-position) );
 		bool writtenWithoutCrcError=true; // assumption
-		for( WORD w; true; ){
+		for( L w; true; ){
 			const TPhysicalAddress &chs=GetCurrentPhysicalAddress();
 			if (!chs) // invalid PhysicalAddress? (may be for descendants, e.g. error in FAT for FileReaderWriter)
 				break;
@@ -131,7 +133,7 @@
 					break;
 				writtenWithoutCrcError&=sr.IsWithoutError();
 				w-=sector.offset+sector.padding.z;
-				const WORD n=std::min( nCount, (UINT)w );
+				const L n=std::min( nCount, (UINT)w );
 				::memcpy( sectorData+sector.offset, lpBuf, n );
 				image->MarkSectorAsDirty( chs, sector.indexOnTrack, &sr, true );
 				if (onWritten)
@@ -148,29 +150,29 @@
 		::SetLastError(ERROR_WRITE_FAULT);
 	}
 
-	TRev CImage::CSectorReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	TRev CReaderWriter::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// wrapper around CImage::GetAvailableRevolutionCount
 		return	std::min( (TRev)Revolution::MAX, image->GetAvailableRevolutionCount(cyl,head) );
 	}
 
-	CImage::CSectorReaderWriter::TScannerStatus CImage::CSectorReaderWriter::GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
+	CReaderWriter::TScannerStatus CReaderWriter::GetTrackScannerStatus(PCylinder pnOutScannedCyls) const{
 		// returns Track scanner Status, if any
 		return TScannerStatus::UNAVAILABLE; // no scanner needed - assumed all data are available (e.g. raw-sectored Image)
 	}
-	void CImage::CSectorReaderWriter::SetTrackScannerStatus(TScannerStatus status){
+	void CReaderWriter::SetTrackScannerStatus(TScannerStatus status){
 		// suspends/resumes Track scanner, if any (if none, simply ignores the request)
 		//nop
 	}
 
-	TPhysicalAddress CImage::CSectorReaderWriter::GetPhysicalAddress(Yahel::TPosition pos) const{
-		TPhysicalAddress chs; BYTE iSector;
+	TPhysicalAddress CReaderWriter::GetPhysicalAddress(Yahel::TPosition pos) const{
+		TPhysicalAddress chs; N iSector;
 		GetPhysicalAddress( pos, chs, iSector, nullptr );
 		return chs;
 	}
 
-	LPCWSTR CImage::CSectorReaderWriter::GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
+	LPCWSTR CReaderWriter::GetRecordLabelW(Yahel::TPosition pos,PWCHAR labelBuffer,BYTE labelBufferCharsMax,PVOID param) const{
 		// populates the Buffer with label for the Record that STARTS at specified LogicalPosition, and returns the Buffer; returns Null if no Record starts at specified LogicalPosition
-		TPhysicalAddress chs; BYTE iSector; WORD offset;
+		TPhysicalAddress chs; N iSector; L offset;
 		GetPhysicalAddress( pos, chs, iSector, &offset );
 		if (!chs || offset!=-sector.padding.a) // start Padding provided as NEGATIVE!
 			return nullptr;
@@ -202,22 +204,22 @@
 
 
 
-	CImage::CSameLengthSectorReaderWriter::CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp)
+	CSameLengthReaderWriter::CSameLengthReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthParams &slsp)
 		// ctor
-		: CSectorReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions, onWritten )
-		, TSameLengthSectorParams(slsp)
+		: CReaderWriter( image, dataTotalLength, padding, nDiscoveredRevolutions, onWritten )
+		, TSameLengthParams(slsp)
 		, usableSectorLength(slsp.sectorLength-padding.GetLength()) {
 	}
 
 
 
 
-	Yahel::TPosition CImage::CSameLengthSectorReaderWriter::GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const{
+	Yahel::TPosition CSameLengthReaderWriter::GetSectorStartPosition(RCPhysicalAddress chs,N nSectorsToSkip) const{
 		// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
 		return Yahel::TPosition( chs.GetTrackNumber(image->GetHeadCount())*nSectors + chs.sectorId.sector-firstSectorNumber )*sectorLength;
 	}
 
-	void CImage::CSameLengthSectorReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,BYTE &outSectorIndex,PWORD pOutOffset) const{
+	void CSameLengthReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,N &outSectorIndex,PL pOutOffset) const{
 		// determines the PhysicalAddress that contains the specified LogicalPosition
 		const auto &&s=div( pos, usableSectorLength ); // Quot = # of Sectors to skip, Rem = the first Byte to read in the Sector yet to be computed
 		if (pOutOffset)
@@ -228,26 +230,26 @@
 		outChs.cylinder=h.quot;
 		outChs.head=h.rem;
 		outChs.sectorId.cylinder=h.quot;
-		outChs.sectorId.side=image->sideMap[h.rem];
+		outChs.sectorId.side=image->GetSideMap()[h.rem];
 		outChs.sectorId.sector=firstSectorNumber+sector.indexOnTrack;
 		outChs.sectorId.lengthCode=sectorLengthCode;
 	}
 
-	Yahel::TRow CImage::CSameLengthSectorReaderWriter::LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow){
+	Yahel::TRow CSameLengthReaderWriter::LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow){
 		// computes and returns the row containing the specified LogicalPosition
 		const auto &&d=div( logPos, usableSectorLength );
 		const auto nRowsPerRecord=Utils::RoundDivUp( usableSectorLength, nBytesInRow );
 		return d.quot*nRowsPerRecord + d.rem/nBytesInRow;
 	}
 
-	Yahel::TPosition CImage::CSameLengthSectorReaderWriter::RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow){
+	Yahel::TPosition CSameLengthReaderWriter::RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow){
 		// converts Row begin (i.e. its first Byte) to corresponding logical position in underlying File and returns the result
 		const auto nRowsPerRecord=Utils::RoundDivUp( usableSectorLength, nBytesInRow );
 		const auto &&d=div( row, nRowsPerRecord );
 		return d.quot*usableSectorLength + d.rem*nBytesInRow;
 	}
 
-	void CImage::CSameLengthSectorReaderWriter::GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady){
+	void CSameLengthReaderWriter::GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady){
 		// retrieves the start logical position and length of the Record pointed to by the input LogicalPosition
 		if (pOutRecordStartLogPos)
 			*pOutRecordStartLogPos = logPos/usableSectorLength*usableSectorLength;
@@ -256,3 +258,5 @@
 		if (pOutDataReady)
 			*pOutDataReady=true;
 	}
+
+}

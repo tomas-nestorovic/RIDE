@@ -6,7 +6,7 @@ using namespace Yahel;
 	#define IMAGE	tab.image
 	#define DOS		IMAGE->dos
 
-	typedef CImage::CSectorReaderWriter::TScannerStatus TScannerStatus;
+	typedef Sector::CReaderWriter::TScannerStatus TScannerStatus;
 
 
 	CDiskBrowserView::CDiskBrowserView(PImage image,RCPhysicalAddress chsToSeekTo,BYTE nSectorsToSkip)
@@ -118,7 +118,7 @@ using namespace Yahel;
 		f.Attach( IMAGE->CreateDiskSerializer(this).Detach() ); // the assignment operator doesn't function here
 		Update( f, f, f->GetLength() );
 		const auto lastKnownScannerStatus=f->GetTrackScannerStatus(); // getting last known explicit status (e.g. by the user) ...
-		if (lastKnownScannerStatus!=CImage::CSectorReaderWriter::TScannerStatus::UNAVAILABLE)
+		if (lastKnownScannerStatus!=TScannerStatus::UNAVAILABLE)
 			f->SetTrackScannerStatus(lastKnownScannerStatus); // ... and resetting any internal status of the scanner
 	}
 
@@ -419,13 +419,13 @@ using namespace Yahel;
 		// - report in StatusBar
 		TCylinder nScannedCyls;
 		switch (f->GetTrackScannerStatus(&nScannedCyls)){
-			case CImage::CSectorReaderWriter::TScannerStatus::RUNNING:{
+			case TScannerStatus::RUNNING:{
 				TCHAR buf[32];
 				::wsprintf( buf, _T("%d %% of disk scanned"), 100*nScannedCyls/IMAGE->GetCylinderCount() );
 				CMainWindow::__setStatusBarText__(buf);
 				break;
 			}
-			case CImage::CSectorReaderWriter::TScannerStatus::PAUSED:
+			case TScannerStatus::PAUSED:
 				CMainWindow::SetStatusBarTextScannerPaused();
 				break;
 			default:
