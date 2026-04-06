@@ -16,7 +16,7 @@
 	protected:
 		ATL::CComPtr<CDos::CFileReaderWriter> fSectorData;
 		CWnd propGrid;
-		CDos::CFileReaderWriter::CHexaEditor hexaEditor;
+		Sector::CReaderWriter::CHexaEditor hexaEditor;
 
 		CCriticalSectorView(PDos dos,RCPhysicalAddress rChs);
 

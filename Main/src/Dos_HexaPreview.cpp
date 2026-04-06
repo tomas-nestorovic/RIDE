@@ -17,7 +17,7 @@
 		// - base
 		: CFilePreview( &hexaEditor, LABEL, INI_PREVIEW, fileManager, HEXA_WIDTH, HEXA_HEIGHT, false, 0, &pSingleInstance )
 		// - initialization
-		, hexaEditor(DOS,this) {
+		, hexaEditor(this) {
 		pSingleInstance=this;
 		// - creating the HexaEditor view
 		hexaEditor.Create( nullptr, nullptr, AFX_WS_DEFAULT_VIEW&~WS_BORDER|WS_CLIPSIBLINGS, rectDefault, this, AFX_IDW_PANE_FIRST );
@@ -45,39 +45,4 @@
 		}
 		//SetWindowPos( nullptr, 0,0, 0,0, SWP_NOZORDER|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED|SWP_NOSENDCHANGING );
 		hexaEditor.SetFocus();
-	}
-
-
-
-
-
-
-
-	CDos::CHexaPreview::CHexaEditorView::CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview)
-		// ctor
-		: CFileReaderWriter::CHexaEditor(pHexaPreview) {
-	}
-
-	LRESULT CDos::CHexaPreview::CHexaEditorView::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
-		// window procedure
-		switch (msg){
-			case WM_KEYDOWN:
-				// char
-				switch (wParam){
-					case 'W':
-						// toggling the WriteProtection of Image
-						if (::GetAsyncKeyState(VK_CONTROL)<0){ // if Ctrl+W pressed
-							app.m_pMainWnd->SendMessage( WM_COMMAND, ID_IMAGE_PROTECT ); // toggling the WriteProtection
-							SetEditable(!pSingleInstance->IMAGE->IsWriteProtected()); // setting the possibility edit in HexaEditor
-							SetFocus(); // focusing the HexaEditor
-						}
-						break;
-					case VK_ESCAPE:
-						// closing the Preview's window
-						pSingleInstance->DestroyWindow();
-						return 0;
-				}
-				break;
-		}
-		return __super::WindowProc(msg,wParam,lParam);
 	}

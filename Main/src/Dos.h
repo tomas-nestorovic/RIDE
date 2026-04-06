@@ -233,13 +233,6 @@
 
 		class CFileReaderWriter:public Sector::CSameLengthReaderWriter{
 		public:
-			class CHexaEditor:public ::CHexaEditor{
-				int GetCustomCommandMenuFlags(WORD cmd) const override;
-				bool ProcessCustomCommand(UINT cmd) override;
-			public:
-				CHexaEditor(PVOID param);
-			};
-
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
@@ -345,11 +338,7 @@
 		public:
 			static CFilePreview *pSingleInstance; // only single file can be previewed at a time
 
-			class CHexaEditorView sealed:public CFileReaderWriter::CHexaEditor{
-				LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
-			public:
-				CHexaEditorView(PCDos dos,CHexaPreview *pHexaPreview);
-			} hexaEditor;
+			Sector::CReaderWriter::CHexaEditor hexaEditor;
 
 			CHexaPreview(const CFileManagerView &fileManager);
 			~CHexaPreview();

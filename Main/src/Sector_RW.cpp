@@ -259,4 +259,72 @@ namespace Sector
 			*pOutDataReady=true;
 	}
 
+
+
+
+
+
+	CReaderWriter::CHexaEditor::CHexaEditor(PVOID param)
+		// ctor
+		// - base
+		: ::CHexaEditor(param) {
+		// - modification of ContextMenu
+		contextMenu.AppendSeparator();
+		contextMenu.AppendMenu( MF_BYCOMMAND|MF_STRING, ID_TIME, _T("Timing under cursor...") );
+	}
+
+	int CReaderWriter::CHexaEditor::GetCustomCommandMenuFlags(WORD cmd) const{
+		// custom command GUI update
+		const CReaderWriter &srw=*(CReaderWriter *)GetCurrentStream().p;
+		switch (cmd){
+			case ID_TIME:
+				return MF_GRAYED*!( srw.image->ReadTrack(0,0) );
+		}
+		return __super::GetCustomCommandMenuFlags(cmd);
+	}
+
+	bool CReaderWriter::CHexaEditor::ProcessCustomCommand(UINT cmd){
+		// custom command processing
+		CReaderWriter &srw=*(CReaderWriter *)GetCurrentStream().p;
+		switch (cmd){
+			case ID_TIME:
+				srw.Seek( instance->GetCaretPosition(), CFile::begin );
+				srw.image->ShowModalTrackTimingAt(
+					srw.GetCurrentPhysicalAddress(),
+					srw.GetCurrentSectorIndexOnTrack(),
+					srw.GetPositionInCurrentSector(),
+					Revolution::ANY_GOOD
+				);
+				return true;
+		}
+		return __super::ProcessCustomCommand(cmd);
+	}
+
+	LRESULT CReaderWriter::CHexaEditor::WindowProc(UINT msg,WPARAM wParam,LPARAM lParam){
+		// window procedure
+		const CReaderWriter &srw=*(CReaderWriter *)GetCurrentStream().p;
+		switch (msg){
+			case WM_KEYDOWN:
+				// char
+				switch (wParam){
+					case 'W':
+						// toggling the WriteProtection of Image
+						if (srw.image==CDos::GetFocused()->image)
+							if (::GetAsyncKeyState(VK_CONTROL)<0){ // if Ctrl+W pressed
+								app.m_pMainWnd->SendMessage( WM_COMMAND, ID_IMAGE_PROTECT ); // toggling the WriteProtection
+								SetEditable(!srw.image->IsWriteProtected()); // setting the possibility edit in HexaEditor
+								SetFocus(); // focusing the HexaEditor
+							}
+						break;
+					case VK_ESCAPE:
+						// closing the Preview's window
+						if (GetActiveWindow()!=app.m_pMainWnd)
+							GetActiveWindow()->DestroyWindow();
+						return 0;
+				}
+				break;
+		}
+		return __super::WindowProc(msg,wParam,lParam);
+	}
+
 }

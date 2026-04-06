@@ -53,6 +53,14 @@ namespace Sector
 	class CReaderWriter abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
 	public:
 		typedef void (* FOnWritten)(const Yahel::TPosInterval &);
+
+		class CHexaEditor:public ::CHexaEditor{
+			int GetCustomCommandMenuFlags(WORD cmd) const override;
+			bool ProcessCustomCommand(UINT cmd) override;
+			LRESULT WindowProc(UINT msg,WPARAM wParam,LPARAM lParam) override;
+		public:
+			CHexaEditor(PVOID param);
+		};
 	private:
 		const FOnWritten onWritten;
 	protected:

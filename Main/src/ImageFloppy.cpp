@@ -97,7 +97,7 @@ using namespace Yahel;
 		// - defining the class
 		#define EXCLUSIVELY_LOCK_SCANNED_TRACKS()	EXCLUSIVELY_LOCK(GetFloppyImage().scannedTracks)
 		class CSerializer sealed:public Sector::CReaderWriter{
-			CHexaEditor *const pParentHexaEditor;
+			::CHexaEditor *const pParentHexaEditor;
 
 			inline CFloppyImage &GetFloppyImage() const{
 				return *(CFloppyImage *)image;
@@ -210,7 +210,7 @@ using namespace Yahel;
 				return nSectors;
 			}
 		public:
-			CSerializer(CHexaEditor *pParentHexaEditor,CFloppyImage *image)
+			CSerializer(::CHexaEditor *pParentHexaEditor,CFloppyImage *image)
 				// ctor
 				// . base
 				: Sector::CReaderWriter( image, image->scannedTracks.dataTotalLength, NoPadding, image->scannedTracks.nDiscoveredRevolutions, nullptr )
