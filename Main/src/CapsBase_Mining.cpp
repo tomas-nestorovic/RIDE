@@ -148,7 +148,7 @@ using namespace Charting;
 			void ShowScatterPlotOfTrack(const CImage::CTrackReaderWriter &trw){
 				// populates the ScatterPlotView with Track's simplified timing
 				// . indices
-				for( BYTE i=0; i<trw.GetIndexCount(); i++ ){
+				for( TRev i=0; i<trw.GetIndexCount(); i++ ){
 					TLogPoint &r=minedTrackIndices[i];
 						r.x=trw.GetIndexTime(i);
 						r.y=TIME_MICRO(200); // should suffice for any Medium
@@ -159,7 +159,7 @@ using namespace Charting;
 				);
 				graphics.list[0]=minedTrackIndexSeries.get();
 				// . timing
-				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (DWORD)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
+				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (Time::N)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
 				const PCLogTime trackTiming=trw.GetBuffer();
 				if (minedTrackDeltaTiming.length<trw.GetTimesCount())
 					minedTrackDeltaTiming.Realloc( trw.GetTimesCount()+1000 ); // avoid excessive reallocations by allowing some reserve

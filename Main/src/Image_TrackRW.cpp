@@ -63,7 +63,7 @@ namespace MFM=Codec::Impl::MFM;
 
 	CImage::CTrackReaderState::PCMetaDataItem CImage::CTrackReaderState::FindMetaDataIteratorAndApply(){
 		// the CurrentTime has changed randomly
-		itCurrMetaData=pLogTimesInfo->metaData.upper_bound( TLogTimeInterval(currentTime,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
+		itCurrMetaData=pLogTimesInfo->metaData.upper_bound( TLogTimeInterval(currentTime,Time::Infinity) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
 		if (itCurrMetaData!=pLogTimesInfo->metaData.cbegin())
 			itCurrMetaData--; // ... and then iterate back, because that's the usual case when "randomly" pinning in the timeline
 		return ApplyCurrentTimeMetaData();
@@ -76,7 +76,7 @@ namespace MFM=Codec::Impl::MFM;
 
 	CImage::CTrackReaderState::CMetaData::const_iterator CImage::CTrackReaderState::CMetaData::GetMetaDataIterator(TLogTime t) const{
 		// returns an iterator to a MetaDataItem that contains the specified Time, or 'cend()'
-		auto it=upper_bound( TLogTimeInterval(t,INT_MAX) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
+		auto it=upper_bound( TLogTimeInterval(t,Time::Infinity) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
 		if (it!=cend())
 			if (it!=cbegin() && (--it)->Contains(t)) // ... and then iterate back, because that's the usual case when "randomly" pinning in the timeline
 				return it;
@@ -156,7 +156,7 @@ namespace MFM=Codec::Impl::MFM;
 		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
 		, defaultDecoder(defaultDecoder)
 		, resetDecoderOnIndex(resetDecoderOnIndex) {
-		*indexPulses=INT_MAX; // a virtual IndexPulse in infinity
+		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
 	#define LOGTIMES_COUNT_EXTRA	1
@@ -269,7 +269,7 @@ namespace MFM=Codec::Impl::MFM;
 		return currentTime;
 	}
 
-	TLogTime CImage::CTrackReader::GetIndexTime(BYTE index) const{
+	TLogTime CImage::CTrackReader::GetIndexTime(TRev index) const{
 		// returns the Time at which the specified IndexPulse occurs
 		if (!nLogTimes || (nIndexPulses|index)==0)
 			return 0;
@@ -284,7 +284,7 @@ namespace MFM=Codec::Impl::MFM;
 		if (nIndexPulses<2)
 			return 0;
 		LONGLONG distSum=0;
-		for( BYTE i=1; i<nIndexPulses; i++ )
+		for( TRev i=1; i<nIndexPulses; i++ )
 			distSum+= indexPulses[i]-indexPulses[i-1];
 		return distSum/(nIndexPulses-1);
 	}
@@ -556,7 +556,7 @@ namespace MFM=Codec::Impl::MFM;
 	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		constexpr int StepGranularity=1000;
-		const Revolution::N nFullRevolutions=std::max( 0, GetIndexCount()-1 );
+		const TRev nFullRevolutions=std::max( 0, GetIndexCount()-1 );
 		ap.SetProgressTarget( (4+2*nFullRevolutions+1)*StepGranularity ); // (N)*X, N = analysis steps
 		// - Step 1: standard scanning using current Codec
 		const WORD nSectorsFound=Scan( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, &rOutParseEvents );
@@ -667,7 +667,7 @@ namespace MFM=Codec::Impl::MFM;
 						if (it->second->tStart<r.time) // gap that overlaps a ParseEvent (e.g. Sector within Sector copy protection) ...
 							continue; // ... is not a gap
 					const auto itNext=rOutParseEvents.FindByStart(r.time);
-					const TLogTime tNextStart= itNext ? itNext->second->tStart : INT_MAX;
+					const TLogTime tNextStart= itNext ? itNext->second->tStart : Time::Infinity;
 					SetCurrentTimeAndProfile( r.time, r.profile );
 					BYTE nBytesInspected=0, nBytesTypical=0;
 					TDataParseEvent peData( TSectorId::Invalid, r.time );
@@ -714,11 +714,11 @@ namespace MFM=Codec::Impl::MFM;
 			// . extraction of bits from each full Revolution
 			const CBitSequence &&allBits=CreateBitSequence(); // factors in Decoder reset on Indices
 			CBitSequence revolutionBits[Revolution::MAX];
-			for( Revolution::N i=0; i<nFullRevolutions; i++ )
+			for( TRev i=0; i<nFullRevolutions; i++ )
 				revolutionBits[i]=CBitSequence( allBits, GetFullRevolutionTimeInterval(i) );
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Utils::CSharedPodArray<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
-			for( Revolution::N i=0; i<nFullRevolutions-1; ){
+			for( TRev i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[++i];
 				auto &ses=shortesEditScripts[i];
@@ -732,7 +732,7 @@ namespace MFM=Codec::Impl::MFM;
 				iRev.InheritFlagsFrom( jRev, ses, ses.length );
 			}
 			// . backward comparison of Revolutions, from the last to the first
-			for( Revolution::N i=nFullRevolutions; i>1; )
+			for( TRev i=nFullRevolutions; i>1; )
 				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
 					// : conversion to dual script
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
@@ -745,7 +745,7 @@ namespace MFM=Codec::Impl::MFM;
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
-			for( Revolution::N r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
+			for( TRev r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
 				const CBitSequence &rev=revolutionBits[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
@@ -906,7 +906,7 @@ namespace MFM=Codec::Impl::MFM;
 			p+= p[-1].time<p->time; // may not be the case if Decoder went over Index and got reset
 		}
 		p->time=p[-1].time; // auxiliary terminal Bit
-		p[1].time=INT_MAX;
+		p[1].time=Time::Infinity;
 		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
 	#ifdef _DEBUG
 		TLogTime tPrev=INT_MIN;
@@ -1525,7 +1525,7 @@ namespace MFM=Codec::Impl::MFM;
 				break;
 		}
 		const TLogTime tIwSynced=profile.iwTime;
-		TLogTimeInterval tiClear( currentTime+tIwSynced/2, INT_MAX ); // portion of this Track to "unformat"
+		TLogTimeInterval tiClear( currentTime+tIwSynced/2, Time::Infinity ); // portion of this Track to "unformat"
 		// - a Data Field mark should follow the synchronization
 		TLogTimeInterval ti( currentTime, peData.tStart ); // Time slot for each Byte to write (yet to correctly offset below)
 		if (!ReadBits16(w)) // Track end encountered
@@ -1787,7 +1787,7 @@ namespace MFM=Codec::Impl::MFM;
 		ASSERT( nIndexPulses<=Revolution::MAX );
 		ASSERT( logTime>=0 );
 		indexPulses[nIndexPulses++]=logTime;
-		indexPulses[nIndexPulses]=INT_MAX;
+		indexPulses[nIndexPulses]=Time::Infinity;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
@@ -1924,12 +1924,10 @@ namespace MFM=Codec::Impl::MFM;
 
 	static Time::N InterpolateTimes(PLogTime logTimes,Time::N nLogTimes,TLogTime tSrcA,Time::N iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){
 		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
-		TLogTime &rtStop=logTimes[nLogTimes],const tStopOrg=rtStop;
-		rtStop=INT_MAX; // stop-condition
+		const Utils::CVarTempReset<TLogTime> tStopOrg( logTimes[nLogTimes], Time::Infinity ); // stop-condition
 			PLogTime pTime=logTimes+iSrcA;
 			for( const TLogTime tSrcInterval=tSrcZ-tSrcA,tDstInterval=tDstZ-tDstA; *pTime<tSrcZ; pTime++ )
 				*pTime = tDstA+(LONGLONG)(*pTime-tSrcA)*tDstInterval/tSrcInterval;
-		rtStop=tStopOrg;
 		return pTime-logTimes;
 	}
 
@@ -1956,7 +1954,7 @@ namespace MFM=Codec::Impl::MFM;
 			const TLogTime dt= indicesOffset<0
 				? std::max(*indexPulses+indicesOffset,0)-*indexPulses // mustn't run into negative timing
 				: indicesOffset;
-			for( BYTE i=nIndexPulses; i; indexPulses[--i]+=dt );
+			for( TRev i=nIndexPulses; i; indexPulses[--i]+=dt );
 		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
@@ -1965,7 +1963,7 @@ namespace MFM=Codec::Impl::MFM;
 		Time::N iTime=iModifStart;
 		const Time::CSharedArray buffer( GetBufferCapacity() );
 		const PLogTime ptModified=buffer;
-		for( BYTE nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
+		for( TRev nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
 			profile.Reset();
 			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);
@@ -1987,7 +1985,7 @@ namespace MFM=Codec::Impl::MFM;
 			Time::N iModifRevEnd=iTime;
 			// . shortening/prolonging this revolution to correct number of cells
 			if (correctCellCountPerRevolution){
-				ptModified[iModifRevEnd]=INT_MAX; // stop-condition
+				ptModified[iModifRevEnd]=Time::Infinity; // stop-condition
 				if (nAlignedCells>0){ // are we working with time-corrected cells?
 					iModifRevEnd=iModifRevStart;
 					const TLogTime tRevEnd=tCurrIndexOrg+mp->revolutionTime;
@@ -2028,9 +2026,9 @@ namespace MFM=Codec::Impl::MFM;
 		// reverses timing of this Track
 		// - reversing Indices
 		const auto tTotal=GetTotalTime();
-		for( BYTE i=0; i<GetIndexCount()/2; i++ )
+		for( TRev i=0; i<GetIndexCount()/2; i++ )
 			std::swap( indexPulses[i], indexPulses[GetIndexCount()-1-i] );
-		for( BYTE i=0; i<GetIndexCount(); i++ )
+		for( TRev i=0; i<GetIndexCount(); i++ )
 			indexPulses[i]=tTotal-indexPulses[i];
 		// - reversing Times
 		for( Time::N i=0; i<nLogTimes/2; i++ )

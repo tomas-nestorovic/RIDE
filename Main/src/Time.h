@@ -8,6 +8,10 @@ namespace Time
 	typedef const T *PC;
 	typedef Utils::CSharedPodArray<T,N> CSharedArray;
 
+	enum{
+		Infinity=LogValueMax
+	};
+
 	extern const TCHAR Prefixes[];
 
 	struct TInterval{

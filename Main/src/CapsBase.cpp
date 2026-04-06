@@ -93,7 +93,7 @@
 			ASSERT(*this);
 			const div_t d=div( iCurrBit++, CHAR_BIT );
 			outByteTime = d.quot<nByteTimes ? pByteTimes[d.quot] : 0;
-			ASSERT(outByteTime<INT_MAX);
+			ASSERT(outByteTime<Time::Infinity);
 			return ( pBits[d.quot]&(0x80>>d.rem) )!=0;
 		}
 	};
@@ -110,8 +110,8 @@
 
 	TLogTime CCapsBase::TInternalSector::GetAverageIdEndTime(const CTrackReader &tr) const{
 		// returns the average time of at which the Sector ID ends
-		LONGLONG sum=0; Revolution::N n=0;
-		for( Revolution::N r=0; r<nRevolutions; r++ )
+		LONGLONG sum=0; TRev n=0;
+		for( TRev r=0; r<nRevolutions; r++ )
 			if (revolutions[r].idEndTime>0) // may be zero (time information not available) or negative (time information invalid)
 				sum+=revolutions[r].idEndTime-tr.GetIndexTime(r), n++;
 		return sum/n;
@@ -137,7 +137,7 @@
 		RewindToIndex(0);
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,Revolution::N nRevs,UDWORD lockFlags){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,TRev nRevs,UDWORD lockFlags){
 		// creates and returns a Track decoded from underlying CAPS Track representation
 		// - at least one full Revolution must be available
 		if (!nRevs)
@@ -146,7 +146,7 @@
 		nRevs=std::min( nRevs, (BYTE)CAPS_MTRS ); // just to be sure we don't overrun the buffers
 		CCapsBitReader revs[CAPS_MTRS];
 		UDWORD nBitsTotally=0;
-		for( Revolution::N r=0; r<nRevs; r++ )
+		for( TRev r=0; r<nRevs; r++ )
 			nBitsTotally+=(  revs[r]=CCapsBitReader( ctiRevs[r], lockFlags )  ).GetCount();
 		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
@@ -169,7 +169,7 @@
 			}
 		trw.AddIndexTime(0);
 		TLogTime currentTime=0, *pFluxTime=trw.GetBuffer();
-		for( Revolution::N r=0; r<nRevs; r++ ){
+		for( TRev r=0; r<nRevs; r++ ){
 			// . add fluxes
 			auto rev=revs[r];
 			for( UDWORD byteTime; rev; ){
@@ -215,7 +215,7 @@
 			if (!nSectorsFound)
 				continue;
 			// . putting the found Sectors over all complete disk revolutions together (some might have not been recognized in one revolution, but might in another revolution)
-			idEnds[nSectorsFound]=INT_MAX; // stop-condition
+			idEnds[nSectorsFound]=Time::Infinity; // stop-condition
 			class CLongestCommonSubstring sealed{
 				const CTrackReader &tr;
 				PCSectorId rowIds; // iterated over R in the LCS method
@@ -255,7 +255,7 @@
 					}else{
 						// order of Sectors couldn't be estimated using the LCS algorithm - resolving their appearance on the Track by observing their ID Times
 						const TInternalSector &ris=uniqueSectors[c-1];
-						Revolution::N rev=0;
+						TRev rev=0;
 						while (ris.revolutions[rev].idEndTime<=0) rev++;
 						v.direction= rowIdEndTimes[r-1]<ris.revolutions[rev].idEndTime ? TBacktrackValue::Left : TBacktrackValue::Top; // proceeding from a Sector that appears LATER on the Track towards a Sector that appears EARLIER on the Track
 						return v.length = b;
@@ -278,7 +278,7 @@
 					return	a.revolutions[ra].idEndTime-tr.GetIndexTime(ra) > b.revolutions[rb].idEndTime-tr.GetIndexTime(rb);
 				}*/
 
-				void Merge(Revolution::N rev,TSector nIds,PCSectorId ids,PCLogTime idEnds,const TProfile *idProfiles,PCFdcStatus idStatuses){
+				void Merge(TRev rev,TSector nIds,PCSectorId ids,PCLogTime idEnds,const TProfile *idProfiles,PCFdcStatus idStatuses){
 					// : performing a naive LCS algorithm
 					rowIds=ids, rowIdEndTimes=idEnds;
 					::ZeroMemory( backtrackTable, (nIds+1)*(nUniqueSectors+1)*sizeof(TBacktrackValue) );
@@ -322,7 +322,7 @@
 				}
 			} lcs(trw);
 			WORD start,end=0;
-			for( Revolution::N rev=0; rev<trw.GetIndexCount()-1; rev++ ){
+			for( TRev rev=0; rev<trw.GetIndexCount()-1; rev++ ){
 				const TLogTime revEndTime=trw.GetIndexTime(rev+1); // revolution end Time
 				for( start=end; idEnds[end]<revEndTime; end++ );
 				lcs.Merge( rev, end-start, ids+start, idEnds+start, idProfiles+start, statuses+start );
@@ -337,7 +337,7 @@
 		return new CInternalTrack( trw, nullptr, 0 );
 	}
 
-	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris,Revolution::N rev){
+	void CCapsBase::CInternalTrack::ReadSector(TInternalSector &ris,TRev rev){
 		// buffers specified Revolution of the Sector (assumed part of this Track)
 		auto &currRev=ris.revolutions[rev];
 		if (currRev.idEndTime<=0)
@@ -372,7 +372,7 @@
 		if (ris.dirtyRevolution<Revolution::MAX){
 			// Sector has been modified
 			const auto &refRev=ris.revolutions[ris.dirtyRevolution];
-			for( Revolution::N r=0; r<ris.nRevolutions; r++ ){ // spread reference data across all Revolutions
+			for( TRev r=0; r<ris.nRevolutions; r++ ){ // spread reference data across all Revolutions
 				const auto &rev=ris.revolutions[r];
 				if (rev.peData){
 					::memcpy( rev.peData->bytes, refRev.peData->bytes, std::min(rev.peData->GetByteCount(),refRev.peData->GetByteCount()) );
@@ -495,7 +495,7 @@
 		return capsImageInfo.maxhead+1; // the last INCLUSIVE Head plus one
 	}
 
-	Revolution::N CCapsBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	TRev CCapsBase::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head))
@@ -1098,7 +1098,7 @@ invalidTrack:
 			(cti->type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
 		)
 			return CTrackReaderWriter::Invalid;
-		Revolution::N nRevs=1;
+		TRev nRevs=1;
 		if (cti->weakcnt!=0) // Track contains some areas with fuzzy bits
 			while (nRevs<CAPS_MTRS){
 				CapsTrackInfoT2 &r = cti[nRevs] = *cti;

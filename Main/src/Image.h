@@ -210,7 +210,7 @@
 			void AddAuto(LPCTSTR name);
 			void AddCylinderCount(TCylinder n);
 			void AddHeadCount(THead n);
-			void AddRevolutionCount(Revolution::N n);
+			void AddRevolutionCount(TRev n);
 			void AddSectorCount(TSector n);
 			void AddSides(PCSide list,THead n);
 			void AddSectorSize(Sector::L nBytes);
@@ -335,7 +335,7 @@
 			};
 		protected:
 			Time::N iNextTime,nLogTimes;
-			BYTE iNextIndexPulse,nIndexPulses;
+			TRev iNextIndexPulse,nIndexPulses;
 			TProfile profile;
 			TLogTime currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
@@ -557,7 +557,7 @@
 			}
 
 			inline
-			BYTE GetIndexCount() const{
+			TRev GetIndexCount() const{
 				// returns the number of IndexPulses recorded
 				return nIndexPulses;
 			}
@@ -587,21 +587,21 @@
 			}
 
 			inline
-			TLogTime RewindToIndex(BYTE index){
+			TLogTime RewindToIndex(TRev index){
 				// navigates back to the first Flux found just after the index pulse
 				SetCurrentTime( GetIndexTime(index) );
 				return GetCurrentTime();
 			}
 
 			inline
-			TLogTime RewindToIndexAndResetProfile(BYTE index){
+			TLogTime RewindToIndexAndResetProfile(TRev index){
 				// navigates back to the first Flux found just after the index pulse
 				profile.Reset();
 				return RewindToIndex( index );
 			}
 
 			inline
-			const TLogTimeInterval &GetFullRevolutionTimeInterval(BYTE rev) const{
+			const TLogTimeInterval &GetFullRevolutionTimeInterval(TRev rev) const{
 				static_assert( sizeof(TLogTimeInterval)==2*sizeof(*indexPulses), "" );
 				ASSERT( rev<GetIndexCount()-1 );
 				return *(TLogTimeInterval *)(indexPulses+rev);
@@ -618,7 +618,7 @@
 			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
 			TProfile CreateResetProfile() const;
 			TLogTime TruncateCurrentTime();
-			TLogTime GetIndexTime(BYTE index) const;
+			TLogTime GetIndexTime(TRev index) const;
 			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetLastTime() const;
@@ -706,7 +706,7 @@
 			} sector; // call 'Seek' to modify this structure
 			Bit::TFlags badByteMask;
 
-			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten);
+			CSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten);
 		public:
 			typedef ATL::CComPtr<CSectorReaderWriter> CComPtr;
 
@@ -717,7 +717,7 @@
 			};
 
 			const PImage image;
-			const Revolution::N &nDiscoveredRevolutions;
+			const TRev &nDiscoveredRevolutions;
 
 			// CFile methods
 		#if _MFC_VER>=0x0A00
@@ -735,7 +735,7 @@
 			inline BYTE GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 			inline WORD GetPositionInCurrentSector() const{ return sector.offset; }
 			inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
-			Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+			TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 			inline Revolution::TType GetCurrentRevolution() const{ return revolution; }
 			inline void SetCurrentRevolution(Revolution::TType rev){ revolution=rev; }
 			virtual Yahel::TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const=0;
@@ -762,7 +762,7 @@
 		protected:
 			const WORD usableSectorLength;
 
-			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const Revolution::N &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp);
+			CSameLengthSectorReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthSectorParams &slsp);
 		public:
 			// Yahel::Stream::IAdvisor methods
 			Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
@@ -805,7 +805,7 @@
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;
 		TTrack GetTrackCount() const;
-		virtual Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+		virtual TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 		virtual TStdWinError SeekHeadsHome() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;
 		virtual bool IsTrackScanned(TCylinder cyl,THead head) const=0;
@@ -846,7 +846,7 @@
 		void SetRedrawToAllViews(bool redraw) const;
 		bool ReportWriteProtection() const;
 		void ToggleWriteProtection();
-		BYTE ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev);
+		BYTE ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,Sector::L positionInSector,Revolution::TType rev);
 		void SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU=TRUE) override;
 		BOOL CanCloseFrame(CFrameWnd* pFrame) override;
 	};

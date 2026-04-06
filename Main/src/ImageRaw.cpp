@@ -796,12 +796,12 @@ trackNotFound:
 		return ERROR_SUCCESS;
 	}
 
-	static const Revolution::N nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
+	static const TRev nDiscoveredRawRevolutions=1; // see comment for 'nDiscoveredRawRevolutions' inside 'CreateDiskSerializer'
 
 	CImage::CSectorReaderWriter::CComPtr CImageRaw::CreateDiskSerializer(CHexaEditor *pParentHexaEditor){
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
-		//static const Revolution::N nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
+		//static const TRev nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
 		class CSerializer sealed:public CSameLengthSectorReaderWriter{
 		public:
 			CSerializer(CImageRaw *image)

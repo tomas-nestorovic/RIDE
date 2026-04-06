@@ -200,7 +200,7 @@
 		Add( _T("heads"), n );
 	}
 
-	void CImage::CSettings::AddRevolutionCount(Revolution::N n){
+	void CImage::CSettings::AddRevolutionCount(TRev n){
 		Add( _T("revolutions"), n );
 	}
 
@@ -518,7 +518,7 @@
 		writeProtected=!writeProtected;
 	}
 
-	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,WORD positionInSector,Revolution::TType rev){
+	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,Sector::L positionInSector,Revolution::TType rev){
 		// displays modal dialog showing low-level timing for specified position on the Track
 		const CString msg=Utils::SimpleFormat( _T("Can't determine timing for sector with %s"), chs.sectorId.ToString() );
 		if (CImage::CTrackReader &&tr=ReadTrack( chs.cylinder, chs.head )){
@@ -710,7 +710,7 @@
 		return GetCylinderCount()*GetHeadCount();
 	}
 
-	Revolution::N CImage::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	TRev CImage::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return 1;
 	}

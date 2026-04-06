@@ -14,8 +14,6 @@ using namespace Charting;
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 	#define EVENT_HEIGHT	30
 
-	const TLogTimeInterval TLogTimeInterval::Invalid( INT_MAX, INT_MIN );
-
 	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
 	typedef const TParseEvent *PCParseEvent;
 
@@ -232,7 +230,7 @@ using namespace Charting;
 						const auto dcSettings0=::SaveDC(dc);
 							::SelectObject( dc, te.penIndex );
 							::SetTextColor( dc, COLOR_BLUE );
-							for( BYTE i=0; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
+							for( TRev i=0; continuePainting && i<tr.GetIndexCount() && tr.GetIndexTime(i)<visible.tEnd; i++ ){ // visible indices
 								const TLogTime tIndex=tr.GetIndexTime(i);
 								if (!visible.Contains(tIndex))
 									continue; // skip invisible index
@@ -843,7 +841,7 @@ using namespace Charting;
 			const auto &iwList=te.timeEditor.GetInspectionWindows();
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
-			for( BYTE i=1; i<tr.GetIndexCount(); i++ ){
+			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
 				const CBitSequence iwRev( iwList, tr.GetFullRevolutionTimeInterval(i-1) );
 				TInspectionWindow *iw=const_cast<TInspectionWindow *>(iwRev.begin());
 				const PCInspectionWindow iwRevEnd=iwRev.end();
@@ -993,7 +991,7 @@ using namespace Charting;
 							);
 							return TRUE;
 						case ID_ZOOM_PART:{
-							BYTE rev=0;
+							TRev rev=0;
 							for( const TLogTime t=timeEditor.GetCenterTime(); rev<tr.GetIndexCount()&&t>tr.GetIndexTime(rev); rev++ );
 							rev+=rev==0; // if before the first Revolution, pointing at the end of the first Revolution
 							rev-=rev==tr.GetIndexCount(); // if after after the last Revolution, pointing at the end of the last Revolution
@@ -1116,7 +1114,7 @@ using namespace Charting;
 											case 'u': t64=TIME_MICRO(t64);	break;
 											default: t64=TIME_NANO(t64);	break;
 										}
-										if (tResult+t64>INT_MAX)
+										if (tResult+t64>Time::Infinity)
 											return -1; // specified time is out of range
 										tResult+=t64;
 									}
@@ -1172,27 +1170,27 @@ using namespace Charting;
 							Utils::Information( _T("Each track item has a reference key, usually the first letter in its name. Keys to the left and right serve for navigation to previous and next item, respectively:\n\n- reference key I = Index, U/O = previous/next index\n- R = Revolution, E/T\n- B = Bad window, V/N\n- E = Event, W/R\n- F = Fuzzy event, D/G\n- K = marK, J/L\n- D = meta-Data, S/F") );
 							return TRUE;
 						case ID_PREV:{
-							BYTE i=0;
+							TRev i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>tr.GetIndexTime(i); i++ );
 							if (i>0)
 								timeEditor.SetCenterTime( tr.GetIndexTime(i-1) );
 							return TRUE;
 						}
 						case ID_NEXT:{
-							BYTE i=0;
+							TRev i=0;
 							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<tr.GetIndexCount()&&tCenter>=tr.GetIndexTime(i); i++ );
 							if (i<tr.GetIndexCount())
 								timeEditor.SetCenterTime( tr.GetIndexTime(i) );
 							return TRUE;
 						}
 						case ID_META_PREV:{
-							auto it=tr.GetMetaData().lower_bound( TLogTimeInterval(timeEditor.GetCenterTime(),INT_MAX) );
+							auto it=tr.GetMetaData().lower_bound( TLogTimeInterval(timeEditor.GetCenterTime(),Time::Infinity) );
 							if (it!=tr.GetMetaData().cbegin())
 								timeEditor.SetCenterTime( (--it)->tStart );
 							return TRUE;
 						}
 						case ID_META_NEXT:{
-							const auto it=tr.GetMetaData().upper_bound( TLogTimeInterval(timeEditor.GetCenterTime(),INT_MAX) );
+							const auto it=tr.GetMetaData().upper_bound( TLogTimeInterval(timeEditor.GetCenterTime(),Time::Infinity) );
 							if (it!=tr.GetMetaData().cend())
 								timeEditor.SetCenterTime( it->tStart );
 							return TRUE;
@@ -1256,7 +1254,7 @@ using namespace Charting;
 						}
 						case ID_REVOLUTION_PREV:{
 							const TLogTime tCursor=timeEditor.GetClientCursorTime();
-							BYTE r=1;
+							TRev r=1;
 							while (tr.GetIndexTime(r)<tCursor)
 								r++;
 							// . try to navigate to corresponding InspectionWindow in the previous Revolution
@@ -1286,7 +1284,7 @@ using namespace Charting;
 						}
 						case ID_REVOLUTION_NEXT:{
 							const TLogTime tCursor=timeEditor.GetClientCursorTime();
-							BYTE r=tr.GetIndexCount();
+							TRev r=tr.GetIndexCount();
 							while (tCursor<tr.GetIndexTime(--r));
 							// . try to navigate to corresponding InspectionWindow in the next Revolution
 							if (const PCInspectionWindow piwCursor=timeEditor.GetInspectionWindow(tCursor)) // has interpretation of the Times been made?
@@ -1345,7 +1343,7 @@ using namespace Charting;
 									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
 							const Utils::CSharedPodArray<TLogPoint,TIndex> indexTimes( tr.GetIndexCount() );
-								for( BYTE i=0; i<tr.GetIndexCount(); i++ ){
+								for( TRev i=0; i<tr.GetIndexCount(); i++ ){
 									auto &r=indexTimes[i];
 										r.x=tr.GetIndexTime(i);
 										r.y=TIME_MILLI(200); // should suffice for any Medium

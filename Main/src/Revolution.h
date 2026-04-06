@@ -22,3 +22,5 @@ namespace Revolution
 	};
 
 }
+
+typedef Revolution::N TRev,*PRev;

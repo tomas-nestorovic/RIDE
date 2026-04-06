@@ -9,7 +9,7 @@
 			TTrack n;
 			bool allScanned;
 			Yahel::TPosition dataTotalLength;
-			Revolution::N nDiscoveredRevolutions;
+			TRev nDiscoveredRevolutions;
 		};
 
 		struct TScannedTracks sealed:public TScannerState{

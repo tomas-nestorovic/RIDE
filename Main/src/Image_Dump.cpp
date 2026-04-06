@@ -245,7 +245,7 @@
 			TTrack track;
 			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
-			Revolution::N revolution;
+			TRev revolution;
 			struct{
 				TFdcStatus automaticallyAcceptedErrors;
 				bool anyErrorsOnUnknownSectors;
@@ -313,7 +313,7 @@
 					for each( const auto &pair in peTrack ){
 						const auto &pe=*pair.second;
 						if (pe.IsDataStd()){
-							for( BYTE i=0; i<trSrc.GetIndexCount(); i++ )
+							for( TRev i=0; i<trSrc.GetIndexCount(); i++ )
 								warnings.hasDataOverIndex|=pe.Contains( trSrc.GetIndexTime(i) );
 							if (warnings.hasDataOverIndex)
 								break;
@@ -931,7 +931,7 @@ reformatTrack:		if (!p.trackWriteable){ // formatting the Track only if can't wr
 				else{
 					// must write to each Sector individually
 					dp.target->BufferTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors ); // make Sectors data ready for IMMEDIATE usage
-					for( BYTE s=0; s<nSectors; ){
+					for( TSector s=0; s<nSectors; ){
 						if (pAction->Cancelled)
 							return ERROR_CANCELLED;
 						if (!bufferFdcStatus[s].DescribesMissingDam()){

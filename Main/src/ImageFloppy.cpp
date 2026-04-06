@@ -412,7 +412,7 @@ using namespace Yahel;
 					switch (revolution){
 						case Revolution::ANY_GOOD:
 							*pOutDataReady=true; // assumption (all Revolutions already attempted, none holding healthy data)
-							for( Revolution::N r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
+							for( TRev r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
 								if (const TDataStatus ds=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )){
 									if (ds==TDataStatus::READY_HEALTHY){
 										*pOutDataReady=true;
@@ -427,7 +427,7 @@ using namespace Yahel;
 							break;
 						case Revolution::ALL_INTERSECTED:
 							*pOutDataReady=true; // assumption (all Revolutions already attempted)
-							for( Revolution::N r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
+							for( TRev r=0; r<GetAvailableRevolutionCount(track>>1,track&1); r++ )
 								*pOutDataReady&=image->IsSectorDataReady( track>>1, track&1, ids[iSector], iSector, (Revolution::TType)r )!=TDataStatus::NOT_READY;
 							break;
 						default:

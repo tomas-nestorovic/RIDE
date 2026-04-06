@@ -37,7 +37,7 @@
 			const Codec::TType codec;
 			#pragma pack(1)
 			struct TSectorInfo sealed{
-				BYTE seqNum; // "zero-based" sequence number of this Sector on containing Track
+				TSector seqNum; // "zero-based" sequence number of this Sector on containing Track
 				TSectorId id;
 				Sector::L length;
 				TLogTime startNanoseconds,endNanoseconds; // counted from the index pulse
@@ -48,8 +48,8 @@
 					inline bool HasDataReady() const{ return data!=nullptr || fdcStatus.DescribesMissingDam(); }
 					inline bool HasGoodDataReady() const{ return data!=nullptr && fdcStatus.IsWithoutError(); }
 				} revolutions[Revolution::MAX]; // a First-In-First-Out buffer of Revolutions
-				Revolution::N nRevolutions;
-				Revolution::N currentRevolution;
+				TRev nRevolutions;
+				TRev currentRevolution;
 				Revolution::TType dirtyRevolution;
 
 				inline bool IsModified() const{ return dirtyRevolution!=Revolution::NONE; }
@@ -115,8 +115,8 @@
 		void __setNumberOfSectorsToSkipOnCurrentTrack__(BYTE _nSectorsToSkip) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption,TLogTime nNanosecondsAfterLastDataByteWritten) const;
 		TStdWinError __setTimeBeforeInterruptingTheFdc__(WORD nDataBytesBeforeInterruption) const;
-		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
-		bool __bufferSectorData__(RCPhysicalAddress chs,WORD sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
+		bool __bufferSectorData__(TCylinder cyl,THead head,PCSectorId psi,Sector::L sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
+		bool __bufferSectorData__(RCPhysicalAddress chs,Sector::L sectorLength,const TInternalTrack *pit,BYTE nSectorsToSkip,TFdcStatus *pFdcStatus) const;
 		TStdWinError FormatToOneLongVerifiedSector(RCPhysicalAddress chs,BYTE fillerByte,const volatile bool &cancelled);
 		void UnformatInternalTrack(TCylinder cyl,THead head) const;
 		void __freeInternalTracks__();
@@ -129,7 +129,7 @@
 		BOOL OnOpenDocument(LPCTSTR) override;
 		TCylinder GetCylinderCount() const override;
 		THead GetHeadCount() const override;
-		Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
+		TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const override;
 		TStdWinError SeekHeadsHome() const override;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override;
 		bool IsTrackScanned(TCylinder cyl,THead head) const override;

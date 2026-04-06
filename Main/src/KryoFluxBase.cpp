@@ -69,7 +69,7 @@
 				auto &ris=pit->sectors[nSectorsToSkip++];
 				if (ris.id==chs.sectorId){
 					ASSERT( ris.dirtyRevolution>=Revolution::MAX||ris.dirtyRevolution==ris.currentRevolution ); // no Revolution yet marked as "dirty" or marking "dirty" the same Revolution
-					for( Revolution::N r=0; r<ris.nRevolutions; pit->ReadSector(ris,r++) ); // making sure all Revolutions of the Sector are buffered
+					for( TRev r=0; r<ris.nRevolutions; pit->ReadSector(ris,r++) ); // making sure all Revolutions of the Sector are buffered
 					ris.dirtyRevolution=(Revolution::TType)ris.currentRevolution;
 					if (pFdcStatus)
 						ris.revolutions[ris.dirtyRevolution].fdcStatus=*pFdcStatus;
@@ -148,7 +148,7 @@
 			cft.gapbvalue=0x4e;
 			cft.trackbuf=bitBuffer;
 			if (const Medium::PCProperties p=Medium::GetProperties(floppyType))
-				cft.tracklen=Utils::RoundDivUp( p->nCells, (DWORD)8 ); // # of bits round up to whole # of Bytes
+				cft.tracklen=Utils::RoundDivUp( p->nCells, (Bit::N)8 ); // # of bits round up to whole # of Bytes
 			else
 				return ERROR_INVALID_MEDIA;
 			cft.buflen=sizeof(bitBuffer);
@@ -242,7 +242,7 @@
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;
 		TIndexPulse indexPulses[Revolution::MAX+1]; // N+1 indices = N full revolutions
-		BYTE nIndexPulses=0;
+		TRev nIndexPulses=0;
 		double mck=0,sck=0,ick=0; // all defaults, allowing flux computation with minimal precision loss
 		for( const PCBYTE pLastRawByte=rawBytes+nBytes; rawBytes<pLastRawByte; ){
 			const BYTE header=*rawBytes++;
@@ -375,7 +375,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		CTrackReaderWriter result( nFluxes*125/100, params.fluxDecoder, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		DWORD sampleCounter=0, totalSampleCounter=0; // delta and absolute sample counters
 		PLogTime buffer=result.GetBuffer(),pLogTime=buffer;
-		BYTE nearestIndexPulse=0;
+		TRev nearestIndexPulse=0;
 		int nearestIndexPulsePos= nIndexPulses>0 ? indexPulses[0].posInStreamData : INT_MAX;
 		for( PCBYTE pis=inStreamData,pLastInStreamData=pis+inStreamDataLength; pis<pLastInStreamData; ){
 			const BYTE header=*pis++;
@@ -457,8 +457,8 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			WORD size;
 			DWORD dataLength, zero;
 		} streamInfoBlock={ 0x0d, 0x01, 2*sizeof(DWORD) }; // 8 Bytes long "out-of-Stream" data, containing StreamInfo
-		BYTE index=0;
-		TLogTime nextIndexPulseTime= tr.GetIndexCount()>0 ? tr.GetIndexTime(0) : INT_MAX;
+		TRev index=0;
+		TLogTime nextIndexPulseTime= tr.GetIndexCount()>0 ? tr.GetIndexTime(0) : Time::Infinity;
 		for( tr.SetCurrentTime(0); tr; ){
 			// . writing an index pulse if its time has already been reached
 			const TLogTime currTime=tr.ReadTime();
@@ -468,7 +468,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 					streamInfoBlock.dataLength,
 					tr.GetIndexTime(index)
 				);
-				nextIndexPulseTime= ++index<tr.GetIndexCount() ? tr.GetIndexTime(index) : INT_MAX;
+				nextIndexPulseTime= ++index<tr.GetIndexCount() ? tr.GetIndexTime(index) : Time::Infinity;
 			}
 			// . writing the flux
 			int sampleCounter= TimeToStdSampleCounter(currTime)-totalSampleCounter; // temporary 64-bit precision even on 32-bit machines

@@ -667,7 +667,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 		return 2; // latest PC floppy drives had two Heads
 	}
 
-	Revolution::N CFDD::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
+	TRev CFDD::GetAvailableRevolutionCount(TCylinder cyl,THead head) const{
 		// returns the number of data variations of one Sector that are guaranteed to be distinct
 		return Revolution::INFINITY;
 	}
@@ -901,7 +901,7 @@ error:				switch (const TStdWinError err=::GetLastError()){
 			} plan[(TSector)-1], *planEnd=plan;
 			BYTE alreadyPlannedSectors[(TSector)-1];
 			::ZeroMemory(alreadyPlannedSectors,nSectors);
-			for( BYTE nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
+			for( TSector nSectorsToPlan=nSectors; planEnd-plan<nSectors && nSectorsToPlan; nSectorsToPlan-- ){ // A&B, A = all Sectors requested to read planned, B = all Sectors are planned in N iterations in the worst case (preventing infinite loop in case that at least one Sector isn't found on the Track)
 				TLogTime lastSectorEndNanoseconds=TIME_SECOND(-1); // minus one second
 				for( TSector n=0; n<pit->sectors.length; n++ ){
 					TInternalTrack::TSectorInfo &si=pit->sectors[n];
@@ -2078,7 +2078,7 @@ formatStandardWay:
 					}
 				} formatPlan[(TSector)-1],*pFormatStep=formatPlan;
 				WORD nBytesReserved; // reserved block of Bytes at the beginning of Track represents an area formatted in the next Step (as Sectors are formatted "backwards")
-				BYTE n=nSectors;
+				auto n=nSectors;
 				PCWORD pLength=bufferLength; PCFdcStatus pFdcStatus=bufferFdcStatus;
 				if (!__mustSectorBeFormattedIndividually__(pFdcStatus)){
 					// there is a sequence of Sectors at the beginning of Track that can be all formatted in a single Step

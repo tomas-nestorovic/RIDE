@@ -34,8 +34,8 @@
 				inline bool HasDataReady() const{ return peData!=nullptr || fdcStatus.DescribesMissingDam(); }
 				inline bool HasGoodDataReady() const{ return peData!=nullptr && fdcStatus.IsWithoutError(); }
 			} revolutions[Revolution::MAX];
-			Revolution::N nRevolutions;
-			Revolution::N currentRevolution;
+			TRev nRevolutions;
+			TRev currentRevolution;
 			Revolution::TType dirtyRevolution;
 
 			inline Sector::L GetOfficialSectorLength() const{
@@ -51,13 +51,13 @@
 
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
-			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,Revolution::N nRevs,UDWORD lockFlags);
+			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,TRev nRevs,UDWORD lockFlags);
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType=Medium::UNKNOWN);
 
 			const Utils::CSharedPodArray<TInternalSector,TSector> sectors;
 			bool modified;
 			
-			void ReadSector(TInternalSector &ris,Revolution::N rev);
+			void ReadSector(TInternalSector &ris,TRev rev);
 			void FlushSectorBuffer(const TInternalSector &ris);
 			void FlushSectorBuffers();
 		} *PInternalTrack;
@@ -148,7 +148,7 @@
 			TParams(LPCTSTR iniSectionName);
 			~TParams();
 
-			inline Revolution::N PrecisionToFullRevolutionCount() const{ return precision; }
+			inline TRev PrecisionToFullRevolutionCount() const{ return precision; }
 			bool EditInModalDialog(CCapsBase &rcb,LPCTSTR firmware,bool initialEditing);
 			void EnumSettings(CSettings &rOut,bool isRealDevice) const;
 		} params;
@@ -183,7 +183,7 @@
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		TCylinder GetCylinderCount() const override sealed;
 		THead GetHeadCount() const override sealed;
-		Revolution::N GetAvailableRevolutionCount(TCylinder cyl,THead head) const override sealed;
+		TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const override sealed;
 		TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const override sealed; // sealed = override ReadTrack method instead!
 		bool IsTrackScanned(TCylinder cyl,THead head) const override sealed;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override sealed;

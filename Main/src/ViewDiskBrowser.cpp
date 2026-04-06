@@ -362,7 +362,7 @@ using namespace Yahel;
 			}
 			case ID_TIME:{
 				// display of low-level Track timing
-				TPhysicalAddress chs; BYTE iSector; WORD offset;
+				TPhysicalAddress chs; BYTE iSector; Sector::L offset;
 				f->GetPhysicalAddress( GetCaretPosition(), chs, iSector, &offset );
 				IMAGE->ShowModalTrackTimingAt(
 					chs, iSector, offset,
