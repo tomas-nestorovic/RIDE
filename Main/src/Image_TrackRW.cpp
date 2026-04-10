@@ -608,7 +608,7 @@ namespace MFM=Codec::Impl::MFM;
 			}
 			const WORD nGaps=nDataEnds+nSectorsFound;
 			// . analyzing gap between two consecutive ParseEvents
-			typedef WORD TBitPattern;
+			typedef Bit::TPattern TBitPattern;
 			struct:Charting::CHistogram{ // Key = bit pattern (data+clock), Value = number of occurences
 				iterator Find(TBitPattern bp){
 					static_assert( sizeof(TBitPattern)==2, "" ); // the following is valid only for "8 data bits + 8 clock bits"
@@ -1352,12 +1352,12 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-		static bool IsWellEncodedMfmSequence(WORD bits){
+		static bool IsWellEncodedMfmSequence(BYTE bits){
 			// see comment at 'CTrackReader::lastReadBits'
 			if ((bits&3)==3) // last valid bit is "1"?
 				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
 			else
-				return (BYTE)bits!=0xaa; // four valid consecutive "0"s are forbidden
+				return bits!=0xaa; // four valid consecutive "0"s are forbidden
 		}
 
 	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
@@ -1474,7 +1474,7 @@ namespace MFM=Codec::Impl::MFM;
 				rbi.dtStart=dt, dt=d.time-peData.tStart;
 				rbi.flags=d.flags;
 				peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(
-					rbi.org.wEncoded = d.value
+					rbi.org.encoded = d.value
 				);
 			}else{ // Track end encountered
 				result.ExtendWith( TFdcStatus::DataFieldCrcError );
@@ -1551,15 +1551,15 @@ namespace MFM=Codec::Impl::MFM;
 			auto &org=rbi.org;
 			ti.tEnd=peData.GetByteTime(i+1);
 			if (peData.bytes[i]==org.value) // Byte not changed
-				tmp.AddWord( ti, org.wEncoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
+				tmp.AddWord( ti, org.encoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
 			else{
 				tmp.AddWord( ti,
-					org.wEncoded = MFM::EncodeByte(
+					org.encoded = MFM::EncodeByte(
 						org.value = peData.bytes[i]
 					)
 				);
 				auto &next=pbi[i+1].org;
-				if (org.wEncoded&1 && next.wEncoded>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
+				if (org.encoded.w&1 && next.encoded.w>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
 					next.value=~next.value; // updated clock bits
 				rbi.MarkHealthy();
 			}
@@ -1586,7 +1586,7 @@ namespace MFM=Codec::Impl::MFM;
 		return	ReplaceTimes( tiClear, tmp );
 	}
 
-	char CImage::CTrackReader::ReadByte(WORD &rOutBits,PBYTE pOutValue){
+	char CImage::CTrackReader::ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue){
 		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:

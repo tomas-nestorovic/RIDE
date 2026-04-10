@@ -3,6 +3,7 @@
 namespace Bit
 {
 	typedef DWORD N; // count
+	typedef WORD TPattern;
 
 	struct TFlags{
 		union{

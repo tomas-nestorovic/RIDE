@@ -339,7 +339,7 @@
 			TProfile profile;
 			TLogTime currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
-			WORD lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
+			Bit::TPattern lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
 			CTrackReaderState(PLogTimesInfo pLti);
 
@@ -405,7 +405,12 @@
 				typedef struct TByteInfo:public Bit::TFlags{
 					struct{
 						BYTE value;
-						WORD wEncoded;
+						union{
+							WORD w;
+							Bit::TPattern bits;
+							inline operator Bit::TPattern() const{ return bits; }
+							inline Bit::TPattern operator=(Bit::TPattern p){ return bits=p; }
+						} encoded;
 					} org;
 					TLogTime dtStart; // offset against ParseEvent's start
 				} *PByteInfo;
@@ -635,7 +640,7 @@
 			bool ReadBits15(WORD &rOut);
 			bool ReadBits16(WORD &rOut);
 			bool ReadBits32(DWORD &rOut);
-			char ReadByte(WORD &rOutBits,PBYTE pOutValue=nullptr);
+			char ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
