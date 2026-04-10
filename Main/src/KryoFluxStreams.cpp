@@ -130,24 +130,17 @@
 			CFile f; CFileException e;
 			if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 				return e.m_cause;
-			Utils::CSharedBytes streamData;
-			DWORD dataLength;
-			PCBYTE data=pit->GetRawDeviceData( KF_STREAM_ID, dataLength );
-			if (!data){ // Track has been really modified and original KF Stream disposed ...
-				streamData.Realloc(KF_BUFFER_CAPACITY);
-				data = streamData;
-				if (!streamData)
-					return ERROR_NOT_ENOUGH_MEMORY;
-				dataLength=TrackToStream( // ... must reconstruct it from current state of the Track
+			Utils::CSharedBytes data=pit->GetRawDeviceData( KF_STREAM_ID );
+			if (!data) // Track has been really modified and original KF Stream disposed ...
+				data.length=TrackToStream( // ... must reconstruct it from current state of the Track
 					head && params.flippyDisk
 						? CTrackReaderWriter(*pit,false).Reverse()
 						: *pit,
-					streamData
+					data.Realloc(KF_BUFFER_CAPACITY)
 				);
-			}
-			if (GetCurrentDiskFreeSpace()<dataLength)
+			if (GetCurrentDiskFreeSpace()<data.length)
 				return ERROR_DISK_FULL;
-			f.Write( data, dataLength );
+			f.Write( data, data.length );
 			pit->modified=false;
 		}
 		return ERROR_SUCCESS;

@@ -2,6 +2,8 @@
 
 namespace Utils{
 
+	const CSharedBytes NoSharedBytes;
+
 	#define SCREEN_DPI_DEFAULT	USER_DEFAULT_SCREEN_DPI
 
 	TLogicalUnitScaleFactor::TLogicalUnitScaleFactor()

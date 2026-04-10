@@ -440,7 +440,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		return sizeof(indexBlock);
 	}
 
-	DWORD CKryoFluxBase::TrackToStream(CTrackReader tr,LPBYTE outBuffer) const{
+	int CKryoFluxBase::TrackToStream(CTrackReader tr,LPBYTE outBuffer) const{
 		// converts specified Track representation into Stream data and returns the length of the Stream
 		PCHAR p=(PCHAR)outBuffer;
 		// - writing app signature

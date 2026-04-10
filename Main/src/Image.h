@@ -623,7 +623,7 @@
 			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetLastTime() const;
 			TLogTime GetTotalTime() const;
-			PCBYTE GetRawDeviceData(TId dataId,DWORD &outLength) const;
+			const Utils::CSharedBytes &GetRawDeviceData(TId dataId) const;
 			TLogTime ReadTime();
 			bool ReadBit(TLogTime &rtOutOne);
 			bool ReadBit();

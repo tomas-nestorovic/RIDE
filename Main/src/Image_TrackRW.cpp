@@ -299,14 +299,12 @@ namespace MFM=Codec::Impl::MFM;
 		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
-	PCBYTE CImage::CTrackReader::GetRawDeviceData(TId dataId,DWORD &outLength) const{
+	const Utils::CSharedBytes &CImage::CTrackReader::GetRawDeviceData(TId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
-			if (r.id==dataId){
-				outLength=r.length;
+			if (r.id==dataId)
 				return r;
-			}
-		return nullptr;
+		return Utils::NoSharedBytes;
 	}
 
 	TLogTime CImage::CTrackReader::ReadTime(){

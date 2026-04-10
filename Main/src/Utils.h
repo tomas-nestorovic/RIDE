@@ -72,6 +72,8 @@ namespace Utils{
 
 	typedef CSharedPodArray<BYTE> CSharedBytes;
 
+	extern const CSharedBytes NoSharedBytes;
+
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>
 	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length){
