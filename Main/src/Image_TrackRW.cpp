@@ -283,10 +283,8 @@ namespace MFM=Codec::Impl::MFM;
 		// given at least two indices, computes and returns the average distance between them, otherwise 0
 		if (nIndexPulses<2)
 			return 0;
-		LONGLONG distSum=0;
-		for( TRev i=1; i<nIndexPulses; i++ )
-			distSum+= indexPulses[i]-indexPulses[i-1];
-		return distSum/(nIndexPulses-1);
+		const TRev nFullRevs=nIndexPulses-1;
+		return (indexPulses[nFullRevs]-*indexPulses)/nFullRevs;
 	}
 
 	TLogTime CImage::CTrackReader::GetLastTime() const{
