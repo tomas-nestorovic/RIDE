@@ -115,7 +115,7 @@
 				return ERROR_CANCELLED;
 			// . composition of test Track
 			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
-	{		CTrackReaderWriter trw( mediumProps.nCells, CTrackReader::KEIR_FRASER, false );
+	{		CTrackReaderWriter trw( mediumProps.nCells, Time::Decoder::KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
 				trw.AddIndexTime(0);
 				trw.AddIndexTime(mediumProps.revolutionTime);

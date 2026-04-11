@@ -45,26 +45,6 @@ namespace Codec
 
 
 
-	TLimits::TLimits(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent)
-		// ctor
-		: iwTimeDefault(iwTimeDefault)
-		, iwTime(iwTimeDefault)
-		, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
-		, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 ) {
-	}
-
-	void TLimits::ClampIwTime(){
-		// keep the inspection window size within limits
-		if (iwTime<iwTimeMin)
-			iwTime=iwTimeMin;
-		else if (iwTime>iwTimeMax)
-			iwTime=iwTimeMax;
-	}
-
-
-
-
-
 	namespace Impl
 	{
 		namespace MFM

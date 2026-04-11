@@ -141,6 +141,12 @@ typedef const TLogPoint *PCLogPoint;
 
 #define STR_CANCEL		_T("Cancel")
 
+namespace Bit
+{
+	typedef int N; // index or count, negative to indicate invalidity
+	typedef WORD TPattern;
+}
+
 #include "Utils.h"
 #include "Time.h"
 #include "Checksum.h"

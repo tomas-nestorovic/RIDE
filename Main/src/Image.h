@@ -236,128 +236,55 @@
 			void Show(const CString &report);
 		} unsupportedFeaturesMessageBar;
 
-		class CTrackReaderBuffers{
-		public:
-			enum TDecoderMethod:BYTE{
-				NONE			=1,
-				KEIR_FRASER		=2,
-				MARK_OGDEN		=8,
-				METADATA		=16, // a hidden decoder to help extract bits from Times tagged with MetaData
-				FDD_METHODS		=NONE|KEIR_FRASER|MARK_OGDEN
-			};
-
-			typedef const struct TMetaDataItem sealed:public TLogTimeInterval{
-				bool isFuzzy;
-				int nBits; // 0 = no explicit # of bits, use DPLL algorithm to adjust next IW size
-
-				TMetaDataItem(const TLogTimeInterval &ti); // for clearing MetaData in specified Interval
-				TMetaDataItem(const TLogTimeInterval &ti,bool isFuzzy,int nBits);
-
-				inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
-				inline bool IsDefault() const{ return nBits<=0; }
-				inline TLogTime GetStartTimeSafe() const{ return this?tStart:0; }
-				TLogTime GetBitTimeAvg() const;
-				TLogTime GetBitTime(int iBit) const;
-				int GetBitIndex(TLogTime t) const;
-				TLogTimeInterval GetIw(int iBit) const;
-				TMetaDataItem Split(TLogTime tAt);
-				bool Equals(const TMetaDataItem &r) const;
-			} *PCMetaDataItem;
-
-			struct CMetaData:public std::set<TMetaDataItem>{
-				inline operator bool() const{ return size()>0; }
-				const_iterator GetMetaDataIterator(TLogTime t) const;
-				PCMetaDataItem GetMetaDataItem(TLogTime t) const;
-				PCMetaDataItem GetFirst() const;
-				PCMetaDataItem GetLast() const;
-			};
+		class CTrackReaderBuffers:public Time::Decoder::CBase{
 		protected:
+			typedef Time::Decoder::TMethod TDecoderMethod;
+			typedef Time::Decoder::TProfile TProfile;
+			typedef Time::Decoder::CBase CDecoder;
+
 			struct TLogTimesInfoData abstract{
 				Medium::PCProperties mediumProps;
 				bool resetDecoderOnIndex;
 				Codec::TType codec;
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
-				CMetaData metaData;
-				TDecoderMethod defaultDecoder; // when no MetaData available
+				Time::CMetaData metaData;
 				struct:public Utils::CSharedBytes{
 					TId id;
 				} rawDeviceData; // valid until Track modified, then disposed
 
-				TLogTimesInfoData(TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
+				TLogTimesInfoData(bool resetDecoderOnIndex);
 			};
 
 			typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
 				UINT nRefs;
 			public:
-				const Time::CSharedArray logTimes;
-
-				CLogTimesInfo(Time::N nLogTimesMax,TDecoderMethod defaultDecoder,bool resetDecoderOnIndex);
+				CLogTimesInfo(bool resetDecoderOnIndex);
 
 				inline UINT GetRefCount() const{ return nRefs; }
 				inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
 				bool Release();
 			} *PLogTimesInfo;
 
-			PLogTime logTimes; // absolute logical times since the start of recording
 			PLogTimesInfo pLogTimesInfo;
 			PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
-			CMetaData::const_iterator itCurrMetaData;
 
-			CTrackReaderBuffers(PLogTimesInfo pLti);
+			CTrackReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti);
 		public:
-			inline const CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
+			inline const Time::CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
 		};
 
 		class CTrackReaderState:public CTrackReaderBuffers{
-		public:
-			struct TProfile sealed:public Codec::TLimits{
-				TDecoderMethod method;
-				union{
-					struct{
-						DWORD nConsecutiveZeros;
-					} fraserObsolete;
-					struct{
-						DWORD nConsecutiveZeros;
-					} fraser;
-					struct{
-						bool up;
-						BYTE fCnt, aifCnt, adfCnt, pcCnt;
-					} ogden;
-					struct{
-						int iCurrBit;
-					} metaData;
-				} methodState;
-
-				TProfile(TDecoderMethod method=TDecoderMethod::NONE);
-				TProfile(const TMetaDataItem &mdi);
-
-				void Reset();
-			};
 		protected:
-			Time::N iNextTime,nLogTimes;
 			TRev iNextIndexPulse,nIndexPulses;
-			TProfile profile;
-			TLogTime currentTime;
-			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
-			Bit::TPattern lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CTrackReaderState(PLogTimesInfo pLti);
-
-			PCMetaDataItem GetCurrentTimeMetaData() const;
-			PCMetaDataItem ApplyCurrentTimeMetaData();
-			PCMetaDataItem IncrMetaDataIteratorAndApply();
-			PCMetaDataItem DecrMetaDataIteratorAndApply();
-			PCMetaDataItem FindMetaDataIteratorAndApply();
+			CTrackReaderState(const CDecoder &decoder,PLogTimesInfo pLti);
 		public:
-			inline const CMetaData::const_iterator &GetCurrentTimeMetaDataIterator() const{ return itCurrMetaData; }
 			void SetCodec(Codec::TType codec);
 			void SetMediumType(Medium::TType mediumType);
 		};
 
 		class CTrackReader:public CTrackReaderState{
 		public:
-			static LPCTSTR GetDescription(TDecoderMethod dm);
-
 			typedef const struct TParseEvent:public TLogTimeInterval{
 				enum TType:BYTE{
 					NONE,			// invalid ParseEvent
@@ -481,7 +408,7 @@
 				inline CLogTiming::const_iterator end() const{ return logStarts.cend(); }
 			};
 		protected:
-			CTrackReader(PLogTimesInfo pLti,Codec::TType codec);
+			CTrackReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
 
 			WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
 			WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents);
@@ -539,18 +466,6 @@
 				inline TBit *end() const{ return pBits+nBits; }
 			};
 
-			template<char N,typename T>
-			bool ReadBits(T &rOut){
-				// True <=> all N bits successfully read, otherwise False
-				static_assert( N>1, "" );
-				for( char n=N; n>0; n-- ){
-					if (!*this)
-						return false;
-					rOut=(rOut<<1)|(T)ReadBit();
-				}
-				return true;
-			}
-
 			CTrackReader(const CTrackReader &tr);
 			CTrackReader(CTrackReader &&rTrackReader);
 			~CTrackReader();
@@ -568,27 +483,9 @@
 			}
 
 			inline
-			Time::N GetTimesCount() const{
-				// returns the number of recorded LogicalTimes
-				return nLogTimes;
-			}
-
-			inline
 			PCLogTime GetBuffer() const{
 				// returns the inner buffer
 				return logTimes;
-			}
-
-			inline
-			TLogTime GetCurrentTime() const{
-				// returns the LogicalTime ellapsed from the beginning of recording
-				return currentTime;
-			}
-
-			inline
-			const TProfile &GetCurrentProfile() const{
-				// returns current read Profile
-				return profile;
 			}
 
 			inline
@@ -621,25 +518,16 @@
 
 			void SetCurrentTime(TLogTime logTime);
 			void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
-			TProfile CreateResetProfile() const;
-			TLogTime TruncateCurrentTime();
 			TLogTime GetIndexTime(TRev index) const;
 			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;
-			TLogTime GetLastTime() const;
 			TLogTime GetTotalTime() const;
 			const Utils::CSharedBytes &GetRawDeviceData(TId dataId) const;
-			TLogTime ReadTime();
-			bool ReadBit(TLogTime &rtOutOne);
-			bool ReadBit();
+			bool ReadBit(TLogTime &rtOutOne=Time::Ignore);
 			bool IsLastReadBitHealthy() const;
 			CBitSequence CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent=0) const;
 			CBitSequence CreateBitSequence(Revolution::TType rev,BYTE oneOkPercent=0) const;
 			CBitSequence CreateBitSequence(BYTE oneOkPercent=0) const;
-			char ReadBits8(BYTE &rOut);
-			bool ReadBits15(WORD &rOut);
-			bool ReadBits16(WORD &rOut);
-			bool ReadBits32(DWORD &rOut);
 			char ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
@@ -648,11 +536,6 @@
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutAllParseEvents);
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
-			void SaveCsv(LPCTSTR filename) const;
-			void SaveDeltaCsv(LPCTSTR filename) const;
-		#ifdef _DEBUG
-			void VerifyChronology() const;
-		#endif
 		};
 
 		typedef CTrackReader::TDataParseEvent::TByteInfo *PByteInfo;
@@ -683,7 +566,7 @@
 			void AddWord(TLogTimeInterval &inOutAt,WORD w);
 			void AddDWord(TLogTimeInterval &inOutAt,DWORD dw);
 			void AddIndexTime(TLogTime logTime);
-			void AddMetaData(const TMetaDataItem &mdi);
+			void AddMetaData(const Time::TMetaDataItem &mdi);
 			void SetRawDeviceData(TId dataId,const Utils::CSharedBytes &data);
 			void TrimToTimesCount(Time::N nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);

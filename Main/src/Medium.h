@@ -31,7 +31,7 @@ namespace Medium
 
 		bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;
 		bool IsAcceptableCountOfCells(Bit::N nCellsQueried) const;
-		inline Codec::TLimits CreateCodecLimits(BYTE iwTimeTolerancePercent=4) const{ return Codec::TLimits(cellTime,iwTimeTolerancePercent); }
+		inline Time::Decoder::TLimits CreateTimeDecoderLimits(BYTE iwTimeTolerancePercent=4) const{ return Time::Decoder::TLimits(cellTime,iwTimeTolerancePercent); }
 	} *PCProperties;
 
 	LPCTSTR GetDescription(TType mediumType);

@@ -381,7 +381,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						}
 						const BYTE nBits=CHAR_BIT-nFollowingDataBitsToSkip;
 						const TLogTime tSpan=nBits*tCell; TLogTime tFuzzy=tCell*fuzzyQuot/100;
-						CTrackReader::TMetaDataItem mdi( TLogTimeInterval(tCurr,Time::Infinity), fuzzyQuot!=0, nBits );
+						Time::TMetaDataItem mdi( TLogTimeInterval(tCurr,Time::Infinity), fuzzyQuot!=0, nBits );
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
 							if ((char)data<0){
 								trw.AddTime( tCurr + i*tCell+tFuzzy );

@@ -148,7 +148,7 @@
 		UDWORD nBitsTotally=0;
 		for( TRev r=0; r<nRevs; r++ )
 			nBitsTotally+=(  revs[r]=CCapsBitReader( ctiRevs[r], lockFlags )  ).GetCount();
-		CTrackReaderWriter trw( nBitsTotally*125/100, CTrackReader::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
+		CTrackReaderWriter trw( nBitsTotally*125/100, Time::Decoder::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
 				// Medium already known and the CAPS Track does NOT contain explicit timing information
 				trw.SetMediumType(cb.floppyType); // adopting the Medium
@@ -1158,7 +1158,7 @@ invalidTrack:
 	#define INI_VERIFY_WRITTEN_TRACKS	_T("vwt")
 	#define INI_VERIFY_BAD_SECTORS		_T("vwtbs")
 
-	typedef CImage::CTrackReader::TDecoderMethod TFluxDecoder;
+	typedef Time::Decoder::TMethod TFluxDecoder;
 
 	CCapsBase::TParams::TParams(LPCTSTR iniSectionName)
 		// ctor
@@ -1331,7 +1331,7 @@ invalidTrack:
 				// . populating combo-box with available DecoderMethods
 				for( BYTE dm=1; dm; dm<<=1 )
 					if (dm&TFluxDecoder::FDD_METHODS)
-						AppendDlgComboBoxValue( ID_ACCURACY, dm, CTrackReader::GetDescription((TFluxDecoder)dm) );
+						AppendDlgComboBoxValue( ID_ACCURACY, dm, Time::Decoder::GetDescription((TFluxDecoder)dm) );
 				// . some settings are changeable only during InitialEditing
 				PopulateComboBoxWithCompatibleMedia(
 					GetDlgItemHwnd(ID_VARIABLE),
@@ -1587,7 +1587,7 @@ invalidTrack:
 
 	void CCapsBase::TParams::EnumSettings(CSettings &rOut,bool isRealDevice) const{
 		// returns a collection of relevant settings for this Image
-		rOut.Add( _T("decoder"), CTrackReader::GetDescription(fluxDecoder) );
+		rOut.Add( _T("decoder"), Time::Decoder::GetDescription(fluxDecoder) );
 		rOut.Add( _T("reset on index"), resetFluxDecoderOnIndex );
 		if (isRealDevice)
 			rOut.AddRevolutionCount( PrecisionToFullRevolutionCount() );

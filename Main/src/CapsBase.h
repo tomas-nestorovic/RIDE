@@ -26,7 +26,7 @@
 			TSectorId id;
 			struct{
 				TLogTime idEndTime;
-				CTrackReader::TProfile idEndProfile;
+				Time::Decoder::TProfile idEndProfile;
 				CTrackReader::TDataParseEvent *peData;
 				TLogTime dataFieldEndTime;
 				TFdcStatus fdcStatus;
@@ -128,7 +128,7 @@
 				ADVANCED=6,	// six full revolutions
 				PRESERVATION=8	// eight full revolutions
 			} mutable precision;
-			CTrackReader::TDecoderMethod fluxDecoder;
+			Time::Decoder::TMethod fluxDecoder;
 			bool resetFluxDecoderOnIndex;
 			bool fortyTrackDrive;
 			enum TCalibrationAfterError{

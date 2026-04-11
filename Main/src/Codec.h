@@ -28,20 +28,6 @@ namespace Codec
 
 
 
-	#pragma pack(1)
-	struct TLimits{
-		TLogTime iwTimeDefault; // inspection window default size
-		TLogTime iwTime; // inspection window size; a "1" is expected in its centre
-		TLogTime iwTimeMin,iwTimeMax; // inspection window possible time range
-
-		TLimits(TLogTime iwTimeDefault,BYTE iwTimeTolerancePercent=0);
-
-		void ClampIwTime();
-		inline TLogTime PeekNextIwTime(TLogTime tIwCurr) const{ return tIwCurr+iwTime; }
-	};
-
-
-
 
 	namespace Impl
 	{
