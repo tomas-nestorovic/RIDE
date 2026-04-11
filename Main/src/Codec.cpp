@@ -71,6 +71,8 @@ namespace Codec
 		{
 			bool g_prevDataBit;
 
+			static_assert( sizeof(Bit::TPattern)*CHAR_BIT>=CodedByteWidth, "" );
+
 			WORD EncodeByte(BYTE byte){
 				WORD result=0;
 				for( WORD mask=0x8000; mask!=0; byte<<=1,mask>>=1 )

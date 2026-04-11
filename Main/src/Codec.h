@@ -47,6 +47,9 @@ namespace Codec
 	{
 		namespace MFM
 		{
+			enum{
+				CodedByteWidth=16
+			};
 			enum:Checksum::W{
 				CRC_A1A1A1=0xcdb4 // CRC of 0xa1, 0xa1, 0xa1
 			};

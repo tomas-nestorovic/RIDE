@@ -1466,7 +1466,7 @@ namespace MFM=Codec::Impl::MFM;
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
-		const CBitSequence bits( *this, nBytesToRead*16 );
+		const CBitSequence bits( *this, nBytesToRead*MFM::CodedByteWidth );
 		WORD nDataBytes=0;
 		for( TLogTime dt=0; nDataBytes<nBytesToRead; )
 			if (const auto &&d=bits.GetWord(nDataBytes)){
@@ -1540,7 +1540,7 @@ namespace MFM=Codec::Impl::MFM;
 				return false; // not the expected Data mark
 		}
 		// - write new Data Field mark to temporary storage
-		CTrackReaderWriter tmp( peData.GetByteCount()*sizeof(WORD)*CHAR_BIT, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
+		CTrackReaderWriter tmp( peData.GetByteCount()*MFM::CodedByteWidth, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
 		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
 		tmp.AddWord( ti, MFM::EncodeByte(dam) );
 		// - write new Bytes to temporary storage
