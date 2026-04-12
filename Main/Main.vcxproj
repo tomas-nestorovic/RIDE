@@ -224,6 +224,7 @@
     <ClInclude Include="src\Revolution.h" />
     <ClInclude Include="src\Sector.h" />
     <ClInclude Include="src\Time.h" />
+    <ClInclude Include="src\Track.h" />
     <ClInclude Include="src\XmlDocs.h" />
     <ClInclude Include="src\IPF.h" />
     <ClInclude Include="src\KryoFluxBase.h" />
@@ -298,6 +299,7 @@
     <ClCompile Include="src\Medium.cpp" />
     <ClCompile Include="src\Sector.cpp" />
     <ClCompile Include="src\Time.cpp" />
+    <ClCompile Include="src\TrackEvent.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Sector_RW.cpp" />
     <ClCompile Include="src\Image_TrackEditor.cpp" />

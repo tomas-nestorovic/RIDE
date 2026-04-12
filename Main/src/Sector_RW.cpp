@@ -77,7 +77,7 @@ namespace Sector
 			}else{
 				if (revolution>=Revolution::MAX)
 					revolution=Revolution::ANY_GOOD;
-				TFdcStatus sr; CImage::PByteInfo pbi; // in/out
+				TFdcStatus sr; PByteInfo pbi; // in/out
 				const PCSectorData sectorData=image->GetSectorData( chs, sector.indexOnTrack, revolution, &w, &sr, nullptr, &pbi );
 				if (!sectorData || !w){ // A|B, B = DAM not found, B = e.g. reading Sector with LengthCode 231 (has by default no data, a pointer to zero-length data has been returned by GetSectorData)
 					// no data for this Sector

@@ -9,6 +9,7 @@ namespace Time
 	typedef Utils::CSharedPodArray<T,N> CSharedArray;
 
 	enum{
+		Invalid=INT_MIN,
 		Infinity=LogValueMax
 	};
 

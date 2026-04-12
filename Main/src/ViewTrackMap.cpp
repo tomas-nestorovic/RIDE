@@ -250,7 +250,7 @@
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
-				CImage::PByteInfo byteInfos[(TSector)-1];
+				PByteInfo byteInfos[(TSector)-1];
 				TFdcStatus statuses[(TSector)-1];
 				TLogTime tDataStarts[(TSector)-1];
 				image->GetTrackData( cyl, head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, byteInfos, tmp.bufferLength, statuses, tDataStarts );

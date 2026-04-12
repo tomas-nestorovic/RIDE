@@ -79,7 +79,7 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	constexpr TLogTime TimelyFromPrevious=INT_MIN;
+	constexpr TLogTime TimelyFromPrevious=Track::Event::TimelyFromPrevious;
 
 	void CImage::CTrackReader::SetCurrentTime(TLogTime logTime){
 		// seeks to the specified LogicalTime
@@ -220,7 +220,7 @@ namespace MFM=Codec::Impl::MFM;
 						if (pe.IsDataStd()) // ... only within a Sector data
 							if (pe.Contains(t0) || pe.Contains(t)){
 								rOutParseEvents.Add(
-									TParseEvent( TParseEvent::NONFORMATTED, t0, t, 0 )
+									TParseEvent( Track::Event::NONFORMATTED, t0, t, 0 )
 								);
 								break;
 							}
@@ -326,7 +326,7 @@ namespace MFM=Codec::Impl::MFM;
 							}
 							nBytesInspected++;
 						}
-						peData.Finalize( currentTime, profile, nBytesInspected, TParseEvent::DATA_IN_GAP );
+						peData.Finalize( currentTime, profile, nBytesInspected, Track::Event::DATA_IN_GAP );
 						rOutParseEvents.Add( peData );
 					}
 				}
@@ -384,7 +384,7 @@ namespace MFM=Codec::Impl::MFM;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
 					const TLogTime tPrevBit= bit==rev.begin()&&pLogTimesInfo->resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
-					TParseEvent peFuzzy( TParseEvent::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
+					TParseEvent peFuzzy( Track::Event::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
@@ -428,7 +428,7 @@ namespace MFM=Codec::Impl::MFM;
 		return ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, idProfiles, statuses, pOutDataEnds, rOutParseEvents, ap, fullAnalysis );
 	}
 	
-	CImage::CTrackReader::CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis){
+	CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
@@ -686,242 +686,6 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	const COLORREF CImage::CTrackReader::TParseEvent::TypeColors[LAST]={
-		0,			// None
-		0xa398c2,	// sync 3 Bytes
-		0x82c5e7,	// mark 1 Byte
-		0xccd4f2,	// preamble
-		0xc4886c,	// data ok (variable length)
-		0x8057c0,	// data bad (variable length)
-		0x00becc,	// data in gap (variable length)
-		0x91d04d,	// CRC ok
-		0x6857ff,	// CRC bad
-		0xabbaba,	// non-formatted area
-		0xabbaba,	// ok fuzzy area
-		0xabbaba,	// bad fuzzy area
-		0xa79b8a	// custom (variable string)
-	};
-
-	CImage::CTrackReader::TParseEvent::TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data)
-		// ctor
-		: TLogTimeInterval( tStart, tEnd )
-		, type(type) , size(sizeof(TParseEvent)) {
-		dw=data;
-	}
-
-	CString CImage::CTrackReader::TParseEvent::GetDescription(bool preferDecimalValues) const{
-		CString desc;
-		switch (type){
-			case TParseEvent::SYNC_3BYTES:
-				desc.Format( _T("0x%06X sync"), dw);
-				break;
-			case TParseEvent::MARK_1BYTE:
-				desc.Format( _T("0x%02X mark"), dw );
-				break;
-			case TParseEvent::PREAMBLE:
-				desc.Format( _T("Preamble (%d Bytes)"), dw );
-				break;
-			case TParseEvent::DATA_OK:
-			case TParseEvent::DATA_BAD:{
-				desc.Format( _T("Data %s (%d Bytes)"), type==DATA_OK?_T("ok"):_T("bad"), dw );
-				const TDataParseEvent &dpe=*(PCDataParseEvent)this;
-				if (dpe.sectorId!=TSectorId::Invalid)
-					desc+=_T(" for ")+dpe.sectorId.ToString();
-				break;
-			}
-			case TParseEvent::DATA_IN_GAP:
-				desc.Format( _T("Gap data (circa %d Bytes)"), dw);
-				break;
-			case TParseEvent::CRC_OK:
-			case TParseEvent::CRC_BAD:{
-				TCHAR format[]=_T("0x%_ %s CRC");
-				format[3]= preferDecimalValues ? 'd' : 'X';
-				desc.Format( format+2*preferDecimalValues, dw, type==CRC_OK?_T("ok"):_T("bad") );
-				break;
-			}
-			case TParseEvent::NONFORMATTED:
-				desc.Format( _T("Nonformatted %d.%d µs"), div((int)GetLength(),1000) );
-				break;
-			case TParseEvent::FUZZY_OK:
-			case TParseEvent::FUZZY_BAD:
-				desc.Format( _T("Fuzzy %d.%d µs"), div((int)GetLength(),1000) );
-				break;
-			default:
-				return lpszMetaString;
-		}
-		return desc;
-	}
-
-	void CImage::CTrackReader::TMetaStringParseEvent::Create(TParseEvent &buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString){
-		ASSERT( lpszMetaString!=nullptr );
-		buffer=TParseEvent( TType::META_STRING, tStart, tEnd, 0 );
-		buffer.size =	sizeof(TMetaStringParseEvent)
-						+
-						::lstrlenA(  ::lstrcpyA( buffer.lpszMetaString, lpszMetaString )  ) // caller responsible for allocating enough buffer
-						+
-						1 // "+1" = including terminal Null character
-						-
-						sizeof(buffer.lpszMetaString); // already counted into Size
-	}
-
-	CImage::CTrackReader::TDataParseEvent::TDataParseEvent(const TSectorId &sectorId,TLogTime tStart)
-		: TParseEvent( NONE, tStart, 0, ARRAYSIZE(dummy) )
-		, sectorId(sectorId) {
-	}
-
-	void CImage::CTrackReader::TDataParseEvent::Finalize(TLogTime tEnd,const TProfile &profileEnd,WORD nBytes,TType type){
-		ASSERT( nBytes>0 );
-		::memcpy( bytes+nBytes, GetByteInfos(), nBytes*sizeof(TByteInfo) );
-		static_cast<TParseEvent &>(*this)=TParseEvent( type, tStart, tEnd, nBytes );
-		GetByteInfos()[nBytes].dtStart=tEnd-tStart; // auxiliary ByteInfo to store the end of the last Byte
-		size=(PCBYTE)(dummy+nBytes+1) - (PCBYTE)this;
-		this->profileEnd=profileEnd;
-	}
-
-
-
-
-	CImage::CTrackReader::CParseEventList::CParseEventList(){
-		// shallow-copy ctor
-		::ZeroMemory( peTypeCounts, sizeof(peTypeCounts) );
-	}
-
-	CImage::CTrackReader::CParseEventList::CParseEventList(CParseEventList &&r)
-		// move-ctor
-		: Utils::CPodList<TParseEvent>( std::move(r) )
-		, logStarts( std::move(r.logStarts) )
-		, logEnds( std::move(r.logEnds) ) {
-		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );
-		::ZeroMemory( r.peTypeCounts, sizeof(r.peTypeCounts) );
-		r.RemoveAll();
-	}
-
-	void CImage::CTrackReader::CParseEventList::Add(const CSharedParseEventPtr &ptr){
-		// - creating a copy of the ParseEvent
-		TParseEvent &pe=*ptr;
-		ASSERT( pe.tStart<pe.tEnd );
-		POSITION pos=static_cast<CStringList *>(this)->AddTail(ptr);
-		if (pe.tStart==TimelyFromPrevious){
-			GetPrev(pos);
-			pe.tStart=GetAt(pos).tEnd; // the tail assumed to be the ParseEvent added previously
-		}
-		// - registering the ParseEvent for quick searching by Start/End time
-		logStarts.insert( std::make_pair(pe.tStart,&pe) );
-		logEnds.insert( std::make_pair(pe.tEnd,&pe) );
-		// - increasing counter
-		peTypeCounts[pe.type]++;
-	}
-
-	void CImage::CTrackReader::CParseEventList::Add(const TParseEvent &pe){
-		// adds copy of the specified ParseEvent into this List
-		Add( CSharedParseEventPtr(pe,pe.size) );
-	}
-
-	void CImage::CTrackReader::CParseEventList::Add(const CParseEventList &list){
-		// adds all ParseEvents to this -List
-		for each( const auto &pair in list.logStarts )
-			Add( *pair.second );
-	}
-
-	CImage::CTrackReader::CParseEventList::CIterator::CIterator(const CLogTiming &logTimes,const CLogTiming::const_iterator &it)
-		// ctor
-		: CLogTiming::const_iterator(it)
-		, logTimes(logTimes) {
-	}
-
-	typedef CImage::CTrackReader::CParseEventList::CIterator CParseEventListIterator;
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::GetIterator() const{
-		return CParseEventListIterator( logStarts, logStarts.cbegin() );
-	}
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::GetLastByStart() const{
-		CParseEventListIterator it( logStarts, logStarts.cend() );
-		if (GetCount()>0)
-			it--;
-		return it;
-	}
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::TBinarySearch::Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{
-		for( auto it=lower_bound(tMin); it!=cend(); it++ ){
-			const TParseEvent &pe=*it->second;
-			if (pe.IsType(typeFrom,typeTo))
-				return CParseEventListIterator( *this, it );
-		}
-		return CParseEventListIterator( *this, cend() );
-	}
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByStart(TLogTime tStartMin,TParseEvent::TType type) const{
-		return	FindByStart( tStartMin, type, type );
-	}
-
-	CParseEventListIterator CImage::CTrackReader::CParseEventList::FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const{
-		return	FindByEnd( tEndMin, type, type );
-	}
-
-	bool CImage::CTrackReader::CParseEventList::IntersectsWith(const TLogTimeInterval &ti) const{
-		static_assert( std::is_same<decltype(ti.tStart),int>::value, "type must be integral" ); // ...
-		if (const auto it=FindByEnd( ti.tStart+1 )) // ... otherwise use 'upper_bound' here
-			return it->second->Intersect(ti);
-		return false;
-	}
-
-	void CImage::CTrackReader::CParseEventList::RemoveConsecutiveBeforeEnd(TLogTime tEndMax){
-		// removes all ParseEvents that touch or overlap just before the End time
-		auto it=FindByEnd(tEndMax);
-		while (it && it->second->tEnd>tEndMax) // 'while' for Event having the same EndTime
-			it--;
-		if (!it)
-			return;
-		TLogTime tStart = tEndMax = it->second->tEnd;
-		while (it){
-			const auto &pe=*(it--)->second;
-			if (tStart<=pe.tEnd){ // touching or overlapping?
-				tStart=pe.tStart;
-				peTypeCounts[pe.type]--; // adjust the -Counter
-			}else
-				break;
-		}
-		logStarts.erase(
-			FindByStart(tStart),
-			FindByStart(tEndMax)
-		);
-		logEnds.erase(
-			logEnds.upper_bound(tStart),
-			logEnds.upper_bound(tEndMax)
-		);
-	}
-
-	CImage::CTrackReader::TParseEvent::TType CImage::CTrackReader::CParseEventList::GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd) const{
-		// observing the existing ParseEvents, determines and returns the type of fuzziness in the specified Interval
-		while (itContinue){
-			const TParseEvent &pe=*itContinue->second;
-			if (tiFuzzy.tEnd<=pe.tStart)
-				break;
-			if (pe.IsDataStd() || pe.IsCrc())
-				if (pe.Intersect(tiFuzzy))
-					if ((pe.type==TParseEvent::DATA_BAD||pe.type==TParseEvent::CRC_BAD) // the fuzziness is in Bad Sector data ...
-						&&
-						pe.tEnd<tTrackEnd // ... and the data is complete (aka, it's NOT data over Index)
-					)
-						return TParseEvent::FUZZY_BAD;
-			itContinue++;
-		}
-		return TParseEvent::FUZZY_OK; // the fuzzy Interval occurs NOT in a Bad Sector
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
 	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
@@ -978,7 +742,7 @@ namespace MFM=Codec::Impl::MFM;
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+				pOutParseEvents->Add( TParseEvent( Track::Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
 			if (!ReadBits16(w)) // Track end encountered
@@ -989,7 +753,7 @@ namespace MFM=Codec::Impl::MFM;
 			if ((data.idam&0xfe)!=0xfe) // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 				continue;			
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, data.idam ) );
+				pOutParseEvents->Add( TParseEvent( Track::Event::MARK_1BYTE, TimelyFromPrevious, currentTime, data.idam ) );
 			// . reading SectorId
 			TSectorId &rid=*pOutFoundSectors++;
 			if (!ReadBits16(w)) // Track end encountered
@@ -1009,7 +773,7 @@ namespace MFM=Codec::Impl::MFM;
 					TParseEvent base;
 					BYTE etc[80];
 				} peId;
-				TMetaStringParseEvent::Create( peId.base, TimelyFromPrevious, currentTime, rid.ToString() );
+				Track::Event::TMetaString::Create( peId.base, TimelyFromPrevious, currentTime, rid.ToString() );
 				pOutParseEvents->Add( peId.base );
 			}
 			// . reading and comparing ID Field's CRC
@@ -1022,7 +786,7 @@ namespace MFM=Codec::Impl::MFM;
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( crcBad?TParseEvent::CRC_BAD:TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( crcBad?Track::Event::CRC_BAD:Track::Event::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
 			// . sector found
 			nSectors++;
 		}
@@ -1046,7 +810,7 @@ namespace MFM=Codec::Impl::MFM;
 		if (!*this) // Track end encountered
 			return TFdcStatus::NoDataField;
 		if (pOutParseEvents)
-			pOutParseEvents->Add( TParseEvent( TParseEvent::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+			pOutParseEvents->Add( TParseEvent( Track::Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 		// - a Data Field mark should follow the synchronization
 		if (!ReadBits16(w)) // Track end encountered
 			return TFdcStatus::NoDataField;
@@ -1063,7 +827,7 @@ namespace MFM=Codec::Impl::MFM;
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->Add( TParseEvent( TParseEvent::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
+			pOutParseEvents->Add( TParseEvent( Track::Event::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
@@ -1101,11 +865,11 @@ namespace MFM=Codec::Impl::MFM;
 		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
+				pOutParseEvents->Add( TParseEvent( Track::Event::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
 		}else{
-			peDataPtr->type=TParseEvent::DATA_OK;
+			peDataPtr->type=Track::Event::DATA_OK;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( TParseEvent::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
+				pOutParseEvents->Add( TParseEvent( Track::Event::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
 		}
 		return result;
 	}

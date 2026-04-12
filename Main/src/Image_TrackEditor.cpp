@@ -14,9 +14,6 @@ using namespace Charting;
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 	#define EVENT_HEIGHT	30
 
-	typedef CImage::CTrackReader::TParseEvent TParseEvent,*PParseEvent;
-	typedef const TParseEvent *PCParseEvent;
-
 	typedef CImage::CTrackReader::TRegion TRegion,*PRegion;
 	typedef CImage::CTrackReader::PCRegion PCRegion;
 
@@ -54,7 +51,6 @@ using namespace Charting;
 		};
 
 		typedef CImage::CTrackReader::CBitSequence CBitSequence;
-		typedef CImage::CTrackReader::CParseEventList CParseEventList;
 
 		typedef CBitSequence::TBit TInspectionWindow;
 			// "uid" = Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
@@ -89,20 +85,20 @@ using namespace Charting;
 						{ std::move(Utils::CRideBrush((COLORREF)0xE4E4B3)), std::move(Utils::CRideBrush((COLORREF)0xECECCE)) },	//  "OK" even and odd InspectionWindows
 						{ std::move(Utils::CRideBrush((COLORREF)0x7E7EEA)), std::move(Utils::CRideBrush((COLORREF)0xB6B6EA)) }	// "BAD" even and odd InspectionWindows
 					};
-					const Utils::CRideBrush parseEventBrushes[TParseEvent::LAST]={
-						TParseEvent::TypeColors[0],
-						TParseEvent::TypeColors[1],
-						TParseEvent::TypeColors[2],
-						TParseEvent::TypeColors[3],
-						TParseEvent::TypeColors[4],
-						TParseEvent::TypeColors[5],
-						TParseEvent::TypeColors[6],
-						TParseEvent::TypeColors[7],
-						TParseEvent::TypeColors[8],
-						TParseEvent::TypeColors[9],
-						TParseEvent::TypeColors[10],
-						TParseEvent::TypeColors[11],
-						TParseEvent::TypeColors[12]
+					const Utils::CRideBrush parseEventBrushes[Track::Event::LAST]={
+						Track::Event::TypeColors[0],
+						Track::Event::TypeColors[1],
+						Track::Event::TypeColors[2],
+						Track::Event::TypeColors[3],
+						Track::Event::TypeColors[4],
+						Track::Event::TypeColors[5],
+						Track::Event::TypeColors[6],
+						Track::Event::TypeColors[7],
+						Track::Event::TypeColors[8],
+						Track::Event::TypeColors[9],
+						Track::Event::TypeColors[10],
+						Track::Event::TypeColors[11],
+						Track::Event::TypeColors[12]
 					};
 					const TLogTime iwTimeDefaultHalf=te.tr.GetCurrentProfile().iwTimeDefault/2;
 					for( CImage::CTrackReader tr=te.tr; true; ){
@@ -157,7 +153,7 @@ using namespace Charting;
 									if (const auto ti=pe.Intersect(visible)){ // ParseEvent visible?
 										const int xa=te.timeline.GetClientUnits(ti.tStart), xz=te.timeline.GetClientUnits(ti.tEnd);
 										RECT rcLabel={ te.timeline.GetClientUnits(pe.tStart+iwTimeDefaultHalf), -1000, xz, -EVENT_HEIGHT-3 };
-										const COLORREF textColor=TParseEvent::TypeColors[pe.type];
+										const COLORREF textColor=Track::Event::TypeColors[pe.type];
 								{		EXCLUSIVELY_LOCK(p.params);
 											if ( continuePainting=p.params.id==id ){
 												::SelectObject( dc, parseEventBrushes[pe.type] );
@@ -168,7 +164,7 @@ using namespace Charting;
 								}		if (!continuePainting) // new paint request?
 											break;
 										if (showByteInfo && pe.IsDataAny()){
-											const auto &peData=(const CImage::CTrackReader::TDataParseEvent &)pe;
+											const auto &peData=(const TDataParseEvent &)pe;
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
 											const auto *const pis=peData.GetByteInfos();
 											WORD i=0;
@@ -823,7 +819,7 @@ using namespace Charting;
 			const auto peList=std::move(tr.ScanAndAnalyze(*pAction));
 			for each( const auto &pair in peList ){
 				ASSERT(pair.second->GetLength()>0);
-				const_cast<PParseEvent>(pair.second)->Offset(tIwOffset);
+				const_cast<TParseEvent *>(pair.second)->Offset(tIwOffset);
 			}
 			rte.timeEditor.SetParseEvents(peList);
 			return pAction->TerminateWithSuccess();
@@ -847,7 +843,7 @@ using namespace Charting;
 				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;
 				do{
-					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, CImage::CTrackReader::TParseEvent::FUZZY_OK, CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, Track::Event::FUZZY_OK, Track::Event::FUZZY_BAD );
 					const TLogTimeInterval tiFuzzy= it ? it->second->Add(-iwTimeTolerance) : TLogTimeInterval::Invalid;
 					const auto uid0=uid;
 					while (iw<iwRevEnd && iw->time<tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
@@ -932,13 +928,13 @@ using namespace Charting;
 								pCmdUi->Enable( FALSE );
 							return TRUE;
 						case ID_PREV_PANE:
-							if (const auto it=timeEditor.GetParseEvents().FindByStart(0,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD))
+							if (const auto it=timeEditor.GetParseEvents().FindByStart(0,Track::Event::FUZZY_OK,Track::Event::FUZZY_BAD))
 								pCmdUi->Enable( it->second->tStart<timeEditor.GetCenterTime() );
 							else
 								pCmdUi->Enable( FALSE );
 							return TRUE;						
 						case ID_NEXT_PANE:
-							pCmdUi->Enable( timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime()+1,TParseEvent::FUZZY_OK,TParseEvent::FUZZY_BAD) );
+							pCmdUi->Enable( timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime()+1,Track::Event::FUZZY_OK,Track::Event::FUZZY_BAD) );
 							return TRUE;
 						case ID_RECORD_PREV:
 							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
@@ -1215,7 +1211,7 @@ using namespace Charting;
 						}
 						case ID_NEXT_PANE:
 							timeEditor.SetCenterTime(
-								timeEditor.GetParseEvents().FindByStart( timeEditor.GetCenterTime()+1, TParseEvent::FUZZY_OK, TParseEvent::FUZZY_BAD )->second->tStart
+								timeEditor.GetParseEvents().FindByStart( timeEditor.GetCenterTime()+1, Track::Event::FUZZY_OK, Track::Event::FUZZY_BAD )->second->tStart
 							);
 							return TRUE;
 						case ID_RECORD_PREV:{
@@ -1356,16 +1352,16 @@ using namespace Charting;
 							const auto &peList=timeEditor.GetParseEvents();
 								class CXyParseEventSeries:public CChartView::CXyGraphics{
 									const Utils::CRideFont font;
-									CBrush peBrushes[TParseEvent::LAST];
+									CBrush peBrushes[Track::Event::LAST];
 								public:
 									const CParseEventList &peList;
 
 									CXyParseEventSeries(const CParseEventList &peList)
 										// ctor
 										: peList(peList) , font(Utils::CRideFont::Std.CreateRotated(90)) {
-										for( BYTE i=0; i<TParseEvent::LAST; i++ )
+										for( BYTE i=0; i<Track::Event::LAST; i++ )
 											peBrushes[i].CreateSolidBrush(
-												Utils::GetBlendedColor( TParseEvent::TypeColors[i], COLOR_WHITE, 0.075f )
+												Utils::GetBlendedColor( Track::Event::TypeColors[i], COLOR_WHITE, 0.075f )
 											);
 										visible=peList.GetCount()>0;
 									}
@@ -1386,7 +1382,7 @@ using namespace Charting;
 													CRect rc( di.GetClientUnits(pe.tStart,0).x, 0, di.GetClientUnits(pe.tEnd,0).x, di.GetClientUnits(0,1).y );
 													::SelectObject( dc, peBrushes[pe.type] );
 													::PatBlt( dc, rc.left,rc.top, rc.Width(),rc.Height(), 0xa000c9 ); // ternary raster operation "dest AND pattern"
-													::SetTextColor( dc, Utils::GetBlendedColor(TParseEvent::TypeColors[pe.type],COLOR_WHITE,0.5f) );
+													::SetTextColor( dc, Utils::GetBlendedColor(Track::Event::TypeColors[pe.type],COLOR_WHITE,0.5f) );
 													::DrawText( dc, pe.GetDescription(),-1, &rc, DT_LEFT|DT_BOTTOM|DT_SINGLELINE );
 												}
 											::SelectObject( dc, hBrush0 );

@@ -160,6 +160,7 @@ namespace Bit
 #include "ViewTrackMap.h"
 #include "Codec.h"
 #include "Medium.h"
+#include "Track.h"
 #include "Image.h"
 #include "DialogFormatting.h"
 #include "DialogVerification.h"

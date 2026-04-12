@@ -1011,7 +1011,7 @@ invalidTrack:
 		//if (!badRegions) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
 			//return ERROR_NOT_ENOUGH_MEMORY;
 		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );
-		CTrackReader::CParseEventList peTrack;
+		CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
 		const auto nSectors=trwWritten.ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
 		if (!params.verifyBadSectors) // remove Events that relate to Bad Sectors

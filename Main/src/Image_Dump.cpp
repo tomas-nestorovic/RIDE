@@ -307,9 +307,9 @@
 				// . if possible, analyzing the read Source Track
 				if (trSrc && dp.fullTrackAnalysis){
 					const auto peTrack=trSrc.ScanAndAnalyze( pAction->CreateSubactionProgress(0) );
-					warnings.hasNonformattedArea=peTrack.Contains( CImage::CTrackReader::TParseEvent::NONFORMATTED );
-					warnings.hasDataInGaps=peTrack.Contains( CImage::CTrackReader::TParseEvent::DATA_IN_GAP );
-					warnings.hasFuzzyData=peTrack.Contains( CImage::CTrackReader::TParseEvent::FUZZY_BAD );
+					warnings.hasNonformattedArea=peTrack.Contains( Track::Event::NONFORMATTED );
+					warnings.hasDataInGaps=peTrack.Contains( Track::Event::DATA_IN_GAP );
+					warnings.hasFuzzyData=peTrack.Contains( Track::Event::FUZZY_BAD );
 					for each( const auto &pair in peTrack ){
 						const auto &pe=*pair.second;
 						if (pe.IsDataStd()){
@@ -352,7 +352,7 @@
 				for( TSector i=nSectors; i>0; bufferFdcStatus[--i]=p.acceptance.automaticallyAcceptedErrors );
 				PVOID dummyBuffer[(TSector)-1];
 {LOG_TRACK_ACTION(p.chs.cylinder,p.chs.head,_T("reading source"));
-				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, (CImage::PByteInfo *)dummyBuffer, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // reading healthy Sectors (unhealthy ones read individually below); "DummyBuffer" = throw away any outputs
+				dp.source->GetTrackData( p.chs.cylinder, p.chs.head, Revolution::ANY_GOOD, bufferId, sectorIdAndPositionIdentity, nSectors, bufferSectorData, (PByteInfo *)dummyBuffer, bufferLength, bufferFdcStatus, (PLogTime)dummyBuffer ); // reading healthy Sectors (unhealthy ones read individually below); "DummyBuffer" = throw away any outputs
 				for( TSector sPrev=~(p.s=p.nSectorsExcluded=0),sIncr=1; p.s<nSectors; ){
 					if (pAction->Cancelled)
 						return ERROR_CANCELLED;

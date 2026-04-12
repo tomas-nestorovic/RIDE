@@ -22,6 +22,7 @@ namespace Sector
 
 		bool operator==(const TId &id2) const;
 		inline bool operator!=(const TId &id2) const{ return !operator==(id2); }
+		inline operator bool() const{ return !operator==(Invalid); }
 		TId &operator=(const FD_ID_HEADER &rih);
 		TId &operator=(const FD_TIMED_ID_HEADER &rtih);
 

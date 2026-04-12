@@ -27,7 +27,7 @@
 			struct{
 				TLogTime idEndTime;
 				Time::Decoder::TProfile idEndProfile;
-				CTrackReader::TDataParseEvent *peData;
+				TDataParseEvent *peData;
 				TLogTime dataFieldEndTime;
 				TFdcStatus fdcStatus;
 

@@ -525,8 +525,8 @@
 			TLogTime tDataStart;
 			if (GetSectorData( chs, nSectorsToSkip, rev, nullptr, nullptr, &tDataStart )!=nullptr){
 				const auto peList=tr.ScanAndAnalyze( CActionProgress::None, false );
-				const auto &peData=*static_cast<const CTrackReader::TDataParseEvent *>(peList.FindByStart(
-					tDataStart, CTrackReader::TParseEvent::DATA_OK, CTrackReader::TParseEvent::DATA_BAD
+				const auto &peData=*static_cast<const TDataParseEvent *>(peList.FindByStart(
+					tDataStart, Track::Event::DATA_OK, Track::Event::DATA_BAD
 				)->second);
 				return tr.ShowModal(
 					nullptr, 0, MB_OK, true, peData.GetByteTime(positionInSector),

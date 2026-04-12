@@ -284,129 +284,6 @@
 		};
 
 		class CTrackReader:public CTrackReaderState{
-		public:
-			typedef const struct TParseEvent:public TLogTimeInterval{
-				enum TType:BYTE{
-					NONE,			// invalid ParseEvent
-					SYNC_3BYTES,	// dw
-					MARK_1BYTE,		// b
-					PREAMBLE,		// dw (length)
-					DATA_OK,		// dw (length)
-					DATA_BAD,		// dw (length)
-					DATA_IN_GAP,	// dw (length)
-					CRC_OK,			// dw
-					CRC_BAD,		// dw
-					NONFORMATTED,	// - (no params)
-					FUZZY_OK,		// - (no params); at least one Revolution yields OK data
-					FUZZY_BAD,		// - (no params); all Revolutions yield only bad data
-					META_STRING,	// lpsz; textual description of a ParseEvent not covered above
-					LAST
-				} type;
-				DWORD size; // length of this ParseEvent in Bytes
-				union{
-					BYTE b;
-					WORD w;
-					DWORD dw;
-					int i;
-					char lpszMetaString[sizeof(DWORD)]; // textual description of a ParseEvent event
-				};
-
-				static const COLORREF TypeColors[LAST];
-
-				inline TParseEvent(){}
-				TParseEvent(TType type,TLogTime tStart,TLogTime tEnd,DWORD data);
-
-				inline bool IsType(TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const{ return typeFrom<=type && type<=typeTo; }
-				inline bool IsDataStd() const{ return IsType( DATA_OK, DATA_BAD ); }
-				inline bool IsDataAny() const{ return IsType( DATA_OK, DATA_IN_GAP ); }
-				inline bool IsCrc() const{ return IsType( CRC_OK, CRC_BAD ); }
-				inline bool IsFuzzy() const{ return IsType( FUZZY_OK, FUZZY_BAD ); }
-				CString GetDescription(bool preferDecimalValues=false) const;
-			} *PCParseEvent;
-
-			typedef const struct TMetaStringParseEvent:public TParseEvent{
-				static void Create(TParseEvent &buffer,TLogTime tStart,TLogTime tEnd,LPCSTR lpszMetaString);
-			} *PCMetaStringParseEvent;
-
-			typedef const struct TDataParseEvent:public TParseEvent{
-				typedef struct TByteInfo:public Bit::TFlags{
-					struct{
-						BYTE value;
-						union{
-							WORD w;
-							Bit::TPattern bits;
-							inline operator Bit::TPattern() const{ return bits; }
-							inline Bit::TPattern operator=(Bit::TPattern p){ return bits=p; }
-						} encoded;
-					} org;
-					TLogTime dtStart; // offset against ParseEvent's start
-				} *PByteInfo;
-
-				TProfile profileEnd; // Profile at the end of this ParseEvent (aka. at the end of the last Byte)
-				TSectorId sectorId; // or TSectorId::Invalid
-				union{
-					struct:TByteInfo{ BYTE v; } dummy[SHRT_MAX]; // to give the structure initial maximum size
-					BYTE bytes[1];
-				};
-
-				TDataParseEvent(const TSectorId &sectorId,TLogTime tStart);
-
-				void Finalize(TLogTime tEnd,const TProfile &profileEnd,WORD nBytes,TType type=DATA_BAD);
-				inline TLogTime GetByteTime(WORD iByte) const{ return tStart+GetByteInfos()[iByte].dtStart; }
-				inline WORD GetByteCount() const{ return w; }
-				inline PByteInfo GetByteInfos() const{ return (PByteInfo)(bytes+GetByteCount()); }
-			} *PCDataParseEvent;
-
-			typedef Utils::CSharedPodPtr<TParseEvent> CSharedParseEventPtr;
-
-			class CParseEventList:private Utils::CPodList<TParseEvent>{
-				DWORD peTypeCounts[TParseEvent::LAST];
-
-				CParseEventList(const CParseEventList &r); //delete
-			public:
-				typedef std::multimap<TLogTime,PCParseEvent> CLogTiming; // multimap to allow ParseEvents starting concurrently at the same time
-
-				typedef class CIterator:public CLogTiming::const_iterator{
-					friend class CParseEventList;
-					const CLogTiming &logTimes;
-				public:
-					CIterator(const CLogTiming &logTimes,const CLogTiming::const_iterator &it);
-
-					inline operator const TParseEvent &() const{ return *(*this)->second; }
-					inline operator bool() const{ return *this!=logTimes.cend(); }
-					inline CIterator &operator=(const CLogTiming::const_iterator &r){ return __super::operator=(r),*this; }
-				} CIteratorByStart, CIteratorByEnd;
-			private:
-				struct TBinarySearch sealed:public CLogTiming{
-					inline TBinarySearch(){}
-					inline TBinarySearch(TBinarySearch &&r)
-						: CLogTiming( std::move(static_cast<CLogTiming &>(r)) ) {
-					}
-					CIterator Find(TLogTime tMin,TParseEvent::TType typeFrom,TParseEvent::TType typeTo) const;
-				} logStarts, logEnds; // values may not correspond to real ParseEvent timing (hence the prefix "logical") - but the value is always AT LEAST the real Start/End
-			public:
-				CParseEventList();
-				CParseEventList(CParseEventList &&r); // move-ctor
-
-				void Add(const CSharedParseEventPtr &ptr);
-				void Add(const TParseEvent &pe);
-				void Add(const CParseEventList &list);
-				CIterator GetIterator() const;
-				inline DWORD GetCount() const{ return logStarts.size(); }
-				inline CIteratorByStart GetFirstByStart() const{ return GetIterator(); }
-				CIteratorByStart GetLastByStart() const;
-				inline CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const{ return logStarts.Find( tStartMin, typeFrom, typeTo ); }
-				CIteratorByStart FindByStart(TLogTime tStartMin,TParseEvent::TType type) const;
-				inline CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType typeFrom=TParseEvent::NONE,TParseEvent::TType typeTo=TParseEvent::LAST) const{ return logEnds.Find( tEndMin, typeFrom, typeTo ); }
-				CIteratorByEnd FindByEnd(TLogTime tEndMin,TParseEvent::TType type) const;
-				inline bool Contains(TParseEvent::TType type) const{ return peTypeCounts[type]>0; }
-				bool IntersectsWith(const TLogTimeInterval &ti) const;
-				void RemoveConsecutiveBeforeEnd(TLogTime tEndMax);
-				TParseEvent::TType GetTypeOfFuzziness(CIterator &itContinue,const TLogTimeInterval &tiFuzzy,TLogTime tTrackEnd) const;
-				// 'for each' support
-				inline CLogTiming::const_iterator begin() const{ return logStarts.cbegin(); }
-				inline CLogTiming::const_iterator end() const{ return logStarts.cend(); }
-			};
 		protected:
 			CTrackReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
 
@@ -537,8 +414,6 @@
 			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
-
-		typedef CTrackReader::TDataParseEvent::TByteInfo *PByteInfo;
 
 		class CTrackReaderWriter:public CTrackReader{
 			bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes);
