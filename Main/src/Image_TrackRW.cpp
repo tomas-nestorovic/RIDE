@@ -597,9 +597,12 @@ namespace MFM=Codec::Impl::MFM;
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
 					rDiff.color=0x5555ff; // another tinted red
-					int iDeletionEnd=std::min( si.iPosA+si.del.nItemsA+1, nBits ); // "+1" = see above Insertion (only for cosmetical reasons)
-					rDiff.tEnd=pBits[iDeletionEnd].time;
-					pBits[--iDeletionEnd].cosmeticFuzzy=true; // see above Insertion
+					int iDeletionEnd=si.iPosA+si.del.nItemsA;
+					if (iDeletionEnd+1<nBits){ // "+1" = see above Insertion (only for cosmetical reasons)
+						rDiff.tEnd=pBits[iDeletionEnd+1].time;
+						pBits[iDeletionEnd].cosmeticFuzzy=true;
+					}else
+						rDiff.tEnd=pBits[iDeletionEnd].time;
 					while (iDeletionEnd>si.iPosA)
 						pBits[--iDeletionEnd].fuzzy=true;
 					break;
