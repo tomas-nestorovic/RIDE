@@ -201,7 +201,7 @@ using namespace Yahel;
 				if (bufferLength)
 					*bufferLength++=sectorLength;
 				if (startTimesNanoseconds)
-					*startTimesNanoseconds++=INT_MIN; // timing is not applicable for this kind of Image
+					*startTimesNanoseconds++=Time::Invalid; // timing is not applicable for this kind of Image
 			}
 			if (pCodec)
 				*pCodec=Codec::ANY;

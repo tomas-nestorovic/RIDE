@@ -292,7 +292,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					EstimateTrackTiming( cyl, head, ti->nSectors, bufferId-ti->nSectors, bufferLength-ti->nSectors, ti->gap3, startTimesNanoseconds );
 				else
 					// timing is not applicable for this kind of Image
-					for( TSector s=ti->nSectors; s>0; startTimesNanoseconds[--s]=INT_MIN );
+					for( TSector s=ti->nSectors; s>0; startTimesNanoseconds[--s]=Time::Invalid );
 			if (pCodec)
 				*pCodec=Codec::ANY;
 			if (pAvgGap3)

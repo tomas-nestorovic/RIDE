@@ -450,7 +450,7 @@ using namespace Charting;
 						// . letting the Painter finish normally
 						painter.params.locker.Lock();
 							painter.params.id++;
-							painter.params.visible.tStart = painter.params.visible.tEnd = INT_MIN;
+							painter.params.visible.tStart = painter.params.visible.tEnd = Time::Invalid;
 						painter.params.locker.Unlock();
 						painter.repaintEvent.SetEvent();
 						::WaitForSingleObject( painter.action, INFINITE );

@@ -33,7 +33,7 @@ namespace Sector
 	struct TPhysicalAddress{
 		static const TPhysicalAddress Invalid;
 
-		inline static TTrack GetTrackNumber(TCylinder cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
+		inline static Track::N GetTrackNumber(TCylinder cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
 
 		TCylinder cylinder;
 		THead head;
@@ -42,8 +42,8 @@ namespace Sector
 		inline operator bool() const{ return *this!=Invalid; }
 		bool operator==(const TPhysicalAddress &chs2) const;
 		inline bool operator!=(const TPhysicalAddress &chs2) const{ return !operator==(chs2); }
-		TTrack GetTrackNumber() const;
-		TTrack GetTrackNumber(THead nHeads) const;
+		Track::N GetTrackNumber() const;
+		Track::N GetTrackNumber(THead nHeads) const;
 		CString GetTrackIdDesc(THead nHeads=0) const;
 		inline bool IsValid() const{ return *this; }
 		inline void Invalidate(){ *this=Invalid; }

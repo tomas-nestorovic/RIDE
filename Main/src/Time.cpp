@@ -2,7 +2,7 @@
 
 namespace Time
 {
-	const TInterval TInterval::Invalid( Infinity, INT_MIN );
+	const TInterval TInterval::Invalid( Infinity, Invalid );
 
 
 
@@ -459,7 +459,7 @@ namespace Time
 
 	#ifdef _DEBUG
 		void CBase::VerifyChronology() const{
-			T tPrev=INT_MIN;
+			T tPrev=Invalid;
 			for( N i=0; i<nLogTimes; i++ )
 				if (logTimes[i]<0)
 					Utils::Information("negative");

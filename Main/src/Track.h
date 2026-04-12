@@ -142,6 +142,7 @@ namespace Track
 
 }
 
+typedef Track::N TTrack,*PTrack;
 typedef Track::Event::T TParseEvent;
 typedef Track::Event::TData TDataParseEvent;
 typedef Track::Event::TData::PByteInfo PByteInfo;

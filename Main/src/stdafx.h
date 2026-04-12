@@ -92,7 +92,6 @@ typedef const TCylinder *PCCylinder;
 typedef BYTE THead,*PHead,TSide,*PSide;
 typedef const THead *PCHead;
 typedef const TSide *PCSide;
-typedef int TTrack,*PTrack;
 
 class CImage; // forward
 typedef CImage *PImage;
@@ -146,6 +145,10 @@ namespace Bit
 	typedef int N; // index or count, negative to indicate invalidity
 	typedef WORD TPattern;
 }
+namespace Track
+{
+	typedef int N; // index or count
+}
 
 #include "Utils.h"
 #include "Time.h"
@@ -157,10 +160,10 @@ namespace Bit
 #include "HexaEditor.h"
 #include "Revolution.h"
 #include "Sector.h"
-#include "ViewTrackMap.h"
 #include "Codec.h"
 #include "Medium.h"
 #include "Track.h"
+#include "ViewTrackMap.h"
 #include "Image.h"
 #include "DialogFormatting.h"
 #include "DialogVerification.h"

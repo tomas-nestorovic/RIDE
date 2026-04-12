@@ -506,7 +506,7 @@ namespace MFM=Codec::Impl::MFM;
 		p[1].time=Time::Infinity;
 		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
 	#ifdef _DEBUG
-		TLogTime tPrev=INT_MIN;
+		TLogTime tPrev=Time::Invalid;
 		for each( const auto &bit in *this ){
 			ASSERT( tPrev<bit.time );
 			tPrev=bit.time;
@@ -610,7 +610,7 @@ namespace MFM=Codec::Impl::MFM;
 	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
 		ScriptToLocalDiffs( pScript, nScriptItems, pOutRegions );
-		TLogTime tLastRegionEnd=INT_MIN;
+		TLogTime tLastRegionEnd=Time::Invalid;
 		DWORD nRegions=0;
 		for( int i=0; i<nScriptItems; i++ ){
 			const auto &diff=pOutRegions[i];

@@ -2,7 +2,7 @@
 
 namespace Revolution
 {
-	typedef BYTE N; // count, e.g. Revolutions per second
+	typedef BYTE N; // index or count, e.g. Revolutions per second
 
 	enum TType:N{
 		// constants to address one particular Revolution
