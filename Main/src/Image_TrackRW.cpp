@@ -1032,7 +1032,7 @@ namespace MFM=Codec::Impl::MFM;
 		if (!shareTimes){
 			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
 			std::swap<CTrackReaderBuffers>( tmp, *this );
-			::memcpy( logTimes, trw.logTimes, nLogTimes*sizeof(TLogTime) );
+			AddExternalTimes( trw.logTimes, trw.nLogTimes );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
@@ -1073,6 +1073,12 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
+	void CImage::CTrackReaderWriter::AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
+		// appends given amount of LogicalTimes at the end of the Track
+		::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
+		this->nLogTimes+=nLogTimes;
+	}
+
 	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
@@ -1081,8 +1087,7 @@ namespace MFM=Codec::Impl::MFM;
 			this->nLogTimes+=nLogTimes;
 		else{
 			// caller used its own buffer to store new LogicalTimes
-			::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
-			this->nLogTimes+=nLogTimes;
+			AddExternalTimes( logTimes, nLogTimes );
 		}
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}

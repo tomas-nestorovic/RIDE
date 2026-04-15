@@ -416,6 +416,7 @@
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
+			void AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
 			bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes);
 			bool WriteDataFm(TDataParseEvent &peData,TFdcStatus sr);
 			bool WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr);
