@@ -60,7 +60,7 @@ using namespace Charting;
 			Time::CTimeline timeline;
 			CImage::CTrackReader tr;
 			TLogTime scrollTime;
-			CBitSequence inspectionWindows;
+			CImage::CTrackReader::TBits inspectionWindows;
 			CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
@@ -601,11 +601,11 @@ using namespace Charting;
 				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
-			inline const CBitSequence &GetInspectionWindows() const{
+			inline const CImage::CTrackReader::TBits &GetInspectionWindows() const{
 				return inspectionWindows;
 			}
 
-			inline void SetInspectionWindows(const CBitSequence &list){
+			inline void SetInspectionWindows(const CImage::CTrackReader::TBits &list){
 				inspectionWindows=list;
 			}
 
@@ -772,13 +772,12 @@ using namespace Charting;
 			pAction->SetProgressTarget(3);
 			// - Step 1: recognize all Bits
 			const auto &tr=rte.tr;
-			const auto &&resetProfile=tr.CreateResetProfile();
-			const auto &&bits=tr.CreateBitSequence(rte.iwInfo.oneOkPercent);
+			const auto &&bits=tr.CreateFullRevBitSequences(rte.iwInfo.oneOkPercent);
 			if (!bits)
 				return pAction->TerminateWithLastError();
 			pAction->IncrementProgress();
 			// - Step 2: offset all Bits, producing InspectionWindows beginnings
-			bits.OffsetAll( -resetProfile.iwTimeDefault/2 );
+			bits.OffsetAll( -tr.GetCurrentProfile().iwTimeDefault/2 );
 			pAction->IncrementProgress();
 			// - Step 3: populating the list of BadBlocks, i.e. Bits that are reported as Bad
 			auto &badBlocks=rte.iwInfo.badBlocks;
@@ -815,7 +814,7 @@ using namespace Charting;
 			// (5) So, we assume that all ParseEvents are 'tIwDefault' behind and would step 'tStart+tIwDefault' and 'tEnd+tIwDefault'
 			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
-			const TLogTime tIwOffset=tr.CreateResetProfile().iwTimeDefault/2; // see (7)
+			const TLogTime tIwOffset=tr.GetCurrentProfile().iwTimeDefault/2; // see (7)
 			const auto peList=std::move(tr.ScanAndAnalyze(*pAction));
 			for each( const auto &pair in peList ){
 				ASSERT(pair.second->GetLength()>0);
@@ -838,7 +837,7 @@ using namespace Charting;
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
-				const CBitSequence iwRev( iwList, tr.GetFullRevolutionTimeInterval(i-1) );
+				const CBitSequence &iwRev=iwList.revs[i-1];
 				TInspectionWindow *iw=const_cast<TInspectionWindow *>(iwRev.begin());
 				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;
@@ -1317,7 +1316,7 @@ using namespace Charting;
 								if (iwInfo.oneOkPercent!=org || !timeEditor.GetInspectionWindows()){
 									if (timeEditor.IsFeatureShown(TCursorFeatures::INSPECT))
 										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
-									timeEditor.SetInspectionWindows(CBitSequence()); // ... and disposing previous
+									timeEditor.SetInspectionWindows(CImage::CTrackReader::TBits()); // ... and disposing previous
 									iwInfo.badBlocks.RemoveAll();
 									SendMessage( WM_COMMAND, ID_RECOGNIZE );
 								}

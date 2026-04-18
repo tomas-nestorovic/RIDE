@@ -337,15 +337,12 @@ namespace MFM=Codec::Impl::MFM;
 		const TLogTime tTrackEnd=GetIndexTime(nFullRevolutions)-profile.iwTimeMax;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
-			const CBitSequence &&allBits=CreateBitSequence(); // factors in Decoder reset on Indices
-			CBitSequence revolutionBits[Revolution::MAX];
-			for( TRev i=0; i<nFullRevolutions; i++ )
-				revolutionBits[i]=CBitSequence( allBits, GetFullRevolutionTimeInterval(i) );
+			const auto &&bits=CreateFullRevBitSequences();
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Utils::CSharedPodArray<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
 			for( TRev i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
-				const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[++i];
+				const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[++i];
 				auto &ses=shortesEditScripts[i];
 				ses=iRev.GetShortestEditScript( jRev, ap.CreateSubactionProgress(StepGranularity) );
 				if (ap.Cancelled)
@@ -362,7 +359,7 @@ namespace MFM=Codec::Impl::MFM;
 					// : conversion to dual script
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
-					const CBitSequence &jRev=revolutionBits[i], &iRev=revolutionBits[i-1];
+					const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
 					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
 					// : inheriting fuzzyness from next Revolution
 					iRev.InheritFlagsFrom( jRev, ses, ses.length );
@@ -371,7 +368,7 @@ namespace MFM=Codec::Impl::MFM;
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
 			for( TRev r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
-				const CBitSequence &rev=revolutionBits[r];
+				const CBitSequence &rev=bits.revs[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
@@ -999,6 +996,14 @@ namespace MFM=Codec::Impl::MFM;
 	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(BYTE oneOkPercent) const{
 		// records Decoder processing for the whole Track into a BitSequence
 		return CBitSequence( *this, 0, CreateResetProfile(), GetTotalTime(), oneOkPercent );
+	}
+
+	CImage::CTrackReader::TBits CImage::CTrackReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
+		TBits result;
+		static_cast<CBitSequence &>(result)=CreateBitSequence(oneOkPercent);
+		for( TRev i=1; i<nIndexPulses; i++ )
+			result.revs[i-1]=CBitSequence( result, GetFullRevolutionTimeInterval(i-1) );
+		return result;
 	}
 
 

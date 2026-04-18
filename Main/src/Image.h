@@ -296,7 +296,7 @@
 				COLORREF color;
 			} *PCRegion;
 
-			class CBitSequence sealed{
+			class CBitSequence{
 			public:
 				typedef const struct TBit sealed:public Bit::TTimed{
 					int uid; // unique identifier (unused by default, set by caller)
@@ -341,6 +341,10 @@
 				// 'for each' support
 				inline TBit *begin() const{ return pBits; }
 				inline TBit *end() const{ return pBits+nBits; }
+			};
+
+			struct TBits:public CBitSequence{ // 'base' factors in Decoder reset upon Index pulse
+				CBitSequence revs[Revolution::MAX];
 			};
 
 			CTrackReader(const CTrackReader &tr);
@@ -405,6 +409,7 @@
 			CBitSequence CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent=0) const;
 			CBitSequence CreateBitSequence(Revolution::TType rev,BYTE oneOkPercent=0) const;
 			CBitSequence CreateBitSequence(BYTE oneOkPercent=0) const;
+			TBits CreateFullRevBitSequences(BYTE oneOkPercent=0) const;
 			char ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue=nullptr);
 			WORD Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents=nullptr);
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
