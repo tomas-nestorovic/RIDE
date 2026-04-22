@@ -48,12 +48,10 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	#define LOGTIMES_COUNT_EXTRA	1
-
 	CImage::CTrackReader::CTrackReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
 		: CTrackReaderState(
-			CDecoder( method, nLogTimesMax+LOGTIMES_COUNT_EXTRA, 0, pLti->metaData ),
+			CDecoder( method, nLogTimesMax, 0, pLti->metaData ),
 			pLti
 		) {
 		SetCodec(codec); // setting values associated with the specified Codec
@@ -1029,7 +1027,7 @@ namespace MFM=Codec::Impl::MFM;
 	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: CTrackReader(
-			nLogTimesMax, method,
+			nLogTimesMax+LogTimesCountExtra, method,
 			new CLogTimesInfo( resetDecoderOnIndex ),
 			Codec::MFM
 		){
@@ -1049,7 +1047,7 @@ namespace MFM=Codec::Impl::MFM;
 	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CTrackReader(
-			nLogTimes, TDecoderMethod::KEIR_FRASER,
+			nLogTimes+LogTimesCountExtra, TDecoderMethod::KEIR_FRASER,
 			new CLogTimesInfo( true ),
 			Codec::MFM
 		){
@@ -1070,10 +1068,6 @@ namespace MFM=Codec::Impl::MFM;
 		: CTrackReader(tr) {
 	}
 
-	Time::N CImage::CTrackReaderWriter::GetBufferCapacity() const{
-		return logTimes.length-LOGTIMES_COUNT_EXTRA;
-	}
-	
 	void CImage::CTrackReaderWriter::AddTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
 		ASSERT( nLogTimes<GetBufferCapacity() );

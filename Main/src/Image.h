@@ -417,6 +417,10 @@
 		};
 
 		class CTrackReaderWriter:public CTrackReader{
+			enum{
+				LogTimesCountExtra=1
+			};
+
 			void AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
 			bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes);
 			bool WriteDataFm(TDataParseEvent &peData,TFdcStatus sr);
@@ -435,8 +439,8 @@
 				// returns the inner buffer
 				return logTimes;
 			}
+			inline Time::N GetBufferCapacity() const{ return logTimes.length-LogTimesCountExtra; }
 
-			Time::N GetBufferCapacity() const;
 			void AddTime(TLogTime logTime);
 			void AddTimes(PCLogTime logTimes,Time::N nLogTimes);
 			void AddByte(TLogTimeInterval &inOutAt,BYTE b);
