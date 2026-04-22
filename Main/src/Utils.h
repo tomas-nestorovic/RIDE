@@ -28,7 +28,7 @@ namespace Utils{
 	static_assert( sizeof(CSharedPodPtr<BYTE>)==sizeof(CString), "can't easily retype these two, e.g. '(CSharedPodPtr)myAfxStr'" );
 
 	template<typename T,typename TIndex=int>
-	class CSharedPodArray:protected CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
+	class CSharedPodArray:public CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
 	public:
 		TIndex length;
 
