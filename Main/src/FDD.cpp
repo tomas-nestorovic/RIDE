@@ -1484,7 +1484,7 @@ Utils::Information(buf);}
 				const Utils::CRideTime endTime;
 				const TLogTime deltaNanoseconds=TIME_MILLI( (endTime-startTime).ToMilliseconds() );
 				// . STEP 2.4: determining if the readings took more than just one disk revolution or more
-				if (deltaNanoseconds>=pit->sectors[(TSector)1].endNanoseconds-pit->sectors.begin()->endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
+				if (deltaNanoseconds>=pit->sectors[(TSector)1].endNanoseconds-pit->sectors->endNanoseconds+TIME_MILLI(4)) // 4e6 = allowing circa 120 Bytes as a limit of detecting a single disk revolution
 					break;
 				c++;
 			}

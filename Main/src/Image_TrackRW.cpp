@@ -357,7 +357,7 @@ namespace MFM=Codec::Impl::MFM;
 			for( TRev i=nFullRevolutions; i>1; )
 				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
 					// : conversion to dual script
-					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
+					for( auto k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
 					const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
 					iRev.ScriptToLocalDiffs( ses );

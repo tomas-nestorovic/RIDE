@@ -700,7 +700,7 @@ using namespace Charting;
 				timeEditor.SetCenterTime( tInitScrollTo );
 			// - if Regions are specified, navigating to the first of them
 			else if (timeEditor.regions)
-				timeEditor.SetCenterTime( timeEditor.regions.begin()->tStart );
+				timeEditor.SetCenterTime( timeEditor.regions->tStart );
 			// - if requested, displaying all Features
 			if (initAllFeaturesOn)
 				SendMessage( WM_COMMAND, ID_TRACK );
@@ -935,10 +935,10 @@ using namespace Charting;
 							pCmdUi->Enable( timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime()+1,Track::Event::FUZZY_OK,Track::Event::FUZZY_BAD) );
 							return TRUE;
 						case ID_RECORD_PREV:
-							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()>timeEditor.regions.begin()->tStart );
+							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()>timeEditor.regions->tStart );
 							return TRUE;
 						case ID_RECORD_NEXT:
-							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()<timeEditor.regions[timeEditor.regions.length-1].tStart );
+							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()<timeEditor.regions.Last().tStart );
 							return TRUE;
 						case ID_DOWN:
 							pCmdUi->Enable( timeEditor.GetScrollTime()>0 );

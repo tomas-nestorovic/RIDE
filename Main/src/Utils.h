@@ -49,6 +49,8 @@ namespace Utils{
 
 		inline void reset(){ Empty(), length=0; }
 
+		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
+
 		T *Realloc(TIndex newLength){
 			if (newLength){
 				const CSharedPodArray tmp(newLength);
