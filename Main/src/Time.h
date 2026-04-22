@@ -58,6 +58,12 @@ namespace Time
 		}
 	};
 
+	struct TColorInterval:public TInterval{
+		COLORREF color;
+	};
+
+	typedef Utils::CSharedPodArray<TColorInterval> CSharedColorIntervalArray;
+
 	typedef const struct TMetaDataItem sealed:public TInterval{
 		Bit::N nBits; // 0 = no explicit # of bits, use DPLL algorithm to adjust next IW size
 		bool isFuzzy;

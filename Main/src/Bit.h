@@ -24,4 +24,6 @@ namespace Bit
 		TLogTime time;
 	};
 
+	typedef Utils::CSharedPodArray<CDiffBase::TScriptItem,N> CSharedDiffScript;
+
 }

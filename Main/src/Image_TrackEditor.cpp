@@ -14,8 +14,7 @@ using namespace Charting;
 	#define IW_TIME_HEIGHT	(SPACING_HEIGHT+20)
 	#define EVENT_HEIGHT	30
 
-	typedef CImage::CTrackReader::TRegion TRegion,*PRegion;
-	typedef CImage::CTrackReader::PCRegion PCRegion;
+	typedef Time::TColorInterval TRegion,*PRegion;
 
 	#define MSG_FUZZY_NAVIGATION	_T("This fuzzy bit has no counterpart in any revolution")
 	#define MSG_INSPECTION_APPROXIMATE _T("Inspection may vary when run on real hardware")
@@ -210,9 +209,10 @@ using namespace Charting;
 								continue;
 						}
 						// . drawing Regions
-						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.pRegions){
-							for( DWORD iRegion=0; continuePainting&&iRegion<te.nRegions; iRegion++ ){
-								const TRegion &rgn=te.pRegions[iRegion];
+						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.regions){
+							for each( const auto &rgn in te.regions ){
+								if (!continuePainting)
+									break;
 								if (const auto ti=rgn.Add(iwTimeDefaultHalf).Intersect(visible)){ // offset Region visible?
 									EXCLUSIVELY_LOCK(p.params);
 									if ( continuePainting=p.params.id==id )
@@ -503,18 +503,17 @@ using namespace Charting;
 				//nop (View destroyed by its owner)
 			}
 		public:
-			const PCRegion pRegions;
-			const DWORD nRegions;
+			const Time::CSharedColorIntervalArray regions;
 			const Utils::CRidePen penIndex;
 			const Utils::CRidePen penMetaData;
 			const Utils::CRideFont fontMetaData;
 			bool decimalByteValues;
 
-			CTimeEditor(const CImage::CTrackReader &tr,CImage::CTrackReader::PCRegion pRegions,DWORD nRegions)
+			CTimeEditor(const CImage::CTrackReader &tr,const Time::CSharedColorIntervalArray &regions)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
-				, pRegions(pRegions) , nRegions(nRegions) // up to the caller to dispose allocated Regions!
+				, regions(regions)
 				, penIndex( 2, COLOR_BLUE )
 				, penMetaData( 1, COLOR_BLACK, PS_DOT )
 				, fontMetaData( Utils::CRideFont::Small.CreateRotated(90) )
@@ -700,8 +699,8 @@ using namespace Charting;
 			if (tInitScrollTo>0)
 				timeEditor.SetCenterTime( tInitScrollTo );
 			// - if Regions are specified, navigating to the first of them
-			else if (timeEditor.pRegions)
-				timeEditor.SetCenterTime( timeEditor.pRegions->tStart );
+			else if (timeEditor.regions)
+				timeEditor.SetCenterTime( timeEditor.regions.begin()->tStart );
 			// - if requested, displaying all Features
 			if (initAllFeaturesOn)
 				SendMessage( WM_COMMAND, ID_TRACK );
@@ -891,7 +890,7 @@ using namespace Charting;
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::INSPECT) );
 							return TRUE;
 						case ID_INTERLEAVE:
-							pCmdUi->Enable( timeEditor.pRegions!=nullptr );
+							pCmdUi->Enable( timeEditor.regions );
 							pCmdUi->SetCheck( timeEditor.IsFeatureShown(TCursorFeatures::REGIONS) );
 							return TRUE;
 						case ID_NUMBER:
@@ -936,10 +935,10 @@ using namespace Charting;
 							pCmdUi->Enable( timeEditor.GetParseEvents().FindByStart(timeEditor.GetCenterTime()+1,Track::Event::FUZZY_OK,Track::Event::FUZZY_BAD) );
 							return TRUE;
 						case ID_RECORD_PREV:
-							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()>timeEditor.pRegions->tStart );
+							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()>timeEditor.regions.begin()->tStart );
 							return TRUE;
 						case ID_RECORD_NEXT:
-							pCmdUi->Enable( timeEditor.pRegions && timeEditor.GetCenterTime()<timeEditor.pRegions[timeEditor.nRegions-1].tStart );
+							pCmdUi->Enable( timeEditor.regions && timeEditor.GetCenterTime()<timeEditor.regions[timeEditor.regions.length-1].tStart );
 							return TRUE;
 						case ID_DOWN:
 							pCmdUi->Enable( timeEditor.GetScrollTime()>0 );
@@ -1215,16 +1214,16 @@ using namespace Charting;
 							return TRUE;
 						case ID_RECORD_PREV:{
 							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nRegions&&tCenter>timeEditor.pRegions[i].tStart; i++ );
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions&&tCenter>timeEditor.regions[i].tStart; i++ );
 							if (i>0)
-								timeEditor.SetCenterTime( timeEditor.pRegions[i-1].tStart );
+								timeEditor.SetCenterTime( timeEditor.regions[i-1].tStart );
 							return TRUE;
 						}
 						case ID_RECORD_NEXT:{
 							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.nRegions&&tCenter>=timeEditor.pRegions[i].tStart; i++ );
-							if (i<timeEditor.nRegions)
-								timeEditor.SetCenterTime( timeEditor.pRegions[i].tStart );
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions&&tCenter>=timeEditor.regions[i].tStart; i++ );
+							if (i<timeEditor.regions.length)
+								timeEditor.SetCenterTime( timeEditor.regions[i].tStart );
 							return TRUE;
 						}
 						//case ID_DOWN:	// commented out as coped with already in WM_KEYDOWN handler
@@ -1710,7 +1709,7 @@ using namespace Charting;
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CImage::CTrackReader &tr,const Time::CSharedColorIntervalArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
@@ -1718,7 +1717,7 @@ using namespace Charting;
 			, caption( Utils::SimpleFormat(captionFormat,argList) )
 			, tr(tr)
 			, menu( IDR_TRACK_EDITOR ) , messageBoxButtons(messageBoxButtons) , initAllFeaturesOn(initAllFeaturesOn) , tInitScrollTo(tScrollTo)
-			, timeEditor( tr, pRegions, nRegions )
+			, timeEditor( tr, regions )
 			, hAutoscrollTimer(INVALID_HANDLE_VALUE) {
 			iwInfo.oneOkPercent=50;
 		}
@@ -1732,10 +1731,10 @@ using namespace Charting;
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
+	BYTE __cdecl CImage::CTrackReader::ShowModal(const Time::CSharedColorIntervalArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			const BYTE result=CTrackEditor( *this, pRegions, nRegions, messageBoxButtons, initAllFeaturesOn, tScrollTo, format, argList ).DoModal();
+			const BYTE result=CTrackEditor( *this, regions, messageBoxButtons, initAllFeaturesOn, tScrollTo, format, argList ).DoModal();
 		va_end(argList);
 		return result;
 	}
@@ -1743,6 +1742,6 @@ using namespace Charting;
 	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			CTrackEditor( *this, nullptr, 0, MB_OK, false, 0, format, argList ).DoModal();
+			CTrackEditor( *this, Time::CSharedColorIntervalArray(0), MB_OK, false, 0, format, argList ).DoModal();
 		va_end(argList);
 	}

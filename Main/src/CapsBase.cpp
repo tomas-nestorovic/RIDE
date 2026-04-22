@@ -1007,10 +1007,7 @@ invalidTrack:
 		if (psi==ses.end() || writtenBits[psi->iPosA].time>significant.tEnd)
 			return ERROR_SUCCESS; // only insignificant differences at the beginning and end of Revolution
 		// - composition and display of non-overlapping erroneously written regions of the Track
-		const Utils::CSharedPodArray<CTrackReader::TRegion> badRegions(ses.length);
-		//if (!badRegions) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
-			//return ERROR_NOT_ENOUGH_MEMORY;
-		const DWORD nBadRegions=writtenBits.ScriptToLocalRegions( ses, ses.length, badRegions, COLOR_RED );
+		const auto &&badRegions=writtenBits.ScriptToLocalRegions( ses, COLOR_RED );
 		CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
 		const auto nSectors=trwWritten.ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, CActionProgress::None, false ); // False = only linear, time-inexpensive analysis (thus no need for doing this in parallel)
@@ -1024,7 +1021,7 @@ invalidTrack:
 			}
 		for each( const auto &br in badRegions )
 			if (peTrack.IntersectsWith(br)) // an intersection with ID or Data fields
-				switch (trwWritten.ShowModal( badRegions, nBadRegions, MB_ABORTRETRYIGNORE, true, br.tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
+				switch (trwWritten.ShowModal( badRegions, MB_ABORTRETRYIGNORE, true, br.tStart, _T("Track %02d.%c verification failed: Review RED-MARKED errors (use J and L keys) and decide how to proceed!"), cyl, '0'+head )){
 					case IDOK: // ignore
 						return ERROR_CONTINUE;
 					case IDCANCEL:

@@ -292,10 +292,6 @@
 			TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents);
 			TFdcStatus ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents);
 		public:
-			typedef const struct TRegion:public TLogTimeInterval{
-				COLORREF color;
-			} *PCRegion;
-
 			class CBitSequence{
 			public:
 				typedef const struct TBit sealed:public Bit::TTimed{
@@ -330,10 +326,10 @@
 				TData<WORD> GetWord(int i) const;
 				PCBit Find(TLogTime t) const;
 				PCBit FindOrNull(TLogTime t) const;
-				Utils::CSharedPodArray<CDiffBase::TScriptItem> GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
-				void ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const;
-				DWORD ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const;
-				void InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScript,DWORD nScriptItems) const;
+				Bit::CSharedDiffScript GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const;
+				Time::CSharedColorIntervalArray ScriptToLocalDiffs(const Bit::CSharedDiffScript &script) const;
+				Time::CSharedColorIntervalArray ScriptToLocalRegions(const Bit::CSharedDiffScript &script,COLORREF regionColor) const;
+				void InheritFlagsFrom(const CBitSequence &theirs,const Bit::CSharedDiffScript &script) const;
 				void OffsetAll(TLogTime dt) const;
 			#ifdef _DEBUG
 				void SaveCsv(LPCTSTR filename) const;
@@ -416,7 +412,7 @@
 			WORD ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis=true);
 			CParseEventList ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis=true);
 			TFdcStatus ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutAllParseEvents);
-			BYTE __cdecl ShowModal(PCRegion pRegions,DWORD nRegions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
+			BYTE __cdecl ShowModal(const Time::CSharedColorIntervalArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 			void __cdecl ShowModal(LPCTSTR format,...) const;
 		};
 

@@ -151,11 +151,11 @@ namespace Track
 }
 
 #include "Utils.h"
+#include "BackgroundAction.h"
+#include "Diff.h"
 #include "Time.h"
 #include "Checksum.h"
 #include "Bit.h"
-#include "BackgroundAction.h"
-#include "Diff.h"
 #include "MainWindow.h"
 #include "HexaEditor.h"
 #include "Revolution.h"

@@ -339,7 +339,7 @@ namespace MFM=Codec::Impl::MFM;
 			// . extraction of bits from each full Revolution
 			const auto &&bits=CreateFullRevBitSequences();
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
-			Utils::CSharedPodArray<CDiffBase::TScriptItem> shortesEditScripts[Revolution::MAX];
+			Bit::CSharedDiffScript shortesEditScripts[Revolution::MAX];
 			for( TRev i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
 				const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[++i];
@@ -349,9 +349,9 @@ namespace MFM=Codec::Impl::MFM;
 					return nSectorsFound;
 				// : marking different Bits neighboring Revolutions as Fuzzy
 				if (ses.length) // bitwise different?
-					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
+					iRev.ScriptToLocalDiffs( ses );
 				// : inheriting fuzzyness from previous Revolution
-				iRev.InheritFlagsFrom( jRev, ses, ses.length );
+				iRev.InheritFlagsFrom( jRev, ses );
 			}
 			// . backward comparison of Revolutions, from the last to the first
 			for( TRev i=nFullRevolutions; i>1; )
@@ -360,9 +360,9 @@ namespace MFM=Codec::Impl::MFM;
 					for( DWORD k=ses.length; k>0; ses[--k].ConvertToDual() );
 					// : marking different Bits as Fuzzy
 					const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
-					iRev.ScriptToLocalDiffs( ses, ses.length, Utils::MakeSharedPodArray<TRegion>(ses.length) );
+					iRev.ScriptToLocalDiffs( ses );
 					// : inheriting fuzzyness from next Revolution
-					iRev.InheritFlagsFrom( jRev, ses, ses.length );
+					iRev.InheritFlagsFrom( jRev, ses );
 				}
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
@@ -555,9 +555,9 @@ namespace MFM=Codec::Impl::MFM;
 		return	it!=end() ? it : nullptr;
 	}
 
-	Utils::CSharedPodArray<CDiffBase::TScriptItem> CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
+	Bit::CSharedDiffScript CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
 		// creates and returns the shortest edit script (SES)
-		Utils::CSharedPodArray<CDiffBase::TScriptItem> ses( GetBitCount()+theirs.GetBitCount() );
+		Bit::CSharedDiffScript ses( GetBitCount()+theirs.GetBitCount() );
 		//if (!ses) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
 			//return ses;
 		const int i=CDiff<const TBit>(
@@ -570,22 +570,23 @@ namespace MFM=Codec::Impl::MFM;
 		if (i<0) // e.g. Action cancelled
 			ses.reset();
 		else
-			ses.Realloc(i);
+			ses.length=i;
 		return ses;
 	}
 
-	void CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutDiffs) const{
+	Time::CSharedColorIntervalArray CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const Bit::CSharedDiffScript &script) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller)
-		ASSERT( nScriptItems>0 );
-		while (nScriptItems-->0){
-			const auto &si=pScript[nScriptItems];
-			auto &rDiff=pOutDiffs[nScriptItems];
+		ASSERT( script );
+		const Time::CSharedColorIntervalArray result(script.length);
+		for( auto i=script.length; i-->0; ){
+			const auto &si=script[i];
+			auto &rDiff=result[i];
 			rDiff.tStart=pBits[si.iPosA].time;
 			switch (si.operation){
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
 					rDiff.color=0xb4; // tinted red
-					rDiff.tEnd=pBits[std::min( si.iPosA+1, nBits )].time; // even Insertions must be represented locally!
+					rDiff.tEnd=pBits[std::min( si.iPosA+1, nBits )].time; // "+1" = even Insertions must be represented locally!
 					pBits[si.iPosA].cosmeticFuzzy=true;
 					break;
 				default:
@@ -605,34 +606,37 @@ namespace MFM=Codec::Impl::MFM;
 					break;
 			}
 		}
+		return result;
 	}
 
-	DWORD CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const CDiffBase::TScriptItem *pScript,int nScriptItems,TRegion *pOutRegions,COLORREF regionColor) const{
+	Time::CSharedColorIntervalArray CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const Bit::CSharedDiffScript &script,COLORREF regionColor) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
-		ScriptToLocalDiffs( pScript, nScriptItems, pOutRegions );
+		auto &&diffs=ScriptToLocalDiffs(script);
 		TLogTime tLastRegionEnd=Time::Invalid;
-		DWORD nRegions=0;
-		for( int i=0; i<nScriptItems; i++ ){
-			const auto &diff=pOutRegions[i];
-			if (diff.tStart>tLastRegionEnd){
-				// disjunct Diffs - creating a new Region
-				auto &rRgn=pOutRegions[nRegions++];
+		int nRegions=0;
+		for each( const auto &d in diffs ){
+			if (d.tStart>tLastRegionEnd){
+				// disjunct Diffs - create a new Region
+				auto &rRgn=diffs[nRegions++];
 					rRgn.color=regionColor;
-					rRgn.tStart=diff.tStart;
-				tLastRegionEnd = rRgn.tEnd = diff.tEnd;
+					rRgn.tStart=d.tStart;
+				tLastRegionEnd = rRgn.tEnd = d.tEnd;
 			}else
 				// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
-				tLastRegionEnd = pOutRegions[nRegions-1].tEnd = std::max(tLastRegionEnd,diff.tEnd);
+				tLastRegionEnd = diffs[nRegions-1].tEnd = std::max(tLastRegionEnd,d.tEnd);
 		}
-		return nRegions;
+		diffs.length=nRegions;
+		return diffs;
 	}
 
-	void CImage::CTrackReader::CBitSequence::InheritFlagsFrom(const CBitSequence &theirs,const CDiffBase::TScriptItem *pScriptItem,DWORD nScriptItems) const{
+	void CImage::CTrackReader::CBitSequence::InheritFlagsFrom(const CBitSequence &theirs,const Bit::CSharedDiffScript &script) const{
 		//
 		int iMyBit=0, iTheirBit=0;
+		int iScriptItem=0;
 		do{
 			// . inheriting Flags from Bits identical up to the next ScriptItem
-			const int iDiffStartPos= nScriptItems>0 ? pScriptItem->iPosA : nBits;
+			const auto &si=script[iScriptItem]; // below never touched when index invalid ...
+			const int iDiffStartPos= iScriptItem<script.length ? si.iPosA : nBits; // ... like here
 			int nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
 			while (nIdentical-->0){
 				#ifdef _DEBUG
@@ -642,23 +646,23 @@ namespace MFM=Codec::Impl::MFM;
 				pBits[iMyBit++].flags|=theirs.pBits[iTheirBit++].flags;
 			}
 			// . if no more differences, then we have just processed the common tail Bits
-			if (!nScriptItems)
+			if (iScriptItem==script.length)
 				break;
 			// . skipping Bits that are different
-			switch (pScriptItem->operation){
+			switch (si.operation){
 				case CDiffBase::TScriptItem::INSERTION:
 					// "theirs" contains some extra bits that "this" misses
-					iTheirBit+=pScriptItem->op.nItemsB;
+					iTheirBit+=si.op.nItemsB;
 					break;
 				default:
 					ASSERT(FALSE); // we shouldn't end up here!
 					//fallthrough
 				case CDiffBase::TScriptItem::DELETION:
 					// "theirs" misses some bits that "this" contains
-					iMyBit+=pScriptItem->op.nItemsB;
+					iMyBit+=si.op.nItemsB;
 					break;
 			}
-			pScriptItem++, nScriptItems--;
+			iScriptItem++;
 		} while(true);
 	}
 
