@@ -166,7 +166,7 @@ using namespace Charting;
 											const auto &peData=(const TDataParseEvent &)pe;
 											const COLORREF textColorBlend=Utils::GetBlendedColor( textColor, COLOR_BLACK );
 											const auto *const pis=peData.GetByteInfos();
-											WORD i=0;
+											Sector::L i=0;
 											for( const TLogTime dt=ti.tStart-peData.tStart; pis[i].dtStart<dt; i++ ); // skip invisible part
 											const int fullBiLineHeight=rcLabel.bottom-te.timeline.font.charHeight;
 											rcLabel.top=fullBiLineHeight-byteInfoSizeMin.cy, rcLabel.bottom=-EVENT_HEIGHT+Utils::CRideFont::Small.charHeight;
@@ -209,7 +209,7 @@ using namespace Charting;
 								continue;
 						}
 						// . drawing Regions
-						if (te.IsFeatureShown(TCursorFeatures::REGIONS) && te.regions){
+						if (te.IsFeatureShown(TCursorFeatures::REGIONS)){
 							for each( const auto &rgn in te.regions ){
 								if (!continuePainting)
 									break;
@@ -1213,15 +1213,15 @@ using namespace Charting;
 							);
 							return TRUE;
 						case ID_RECORD_PREV:{
-							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions&&tCenter>timeEditor.regions[i].tStart; i++ );
+							int i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions.length&&tCenter>timeEditor.regions[i].tStart; i++ );
 							if (i>0)
 								timeEditor.SetCenterTime( timeEditor.regions[i-1].tStart );
 							return TRUE;
 						}
 						case ID_RECORD_NEXT:{
-							WORD i=0;
-							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions&&tCenter>=timeEditor.regions[i].tStart; i++ );
+							int i=0;
+							for( const TLogTime tCenter=timeEditor.GetCenterTime(); i<timeEditor.regions.length&&tCenter>=timeEditor.regions[i].tStart; i++ );
 							if (i<timeEditor.regions.length)
 								timeEditor.SetCenterTime( timeEditor.regions[i].tStart );
 							return TRUE;
