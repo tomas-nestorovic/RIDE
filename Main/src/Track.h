@@ -2,6 +2,8 @@
 
 namespace Track
 {
+	typedef DWORD TTypeId;
+
 	enum TOrder:BYTE{
 		BY_CYLINDERS	=1,
 		BY_HEADS		=2

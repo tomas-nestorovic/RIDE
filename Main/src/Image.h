@@ -133,7 +133,7 @@
 
 
 	#define MAKE_IMAGE_ID(char1,char2,char3,char4,char5,char6,char7,char8)\
-		( (((((((CImage::TId)char1<<4^char2)<<4^char3)<<4^char4)<<4^char5)<<4^char6)<<4^char7)<<4^char8 )
+		( (((((((Track::TTypeId)char1<<4^char2)<<4^char3)<<4^char4)<<4^char5)<<4^char6)<<4^char7)<<4^char8 )
 
 	class CImage:public CDocument{
 		friend class CRideApp;
@@ -156,7 +156,6 @@
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons
 		virtual TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap);
 	public:
-		typedef DWORD TId;
 		typedef LPCTSTR (*TFnRecognize)(PTCHAR deviceNameList);
 		typedef CImage *(*TFnInstantiate)(LPCTSTR deviceName);
 
@@ -171,7 +170,7 @@
 
 		#pragma pack(1)
 		typedef const struct TProperties sealed{
-			TId id; // container's unique identifier (see other containers to be REALLY unique!)
+			Track::TTypeId id; // container's unique identifier (see other containers to be REALLY unique!)
 			TFnRecognize fnRecognize;
 			TFnInstantiate fnInstantiate;
 			LPCTSTR filter; // filter for the "Open/Save file" dialogs (e.g. "*.d80;*.d40"); ATTENTION - must be all in lowercase (normalization) and the extension must always have right three characters (otherwise changes in DoSave needed)
@@ -237,7 +236,7 @@
 				TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 				Time::CMetaData metaData;
 				struct:public Utils::CSharedBytes{
-					TId id;
+					Track::TTypeId id;
 				} rawDeviceData; // valid until Track modified, then disposed
 
 				TLogTimesInfoData(bool resetDecoderOnIndex);
@@ -387,7 +386,7 @@
 			TLogTime GetLastIndexTime() const;
 			TLogTime GetAvgIndexDistance() const;
 			TLogTime GetTotalTime() const;
-			const Utils::CSharedBytes &GetRawDeviceData(TId dataId) const;
+			const Utils::CSharedBytes &GetRawDeviceData(Track::TTypeId dataId) const;
 			bool ReadBit(TLogTime &rtOutOne=Time::Ignore);
 			bool IsLastReadBitHealthy() const;
 			CBitSequence CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent=0) const;
@@ -436,7 +435,7 @@
 			void AddDWord(TLogTimeInterval &inOutAt,DWORD dw);
 			void AddIndexTime(TLogTime logTime);
 			void AddMetaData(const Time::TMetaDataItem &mdi);
-			void SetRawDeviceData(TId dataId,const Utils::CSharedBytes &data);
+			void SetRawDeviceData(Track::TTypeId dataId,const Utils::CSharedBytes &data);
 			void TrimToTimesCount(Time::N nKeptLogTimes);
 			void ClearMetaData(TLogTime a,TLogTime z);
 			void ClearAllMetaData();

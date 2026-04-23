@@ -116,7 +116,7 @@ namespace MFM=Codec::Impl::MFM;
 		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
-	const Utils::CSharedBytes &CImage::CTrackReader::GetRawDeviceData(TId dataId) const{
+	const Utils::CSharedBytes &CImage::CTrackReader::GetRawDeviceData(Track::TTypeId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
 			if (r.id==dataId)
@@ -1196,7 +1196,7 @@ namespace MFM=Codec::Impl::MFM;
 			metaData.insert(mdi);
 	}
 
-	void CImage::CTrackReaderWriter::SetRawDeviceData(TId dataId,const Utils::CSharedBytes &data){
+	void CImage::CTrackReaderWriter::SetRawDeviceData(Track::TTypeId dataId,const Utils::CSharedBytes &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
 		static_cast<Utils::CSharedBytes &>(pLogTimesInfo->rawDeviceData)=data;
 		pLogTimesInfo->rawDeviceData.id=dataId;
