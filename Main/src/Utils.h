@@ -30,6 +30,8 @@ namespace Utils{
 	template<typename T,typename TIndex=int>
 	class CSharedPodArray:public CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
 	public:
+		typedef TIndex N;
+
 		TIndex length;
 
 		CSharedPodArray(TIndex length=0,TCHAR initByte=0)

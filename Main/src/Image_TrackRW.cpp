@@ -611,7 +611,7 @@ namespace MFM=Codec::Impl::MFM;
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
 		auto &&diffs=ScriptToLocalDiffs(script);
 		TLogTime tLastRegionEnd=Time::Invalid;
-		int nRegions=0;
+		Bit::CSharedDiffScript::N nRegions=0;
 		for each( const auto &d in diffs ){
 			if (d.tStart>tLastRegionEnd){
 				// disjunct Diffs - create a new Region
@@ -629,13 +629,14 @@ namespace MFM=Codec::Impl::MFM;
 
 	void CImage::CTrackReader::CBitSequence::InheritFlagsFrom(const CBitSequence &theirs,const Bit::CSharedDiffScript &script) const{
 		//
-		int iMyBit=0, iTheirBit=0;
-		int iScriptItem=0;
+		typedef Bit::CSharedDiffScript::N N;
+		N iMyBit=0, iTheirBit=0;
+		N iScriptItem=0;
 		do{
 			// . inheriting Flags from Bits identical up to the next ScriptItem
 			const auto &si=script[iScriptItem]; // below never touched when index invalid ...
-			const int iDiffStartPos= iScriptItem<script.length ? si.iPosA : nBits; // ... like here
-			int nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
+			const N iDiffStartPos= iScriptItem<script.length ? si.iPosA : nBits; // ... like here
+			N nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
 			while (nIdentical-->0){
 				#ifdef _DEBUG
 					const auto &mine=pBits[iMyBit], &their=theirs.pBits[iTheirBit];

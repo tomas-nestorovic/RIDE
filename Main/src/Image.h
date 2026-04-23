@@ -152,7 +152,6 @@
 		friend class CFileManagerView;
 
 		void Dump() const;
-		void Patch();
 	protected:
 		static DWORD GetCurrentDiskFreeSpace();
 		static TStdWinError OpenImageForReading(LPCTSTR fileName,CFile &f);
