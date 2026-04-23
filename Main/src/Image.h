@@ -68,12 +68,6 @@
 	} *PFormat;
 	typedef const TFormat *PCFormat,&RCFormat;
 
-	enum TDataStatus{
-		NOT_READY	=0,		// querying data via CImage::GetTrackData may lead to delay (e.g. application freezes if called from main thread)
-		READY		=1,		// erroneous data are buffered, there will be no delay in calling CImage::GetTrackData
-		READY_HEALTHY=READY|2 // healthy data are buffered, there will be no delay in calling CImage::GetTrackData
-	};
-
 
 	#define FDC_ST1_END_OF_CYLINDER		128
 			// ^ FDC tried to access a sector beyond the final sector of the track (255D*).  Will be set if TC is not issued after Read or Write Data command
@@ -133,11 +127,6 @@
 		bool DescribesMissingId() const; // aka. Sector not found
 		bool DescribesMissingDam() const;
 	} *PCFdcStatus;
-
-	enum TTrackScheme:BYTE{
-		BY_CYLINDERS	=1,
-		BY_SIDES		=2
-	};
 
 
 

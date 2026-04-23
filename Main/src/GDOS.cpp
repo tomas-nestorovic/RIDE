@@ -97,7 +97,7 @@
 	CGDOS::CGDOS(PImage image,PCFormat pFormatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_SIDES, &Properties, IDR_GDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::EMPTY )
+		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_HEADS, &Properties, IDR_GDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::EMPTY )
 		// - initialization
 		, zeroLengthFilesEnabled( __getProfileBool__(INI_ALLOW_ZERO_LENGTH_FILES,false) )
 		, fileManager(this) {

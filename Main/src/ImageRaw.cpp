@@ -157,7 +157,7 @@ using namespace Yahel;
 							return err;
 					}
 				break;
-			case TTrackScheme::BY_SIDES:
+			case TTrackScheme::BY_HEADS:
 				for( chs.head=0; chs.head<nHeads; chs.head++ )
 					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++,ap.IncrementProgress() ){
 						chs.sectorId.cylinder=chs.cylinder;
@@ -244,7 +244,7 @@ using namespace Yahel;
 									f.Seek( cyl*nBytesOfCylinder, CFile::begin );
 									nBytesRead=f.Read(p,nBytesOfCylinder);
 									break;
-								case TTrackScheme::BY_SIDES:
+								case TTrackScheme::BY_HEADS:
 									nBytesRead=0;
 									for( THead head=0; head<nHeads; head++ ){
 										f.Seek( (head*nCylinders+cyl)*nBytesOfTrack, CFile::begin );
@@ -325,7 +325,7 @@ trackNotFound:
 							nCylinders=1+d.quot; // "1" = the last incomplete Cylinder
 						break;
 					}
-					case TTrackScheme::BY_SIDES:{
+					case TTrackScheme::BY_HEADS:{
 						const int nSectorsOnSide=( nCylinders=pFormat->nCylinders )*nSectors; // NumberOfCylinders constant ...
 						nHeads=div( nSectorsInTotal+nSectorsOnSide-1, nSectorsOnSide ).quot; // ... and NumberOfHeads computed
 						break;
@@ -357,7 +357,7 @@ trackNotFound:
 		/*
 		if (dos) // may not exist if creating a new Image
 			if (dos->properties==&CGDOS::Properties)
-				trackAccessScheme=TTrackScheme::BY_SIDES;
+				trackAccessScheme=TTrackScheme::BY_HEADS;
 			else
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		*/
@@ -415,7 +415,7 @@ trackNotFound:
 							Utils::Information( _T("Invalid geometry"), err );
 							pDX->Fail();
 						}
-						if (rawImage.trackAccessScheme==TTrackScheme::BY_SIDES)
+						if (rawImage.trackAccessScheme==TTrackScheme::BY_HEADS)
 							if (nHeads!=rawImage.nHeads){ // Side numbers under- or over-specified?
 								SetDlgItemFormattedText( ID_HEAD, _T("< Given other settings, the number of heads must be %d."), rawImage.nHeads );
 								pDX->PrepareCtrl(ID_SIDE);
@@ -640,7 +640,7 @@ trackNotFound:
 
 			TStdWinError TrySetMediumTypeAndGeometry() const{
 				// tries to apply current geometry; returns Windows standard i/o error
-				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_SIDES : TTrackScheme::BY_CYLINDERS;
+				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_HEADS : TTrackScheme::BY_CYLINDERS;
 				TFormat fmt=TFormat::Unknown; // the Image format ...
 					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
 					fmt.nCylinders=nCylinders;
@@ -739,7 +739,7 @@ trackNotFound:
 		if (nCylinders<=cyl)
 			// redimensioning the Image
 			switch (trackAccessScheme){
-				case TTrackScheme::BY_SIDES:
+				case TTrackScheme::BY_HEADS:
 					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
 						for( TCylinder c=0; c<nCylinders; ){
 							if (cancelled)
@@ -771,7 +771,7 @@ trackNotFound:
 		// unformats given Track {Cylinder,Head}; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		switch (trackAccessScheme){
-			case TTrackScheme::BY_SIDES:
+			case TTrackScheme::BY_HEADS:
 				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
 					for( TCylinder c=0; c<nCylinders; ){
 						const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };

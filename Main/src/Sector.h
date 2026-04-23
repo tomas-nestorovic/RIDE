@@ -49,6 +49,12 @@ namespace Sector
 		inline void Invalidate(){ *this=Invalid; }
 	};
 
+	enum TDataStatus{
+		NOT_READY	=0,		// querying data via CImage::GetTrackData may lead to delay (e.g. application freezes if called from main thread)
+		READY		=1,		// erroneous data are buffered, there will be no delay in calling CImage::GetTrackData
+		READY_HEALTHY=READY|2 // healthy data are buffered, there will be no delay in calling CImage::GetTrackData
+	};
+
 
 
 	class CReaderWriter abstract:public CHexaEditor::CYahelStreamFile,public Yahel::Stream::IAdvisor{
@@ -158,3 +164,4 @@ typedef Sector::TId TSectorId,*PSectorId;
 typedef const Sector::TId *PCSectorId,&RCSectorId;
 typedef Sector::TPhysicalAddress TPhysicalAddress;
 typedef const Sector::TPhysicalAddress &RCPhysicalAddress;
+typedef Sector::TDataStatus TDataStatus;

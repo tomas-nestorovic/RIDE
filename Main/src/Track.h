@@ -2,6 +2,14 @@
 
 namespace Track
 {
+	enum TOrder:BYTE{
+		BY_CYLINDERS	=1,
+		BY_HEADS		=2
+	};
+
+
+
+
 	namespace Event
 	{
 		typedef size_t N; // index or count
@@ -148,3 +156,4 @@ typedef Track::Event::TData TDataParseEvent;
 typedef Track::Event::TData::PByteInfo PByteInfo;
 typedef Track::Event::CList CParseEventList;
 typedef Track::Event::CSharedPtr CSharedParseEventPtr;
+typedef Track::TOrder TTrackScheme;

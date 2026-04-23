@@ -1032,7 +1032,7 @@
 				// all Heads will be considered when searching for free Sectors in the "per-Cylinder" basis
 				headZ=formatBoot.nHeads-1;
 				break;
-			case TTrackScheme::BY_SIDES:
+			case TTrackScheme::BY_HEADS:
 				// only one Head at a time will be used when searching for free Sectors in the "per-Side" basis, then going to the next Head, etc.
 				headZ=0;
 				break;
