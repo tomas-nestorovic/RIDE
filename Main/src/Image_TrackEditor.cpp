@@ -1742,6 +1742,6 @@ using namespace Charting;
 	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
-			CTrackEditor( *this, CRegionArray(0), MB_OK, false, 0, format, argList ).DoModal();
+			CTrackEditor( *this, CRegionArray::GetEmpty(), MB_OK, false, 0, format, argList ).DoModal();
 		va_end(argList);
 	}

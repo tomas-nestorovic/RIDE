@@ -531,7 +531,7 @@ namespace Sector
 					tDataStart, Track::Event::DATA_OK, Track::Event::DATA_BAD
 				)->second);
 				return tr.ShowModal(
-					Time::CSharedColorIntervalArray(0), MB_OK, true, peData.GetByteTime(positionInSector),
+					Time::CSharedColorIntervalArray::GetEmpty(), MB_OK, true, peData.GetByteTime(positionInSector),
 					_T("%s, sector %s data timing"), (LPCTSTR)chs.GetTrackIdDesc(), (LPCTSTR)chs.sectorId.ToString()
 				);
 			}else

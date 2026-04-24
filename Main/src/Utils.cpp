@@ -2,7 +2,7 @@
 
 namespace Utils{
 
-	const CSharedBytes NoSharedBytes;
+	const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
 
 	#define SCREEN_DPI_DEFAULT	USER_DEFAULT_SCREEN_DPI
 

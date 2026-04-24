@@ -32,15 +32,23 @@ namespace Utils{
 	public:
 		typedef TIndex N;
 
+		inline static const CSharedPodArray &GetEmpty(){
+			return static_cast<const CSharedPodArray &>( // this is utmost nasty but efficient, provided 'TIndex' of 'Empty' covers all possible ranges
+				static_cast<const CString &>(Utils::UniversalEmptySharedPodArray)
+			);
+		}
+
 		TIndex length;
 
 		CSharedPodArray(TIndex length=0,TCHAR initByte=0)
 			: CSharedPodPtr( initByte, sizeof(T)*length )
 			, length(length) {
+			static_assert( std::is_integral<TIndex>().value, "'TIndex' must be integral" );
 		}
 		CSharedPodArray(TIndex length,const T *pCopyInitData)
 			: CSharedPodPtr( *pCopyInitData, sizeof(T)*length )
 			, length(length) {
+			static_assert( std::is_integral<TIndex>().value, "'TIndex' must be integral" );
 		}
 
 		inline operator bool() const{ return length>0; }
@@ -76,7 +84,7 @@ namespace Utils{
 
 	typedef CSharedPodArray<BYTE> CSharedBytes;
 
-	extern const CSharedBytes NoSharedBytes;
+	extern const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
 
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>

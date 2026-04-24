@@ -121,7 +121,7 @@ namespace MFM=Codec::Impl::MFM;
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
 			if (r.id==dataId)
 				return r;
-		return Utils::NoSharedBytes;
+		return Utils::CSharedBytes::GetEmpty();
 	}
 
 	void CImage::CTrackReaderState::SetCodec(Codec::TType codec){
