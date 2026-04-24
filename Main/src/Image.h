@@ -69,67 +69,6 @@
 	typedef const TFormat *PCFormat,&RCFormat;
 
 
-	#define FDC_ST1_END_OF_CYLINDER		128
-			// ^ FDC tried to access a sector beyond the final sector of the track (255D*).  Will be set if TC is not issued after Read or Write Data command
-	#define FDC_ST1_DATA_ERROR			32
-			// ^ FDC detected a CRC error in either the ID field or the data field of a sector
-	#define FDC_ST1_NO_DATA				4
-			// ^ (1) "Read Data" or "Read Deleted Data" commands - FDC did not find the specified sector; may also occur in "Read ID" and "Read Track" commands, but that's not important in scope of this application
-			//	 (2) "Read ID" command - FDC cannot read the ID field without an error
-			//	 (3) "Read Track" command - FDC cannot find the proper sector sequence
-	#define FDC_ST1_NO_ADDRESS_MARK		1
-			// ^ (1) The FDC did not detect an ID address mark at the specified track after encountering the index pulse from the IDX pin twice
-			//	 (2) The FDC cannot detect a data address mark or a deleted data address mark on the specified track
-
-
-	#define FDC_ST2_DELETED_DAM			64
-			// ^ (1) "Read Data" command - FDC encountered a deleted data address mark
-			//	 (2) "Read Deleted Data" command - the FDC encountered a data address mark
-	#define FDC_ST2_CRC_ERROR_IN_DATA	32
-			// ^ FDC detected a CRC error in the data field
-	#define FDC_ST2_NOT_DAM				1
-			// ^ The FDC cannot detect a data address mark or a deleted data address mark
-
-
-	#pragma pack(1)
-	typedef const struct TFdcStatus sealed{
-		static const TFdcStatus Unknown; // e.g. when Sector not yet attempted for reading
-		static const TFdcStatus WithoutError;
-		static const TFdcStatus SectorNotFound;
-		static const TFdcStatus IdFieldCrcError;
-		static const TFdcStatus DataFieldCrcError;
-		static const TFdcStatus NoDataField;
-		static const TFdcStatus DeletedDam;
-
-		union{
-			struct{
-				BYTE reg1,reg2;
-			};
-			WORD w;
-		};
-
-		inline TFdcStatus() : w(0) {}
-		inline TFdcStatus(WORD w) : w(w) {}
-		TFdcStatus(BYTE _reg1,BYTE _reg2);
-
-		inline operator WORD() const{ return w; }
-		inline bool operator==(const WORD st) const{ return w==st; }
-
-		WORD GetSeverity(WORD mask=-1) const;
-		inline void ExtendWith(const WORD st){ w|=st; }
-		void GetDescriptionsOfSetBits(LPCTSTR *pDescriptions) const;
-		inline bool IsWithoutError() const{ static_assert(sizeof(*this)==sizeof(WORD),""); return *(PCWORD)this==0; } // True <=> Registers don't describe any error, otherwise False
-		bool DescribesIdFieldCrcError() const;
-		void CancelIdFieldCrcError();
-		bool DescribesDataFieldCrcError() const;
-		void CancelDataFieldCrcError();
-		bool DescribesDeletedDam() const;
-		bool DescribesMissingId() const; // aka. Sector not found
-		bool DescribesMissingDam() const;
-	} *PCFdcStatus;
-
-
-
 
 
 	#define MAKE_IMAGE_ID(char1,char2,char3,char4,char5,char6,char7,char8)\

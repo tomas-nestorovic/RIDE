@@ -38,7 +38,8 @@
 
 
 
-
+namespace Sector
+{
 	const TFdcStatus TFdcStatus::Unknown(-1,-1);
 	const TFdcStatus TFdcStatus::WithoutError;
 	const TFdcStatus TFdcStatus::SectorNotFound( FDC_ST1_NO_ADDRESS_MARK, 0 );
@@ -127,6 +128,7 @@
 		// True <=> Registers describe that the data portion of a Sector has not been found, otherwise False
 		return (reg1&FDC_ST1_NO_ADDRESS_MARK)!=0 || (reg2&FDC_ST2_NOT_DAM)!=0;
 	}
+}
 
 
 
