@@ -846,7 +846,7 @@ using namespace Charting;
 					const auto uid0=uid;
 					while (iw<iwRevEnd && iw->time<tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
-					uid-=uid==uid0; // if no common bits between two consecutive Fuzzy events, continue for current Fuzzy event with the UniqueIdentifier used for the previous Fuzzy event
+					uid-= uid==uid0 && uid0>1; // if no common bits between two consecutive Fuzzy events, continue for current Fuzzy event with the UniqueIdentifier used for the previous Fuzzy event
 					while (iw<iwRevEnd && iw->time<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
 						iw++->uid=-uid;
 					uid++;
