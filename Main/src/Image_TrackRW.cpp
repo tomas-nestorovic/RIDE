@@ -176,7 +176,7 @@ namespace MFM=Codec::Impl::MFM;
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		constexpr int StepGranularity=1000;
 		const TRev nFullRevolutions=std::max( 0, GetIndexCount()-1 );
@@ -336,6 +336,8 @@ namespace MFM=Codec::Impl::MFM;
 		if (nSectorsFound>0 && nFullRevolutions>=2){ // makes sense only if some Sectors found over several Revolutions
 			// . extraction of bits from each full Revolution
 			const auto &&bits=CreateFullRevBitSequences();
+			if (pOutBits)
+				*pOutBits=bits;
 			// . forward comparison of Revolutions, from the first to the last; bits not included in the last diff script are stable across all previous Revolutions
 			Bit::CSharedDiffScript shortesEditScripts[Revolution::MAX];
 			for( TRev i=0; i<nFullRevolutions-1; ){
@@ -371,7 +373,7 @@ namespace MFM=Codec::Impl::MFM;
 				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
 					// : finding next Fuzzy interval
-					while (bit<lastBit && !(bit->fuzzy||bit->cosmeticFuzzy)) // skipping Bits that are not Fuzzy
+					while (bit<lastBit && !bit->IsFuzzy()) // skipping Bits that are not Fuzzy
 						if (ap.Cancelled)
 							return nSectorsFound;
 						else
@@ -380,7 +382,7 @@ namespace MFM=Codec::Impl::MFM;
 						break;
 					const TLogTime tPrevBit= bit==rev.begin()&&pLogTimesInfo->resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
 					TParseEvent peFuzzy( Track::Event::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
-					while (bit<lastBit && (bit->fuzzy||bit->cosmeticFuzzy)) // discovering consecutive Fuzzy Bits
+					while (bit<lastBit && bit->IsFuzzy()) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
 						else
@@ -417,17 +419,17 @@ namespace MFM=Codec::Impl::MFM;
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis){
+	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
-		return ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, idProfiles, statuses, pOutDataEnds, rOutParseEvents, ap, fullAnalysis );
+		return ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, idProfiles, statuses, pOutDataEnds, rOutParseEvents, ap, fullAnalysis, pOutBits );
 	}
 	
-	CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis){
+	CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
-		ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, ap, fullAnalysis );
+		ScanAndAnalyze( ids, idEnds, dataEnds, peTrack, ap, fullAnalysis, pOutBits );
 		return peTrack;
 	}
 

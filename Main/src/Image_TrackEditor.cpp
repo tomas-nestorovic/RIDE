@@ -805,6 +805,12 @@ using namespace Charting;
 			CTrackEditor &rte=*(CTrackEditor *)pAction->GetParams();
 			if (rte.timeEditor.GetParseEvents().GetCount()>0) // already set?
 				return pAction->TerminateWithSuccess();
+			// - assert the Track is inspected
+			const auto &inspectedBits=rte.timeEditor.GetInspectionWindows();
+			ASSERT(inspectedBits);
+			if (!inspectedBits) // pre-requisite not met ?
+				return pAction->TerminateWithError(ERROR_REQUEST_REFUSED);
+			// - analyze the Track, creating ParseEvents as the result
 			CImage::CTrackReader tr=rte.tr; // copy
 			// (1) Each decoder (e.g. Fraser's, Ogden's, etc.) begins by stepping to the NEXT InspectionWindow
 			// (2) All ParseEvents have Start/End set to BEFORE this step took place
@@ -814,12 +820,17 @@ using namespace Charting;
 			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
 			const TLogTime tIwOffset=tr.GetCurrentProfile().iwTimeDefault/2; // see (7)
-			const auto peList=std::move(tr.ScanAndAnalyze(*pAction));
+			CImage::CTrackReader::TBits analyzedBits;
+			const auto peList=std::move(tr.ScanAndAnalyze( *pAction, true, &analyzedBits ));
 			for each( const auto &pair in peList ){
 				ASSERT(pair.second->GetLength()>0);
 				const_cast<TParseEvent *>(pair.second)->Offset(tIwOffset);
 			}
 			rte.timeEditor.SetParseEvents(peList);
+			// - merge Inspected- and Analyzed- Bits
+			ASSERT( inspectedBits.GetBitCount()==analyzedBits.GetBitCount() );
+			for( auto i=inspectedBits.GetBitCount(); i-->0; )
+				inspectedBits[i].flags|=analyzedBits[i].flags;
 			return pAction->TerminateWithSuccess();
 		}
 
@@ -837,17 +848,13 @@ using namespace Charting;
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
 				const CBitSequence &iwRev=iwList.revs[i-1];
-				TInspectionWindow *iw=const_cast<TInspectionWindow *>(iwRev.begin());
+				TInspectionWindow *iw=iwRev.begin();
 				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;
 				do{
-					const auto it=peList.FindByEnd( iw->time+iwTimeTolerance, Track::Event::FUZZY_OK, Track::Event::FUZZY_BAD );
-					const TLogTimeInterval tiFuzzy= it ? it->second->Add(-iwTimeTolerance) : TLogTimeInterval::Invalid;
-					const auto uid0=uid;
-					while (iw<iwRevEnd && iw->time<tiFuzzy.tStart) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
+					while (iw<iwRevEnd && !iw->IsFuzzy()) // assigning InspectionWindows BEFORE the next Fuzzy event their UniqueIdentifiers
 						iw++->uid=uid++;
-					uid-= uid==uid0 && uid0>1; // if no common bits between two consecutive Fuzzy events, continue for current Fuzzy event with the UniqueIdentifier used for the previous Fuzzy event
-					while (iw<iwRevEnd && iw->time<=tiFuzzy.tEnd) // assigning InspectionWindows BEFORE the next Fuzzy event negative UniqueIdentifiers of the last non-Fuzzy InspectionWindow
+					while (iw<iwRevEnd && iw->IsFuzzy()) // assigning InspectionWindows INSIDE a Fuzzy event negative UniqueIdentifiers
 						iw++->uid=-uid;
 					uid++;
 					pAction->UpdateProgress(iw->time);

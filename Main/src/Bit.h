@@ -17,6 +17,7 @@ namespace Bit
 
 		inline operator BYTE() const{ return flags; }
 		inline bool IsBad() const{ return badTiming||badEncoding||badCosmetic; }
+		inline bool IsFuzzy() const{ return fuzzy||cosmeticFuzzy; }
 		inline void MarkHealthy(){ badTiming=false, badEncoding=false, badCosmetic=false; }
 	};
 
