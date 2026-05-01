@@ -348,22 +348,21 @@ namespace MFM=Codec::Impl::MFM;
 				if (ap.Cancelled)
 					return nSectorsFound;
 				// : marking different Bits neighboring Revolutions as Fuzzy
-				if (ses.length) // bitwise different?
-					iRev.ScriptToLocalDiffs( ses );
+				iRev.ScriptToLocalDiffs( ses );
 				// : inheriting fuzzyness from previous Revolution
 				iRev.InheritFlagsFrom( jRev, ses );
 			}
 			// . backward comparison of Revolutions, from the last to the first
-			for( TRev i=nFullRevolutions; i>1; )
-				if (const auto &ses=shortesEditScripts[--i]){ // neighboring Revolutions bitwise different?
-					// : conversion to dual script
-					for( auto k=ses.length; k>0; ses[--k].ConvertToDual() );
-					// : marking different Bits as Fuzzy
-					const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
-					iRev.ScriptToLocalDiffs( ses );
-					// : inheriting fuzzyness from next Revolution
-					iRev.InheritFlagsFrom( jRev, ses );
-				}
+			for( TRev i=nFullRevolutions; i>1; ){
+				// : conversion to dual script
+				const auto &ses=shortesEditScripts[--i];
+				for( auto k=ses.length; k>0; ses[--k].ConvertToDual() );
+				// : marking different Bits as Fuzzy
+				const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
+				iRev.ScriptToLocalDiffs( ses );
+				// : inheriting fuzzyness from next Revolution
+				iRev.InheritFlagsFrom( jRev, ses );
+			}
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
@@ -576,7 +575,6 @@ namespace MFM=Codec::Impl::MFM;
 
 	Time::CSharedColorIntervalArray CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const Bit::CSharedDiffScript &script) const{
 		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller)
-		ASSERT( script );
 		const Time::CSharedColorIntervalArray result(script.length);
 		for( auto i=script.length; i-->0; ){
 			const auto &si=script[i];
