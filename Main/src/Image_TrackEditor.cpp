@@ -828,9 +828,11 @@ using namespace Charting;
 			}
 			rte.timeEditor.SetParseEvents(peList);
 			// - merge Inspected- and Analyzed- Bits
-			ASSERT( inspectedBits.GetBitCount()==analyzedBits.GetBitCount() );
-			for( auto i=inspectedBits.GetBitCount(); i-->0; )
-				inspectedBits[i].flags|=analyzedBits[i].flags;
+			if (analyzedBits){ // may not be analyzed if no Sectors recognized
+				ASSERT( inspectedBits.GetBitCount()==analyzedBits.GetBitCount() );
+				for( auto i=inspectedBits.GetBitCount(); i-->0; )
+					inspectedBits[i].flags|=analyzedBits[i].flags;
+			}
 			return pAction->TerminateWithSuccess();
 		}
 
