@@ -264,7 +264,7 @@
     <ClInclude Include="src\Sector.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
-    <ClInclude Include="src\Track.h">
+    <ClInclude Include="src\TrackEvent.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
   </ItemGroup>

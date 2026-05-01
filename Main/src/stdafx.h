@@ -162,7 +162,7 @@ namespace Track
 #include "Sector.h"
 #include "Codec.h"
 #include "Medium.h"
-#include "Track.h"
+#include "TrackEvent.h"
 #include "ViewTrackMap.h"
 #include "Image.h"
 #include "DialogFormatting.h"
