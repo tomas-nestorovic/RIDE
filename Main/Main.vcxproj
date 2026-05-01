@@ -224,6 +224,7 @@
     <ClInclude Include="src\Revolution.h" />
     <ClInclude Include="src\Sector.h" />
     <ClInclude Include="src\Time.h" />
+    <ClInclude Include="src\Track.h" />
     <ClInclude Include="src\TrackEvent.h" />
     <ClInclude Include="src\XmlDocs.h" />
     <ClInclude Include="src\IPF.h" />

@@ -267,6 +267,9 @@
     <ClInclude Include="src\TrackEvent.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Track.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">

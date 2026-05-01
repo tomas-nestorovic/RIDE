@@ -163,6 +163,7 @@ namespace Track
 #include "Codec.h"
 #include "Medium.h"
 #include "TrackEvent.h"
+#include "Track.h"
 #include "ViewTrackMap.h"
 #include "Image.h"
 #include "DialogFormatting.h"
