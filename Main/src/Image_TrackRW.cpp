@@ -148,11 +148,8 @@ namespace MFM=Codec::Impl::MFM;
 		const bool value=__super::ReadBit(rtOutOne);
 		if (profile.method!=TDecoderMethod::METADATA)
 			if (currentTime>=indexPulses[iNextIndexPulse]){
-				if (pLogTimesInfo->resetDecoderOnIndex){
-					profile.Reset();
-					currentTime=indexPulses[iNextIndexPulse];
-					FindMetaDataIteratorAndApply();
-				}
+				if (pLogTimesInfo->resetDecoderOnIndex)
+					RewindToIndexAndResetProfile(iNextIndexPulse);
 				iNextIndexPulse++;
 			}
 		return value;
