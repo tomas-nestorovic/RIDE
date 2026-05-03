@@ -101,11 +101,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		// - construction of InternalTrack
 		const BYTE cylFile=cyl<<(BYTE)params.doubleTrackStep;
 		if (!tdhOffsets[cylFile][head]) // maybe a hardware error during Image creation?
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		PInternalTrack &rit=internalTracks[cyl][head];
 		f.Seek( tdhOffsets[cylFile][head], CFile::begin );
 		if (CTrackReaderWriter trw=StreamToTrack( f, cylFile, head )){
@@ -115,7 +115,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
 			return *rit;
 		}
-		return CTrackReaderWriter::Invalid;
+		return Track::Invalid;
 	}
 
 	TStdWinError CSCP::Reset(){

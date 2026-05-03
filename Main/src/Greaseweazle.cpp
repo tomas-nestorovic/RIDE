@@ -422,10 +422,10 @@
 		// converts Device Stream to general Track representation
 		if (sampleClock==0){
 			ASSERT(FALSE); // SampleClock must be queried from the Device before decoding the Stream!
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		}
 		if (!length || p[--length]) // invalid last Byte in the Stream (must be 0x00)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		CTrackReaderWriter result(
 			length, // a pessimistic estimation of # of Fluxes
 			params.fluxDecoder, params.resetFluxDecoderOnIndex
@@ -441,7 +441,7 @@
 				else{
 					// "long" flux (250-1524 samples, two Bytes)
 					if (++p>=pEnd) // unexpected end of Stream?
-						return CTrackReaderWriter::Invalid;
+						return Track::Invalid;
 					sampleCounter+=250+(i-250)*255+*p-1;
 				}
 				result.AddTime(
@@ -451,11 +451,11 @@
 			}else{
 				// special information
 				if (++p>=pEnd) // unexpected end of Stream? (incl. below Opcode)
-					return CTrackReaderWriter::Invalid;
+					return Track::Invalid;
 				switch (const TFluxOp opcode=(TFluxOp)*p++){
 					case TFluxOp::Index:{ // index information
 						if (p+sizeof(int)>pEnd) // unexpected end of Stream?
-							return CTrackReaderWriter::Invalid;
+							return Track::Invalid;
 						const int value=ReadBits28(p);
 						p+=sizeof(int)-1; // "-1" = see "p++" at the end of cycle
 						result.AddIndexTime(
@@ -466,14 +466,14 @@
 					}
 					case TFluxOp::Space: // "extra long" flux (1525-(2^28-1), seven Bytes, e.g. unformatted area)
 						if (p+sizeof(int)>pEnd) // unexpected end of Stream?
-							return CTrackReaderWriter::Invalid;
+							return Track::Invalid;
 						sampleCounter+=ReadBits28(p); // addendum to ...
 						p+=sizeof(int)-1; // "-1" = see "p++" at the end of cycle
 						break; // ... another flux
 					//case TFluxOp::Astable:
 						//commented out as Astable is intended for representation of non-formatted areas during writing, so it never appears during reading [personal communication with Keir Fraser]
 					default:
-						return CTrackReaderWriter::Invalid;
+						return Track::Invalid;
 				}
 			}
 		}
@@ -489,13 +489,13 @@
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 	}	// - selecting floppy drive
 		PBYTE p=dataBuffer;
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		// - issuing a Request to the Greaseweazle Device to read fluxes in the specified Track
 		if (SeekTo(cyl) || SelectHead(head))
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		#pragma pack(1)
 		const struct{
 			int sampleCounterInit;
@@ -506,7 +506,7 @@
 		};
 		static_assert( sizeof(readParams)==6, "" );
 		if (const TStdWinError err=SendRequest( TRequest::READ_FLUX, &readParams, sizeof(readParams) ))
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		while (const DWORD nBytesFree=dataBuffer+GW_BUFFER_CAPACITY-p)
 			if (const DWORD nBytesRead=Read( p, nBytesFree )){
 				p+=nBytesRead;
@@ -515,7 +515,7 @@
 			}else
 				break;
 		if (const TStdWinError err=GetLastFluxOperationError())
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
 		if (CTrackReaderWriter trw=GwV4StreamToTrack( dataBuffer, p-dataBuffer )){
 			// it's a Greaseweazle Stream whose data make sense
@@ -528,7 +528,7 @@
 				rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
 			return *rit;
 		}
-		return CTrackReaderWriter::Invalid;
+		return Track::Invalid;
 	}
 
 	static PBYTE WriteBits28(int i,PBYTE p){

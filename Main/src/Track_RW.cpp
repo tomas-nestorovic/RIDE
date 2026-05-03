@@ -826,7 +826,7 @@ namespace Track
 
 	typedef Time::TMetaDataItem TMetaDataItem;
 
-	const CReaderWriter CReaderWriter::Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
+	const CReaderWriter Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor

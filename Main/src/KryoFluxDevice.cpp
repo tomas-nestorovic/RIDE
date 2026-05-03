@@ -812,13 +812,13 @@
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
 		const Utils::CSharedBytes tmpDataBuffer(KF_BUFFER_CAPACITY);
 		PBYTE p=tmpDataBuffer+WriteCreatorOob(tmpDataBuffer); // inject app signature
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		const TRev nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (TRev)Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
 			while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
@@ -834,7 +834,7 @@
 			const TStdWinError err=::GetLastError();
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
 		if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 	}	// - making sure the read content is a KryoFlux Stream whose data actually make sense
 		if (CTrackReaderWriter trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
 			// it's a KryoFlux Stream whose data make sense
@@ -847,7 +847,7 @@
 				rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
 			return *rit;
 		}
-		return CTrackReaderWriter::Invalid;
+		return Track::Invalid;
 	}
 
 	bool CKryoFluxDevice::EditSettings(bool initialEditing){

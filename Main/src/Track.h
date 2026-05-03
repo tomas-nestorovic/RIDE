@@ -124,8 +124,6 @@ namespace Track
 		bool WriteDataFm(Event::TData &peData,TFdcStatus sr);
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
 	public:
-		static const CReaderWriter Invalid;
-
 		CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 		CReaderWriter(const CReaderWriter &trw,bool shareTimes=true);
@@ -153,6 +151,7 @@ namespace Track
 		CReaderWriter &Offset(TLogTime dt);
 	};
 
+	extern const CReaderWriter Invalid;
 }
 
 typedef Track::N TTrack,*PTrack;

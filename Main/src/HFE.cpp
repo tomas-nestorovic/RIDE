@@ -198,17 +198,17 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		// - construction of InternalTracks for both Heads
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		if (!internalTracks[cyl][0])
 			internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
 		if (!internalTracks[cyl][1])
 			if (!params.flippyDisk) // flippy disks not known to be represented backwards in *.HFE, hence always fail if this flag is set
 				internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
 		const PInternalTrack &rit=internalTracks[cyl][head];
-		return	rit ? *rit : CTrackReaderWriter::Invalid;
+		return	rit ? *rit : Track::Invalid;
 	}
 
 	inline int GetTotalBitRate(int dataBitRate){

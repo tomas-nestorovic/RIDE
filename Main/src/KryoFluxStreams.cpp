@@ -154,15 +154,15 @@
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		CFileException e;
 		CFile f;
 		if (!f.Open( GetStreamFileName(cyl,head), CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
 			::SetLastError(e.m_cause);
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		}
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		PInternalTrack &rit=internalTracks[cyl][head];
@@ -176,7 +176,7 @@
 					rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
 					return *rit;
 				}
-		return CTrackReaderWriter::Invalid;
+		return Track::Invalid;
 	}
 
 	void CKryoFluxStreams::SetPathName(LPCTSTR lpszPathName,BOOL bAddToMRU){

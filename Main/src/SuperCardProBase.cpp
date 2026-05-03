@@ -190,7 +190,7 @@
 		// - extracting the specified TrackDataHeader from the SCP file
 		TTrackDataHeader tdh(0);
 		if (!tdh.Read( f, cyl, head, header.nAvailableRevolutions ))
-			return CTrackReaderWriter::Invalid; // read invalid TrackDataHeader structure
+			return Track::Invalid; // read invalid TrackDataHeader structure
 		BYTE iUniqueRevolutions[Revolution::MAX];
 		const BYTE nUniqueRevolutions=tdh.GetDistinctRevolutionCount( header.nAvailableRevolutions, iUniqueRevolutions );
 		// - construction of internal representation of the Fluxes
@@ -216,7 +216,7 @@
 									t+=256*sampleClockTime;
 							break;
 						}
-					return CTrackReaderWriter::Invalid;
+					return Track::Invalid;
 				case 0:
 				case 16:
 					if (const auto &&fluxes=Utils::MakeSharedPodArray<Utils::CBigEndianWord>(ri.nFluxes))
@@ -229,10 +229,10 @@
 									t+=65536*sampleClockTime;
 							break;
 						}
-					return CTrackReaderWriter::Invalid;
+					return Track::Invalid;
 				default:
 					ASSERT(FALSE);
-					return CTrackReaderWriter::Invalid;
+					return Track::Invalid;
 			}
 			// . index
 			if (header.flags.indexAligned) // if NOT index-aligned, there is no information on original index pulses as the disk was revolving (based on the drive RPM information, the SCP device just slices whatever fluxes have been read into 200/166ms intervals, thus merely "imitating" indices) - placing here any Indices thus makes no sense
@@ -298,7 +298,7 @@
 						break;
 					default:
 						ASSERT(FALSE);
-						return CTrackReaderWriter::Invalid;
+						return Track::Invalid;
 				}
 				prevSampleClockCounter=sampleClockCounter;
 			}
@@ -315,7 +315,7 @@
 						break;
 					default:
 						ASSERT(FALSE);
-						return CTrackReaderWriter::Invalid;
+						return Track::Invalid;
 				}
 				ri.iFluxDataBegin=fRevBasePos-fBasePos;
 			// . next Revolution

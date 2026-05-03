@@ -1084,7 +1084,7 @@ invalidTrack:
 			return tr;
 		// - checking that specified Track actually CAN exist
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		// - creating the description
 		static constexpr CapsTrackInfoT2 CtiEmpty={2};
 		const UDWORD lockFlags= capsVersionInfo.flag&( DI_LOCK_INDEX | DI_LOCK_DENVAR | DI_LOCK_DENAUTO | DI_LOCK_DENNOISE | DI_LOCK_NOISE | DI_LOCK_TYPE | DI_LOCK_OVLBIT | DI_LOCK_TRKBIT | DI_LOCK_UPDATEFD );
@@ -1094,7 +1094,7 @@ invalidTrack:
 			||
 			(cti->type&CTIT_MASK_TYPE)==ctitNA // error during Track retrieval
 		)
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		TRev nRevs=1;
 		if (cti->weakcnt!=0) // Track contains some areas with fuzzy bits
 			while (nRevs<CAPS_MTRS){
@@ -1131,7 +1131,7 @@ invalidTrack:
 			pit->SetCurrentTime(0); // just to be sure the internal TrackReader is returned in valid state (as invalid state indicates this functionality is not supported)
 			return *pit;
 		}else
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 	}
 
 

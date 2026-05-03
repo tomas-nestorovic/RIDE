@@ -248,7 +248,7 @@
 			const BYTE header=*rawBytes++;
 			if (rawBytes+3>pLastRawByte){ // "+3" = we should finish with an Out-of-Stream mark whose Header has just been read, leaving 3 unread Bytes
 badFormat:		::SetLastError(ERROR_BAD_FORMAT);
-				return CTrackReaderWriter::Invalid;
+				return Track::Invalid;
 			}
 			if (header<=0x07){
 				// Flux2 (see KryoFlux Stream specification for explanation)
@@ -329,7 +329,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 										case 0x01:
 											// buffering problem
 											::SetLastError(ERROR_BUFFER_OVERFLOW);
-											return CTrackReaderWriter::Invalid;
+											return Track::Invalid;
 										case 0x02:
 											// no index signal detected
 											break;
@@ -368,7 +368,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		}
 		if (!isKryofluxStream){ // not explicitly confirmed that this is a KryoFlux Stream
 			::SetLastError(ERROR_BAD_FILE_TYPE);
-			return CTrackReaderWriter::Invalid;
+			return Track::Invalid;
 		}
 		const DWORD inStreamDataLength=pis-inStreamData;
 		// - creating and returning a Track representation of the Stream

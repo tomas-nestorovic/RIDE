@@ -928,7 +928,7 @@ namespace Sector
 
 	CTrackReader CImage::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
-		return CTrackReaderWriter::Invalid; // not supported (TrackReader invalid right from its creation)
+		return Track::Invalid; // not supported (TrackReader invalid right from its creation)
 	}
 
 	TStdWinError CImage::WriteTrack(TCylinder cyl,THead head,CTrackReader tr){
