@@ -418,7 +418,7 @@
 		return	p[0]>>1 | (p[1]&0xfe)<<6 | (p[2]&0xfe)<<13 | (p[3]&0xfe)<<20;
 	}
 
-	CImage::CTrackReaderWriter CGreaseweazleV4::GwV4StreamToTrack(PCBYTE p,DWORD length) const{
+	CTrackReaderWriter CGreaseweazleV4::GwV4StreamToTrack(PCBYTE p,DWORD length) const{
 		// converts Device Stream to general Track representation
 		if (sampleClock==0){
 			ASSERT(FALSE); // SampleClock must be queried from the Device before decoding the Stream!
@@ -480,7 +480,7 @@
 		return result;
 	}
 
-	CImage::CTrackReader CGreaseweazleV4::ReadTrack(TCylinder cyl,THead head) const{
+	CTrackReader CGreaseweazleV4::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		PInternalTrack &rit=internalTracks[cyl][head];
 	{	EXCLUSIVELY_LOCK_THIS_IMAGE();

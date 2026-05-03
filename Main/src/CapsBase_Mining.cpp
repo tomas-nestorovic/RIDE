@@ -145,7 +145,7 @@ using namespace Charting;
 					OnOK();
 			}
 
-			void ShowScatterPlotOfTrack(const CImage::CTrackReaderWriter &trw){
+			void ShowScatterPlotOfTrack(const CTrackReaderWriter &trw){
 				// populates the ScatterPlotView with Track's simplified timing
 				// . indices
 				for( TRev i=0; i<trw.GetIndexCount(); i++ ){

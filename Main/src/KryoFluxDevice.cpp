@@ -803,7 +803,7 @@
 		return err;
 	}
 
-	CImage::CTrackReader CKryoFluxDevice::ReadTrack(TCylinder cyl,THead head) const{
+	CTrackReader CKryoFluxDevice::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		PInternalTrack &rit=internalTracks[cyl][head];
 	{	EXCLUSIVELY_LOCK_THIS_IMAGE();

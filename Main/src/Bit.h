@@ -27,4 +27,53 @@ namespace Bit
 
 	typedef Utils::CSharedPodArray<CDiffBase::TScriptItem,N> CSharedDiffScript;
 
+
+
+
+	class CSequence{
+	public:
+		typedef const struct TBit sealed:public TTimed{
+			int uid; // unique identifier (unused by default, set by caller)
+
+			inline bool operator==(const TBit &r) const{ return value==r.value; }
+			inline TLogTime GetLength() const{ return this[1].time-time; }
+		} *PCBit;
+				
+		template <typename T>
+		struct TData sealed:public TTimed{
+			T value; // '__super::value' now used to indicate validity of this Data
+
+			inline TData(){ flags=0; } // initialized as invalid
+			inline operator bool() const{ return __super::value!=0; }
+			inline operator T() const{ return value; }
+			inline void Validate(){ __super::value=1; }
+		};
+	private:
+		Utils::CSharedPodArray<TBit,N> bitBuffer;
+		TBit *pBits;
+		N nBits;
+	public:
+		CSequence();
+		CSequence(Track::CReader &tr,N nBitsFromCurrTime,BYTE oneOkPercent=0);
+		CSequence(const CSequence &base,const TLogTimeInterval &ti);
+
+		inline operator bool() const{ return nBits>0; }
+		inline TBit &operator[](N i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
+		inline N GetBitCount() const{ return nBits; }
+		TData<WORD> GetWord(int i) const;
+		PCBit Find(TLogTime t) const;
+		PCBit FindOrNull(TLogTime t) const;
+		CSharedDiffScript GetShortestEditScript(const CSequence &theirs,CActionProgress &ap) const;
+		Time::CSharedColorIntervalArray ScriptToLocalDiffs(const CSharedDiffScript &script) const;
+		Time::CSharedColorIntervalArray ScriptToLocalRegions(const CSharedDiffScript &script,COLORREF regionColor) const;
+		void InheritFlagsFrom(const CSequence &theirs,const CSharedDiffScript &script) const;
+		void OffsetAll(TLogTime dt) const;
+	#ifdef _DEBUG
+		void SaveCsv(LPCTSTR filename) const;
+	#endif
+		// 'for each' support
+		inline TBit *begin() const{ return pBits; }
+		inline TBit *end() const{ return pBits+nBits; }
+	};
+	
 }

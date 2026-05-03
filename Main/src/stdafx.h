@@ -140,6 +140,10 @@ typedef const TLogPoint *PCLogPoint;
 
 #define STR_CANCEL		_T("Cancel")
 
+namespace Track
+{
+	class CReader; // forward
+}
 namespace Bit
 {
 	typedef int N; // index or count, negative to indicate invalidity

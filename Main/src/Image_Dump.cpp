@@ -64,7 +64,7 @@
 			: dos(_dos)
 			, source(dos->image)
 			, canCalibrateSourceHeads( source->SeekHeadsHome()==ERROR_SUCCESS )
-			, sourceSupportsTrackReading( source->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED )
+			, sourceSupportsTrackReading( source->WriteTrack(0,0,CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED )
 			, formatJustBadTracks(false)
 			, requireAllStdSectorDataPresent( dos->IsKnown() )
 			, fullTrackAnalysis( source->ReadTrack(0,0) ) // if the Source provides access to low-level recording, let's also do the FullTrackAnalysis
@@ -266,7 +266,7 @@
 		} p;
 		::ZeroMemory(&p,sizeof(p));
 		p.exclusion.allUnknown=dp.dos->IsKnown() && dynamic_cast<CImageRaw *>(dp.target.get())!=nullptr; // Unknown Sectors in recognized DOS cause preliminary termination of dumping to a RawImage, hence excluding them all automatically
-		p.targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
+		p.targetSupportsTrackWriting=dp.target->WriteTrack(0,0,CTrackReaderWriter::Invalid)!=ERROR_NOT_SUPPORTED;
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		for( p.chs.cylinder=dp.cylinderA; p.chs.cylinder<=dp.cylinderZ; pAction->UpdateProgress(++p.chs.cylinder-dp.cylinderA) )
 			for( p.chs.head=0; p.chs.head<dp.nHeads; ){
@@ -302,7 +302,7 @@
 					}
 				}
 				// . reading Source Track
-				CImage::CTrackReader &&trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
+				CTrackReader &&trSrc=dp.source->ReadTrack( p.chs.cylinder, p.chs.head );
 				const bool trackWriteable0 = p.trackWriteable = trSrc && p.targetSupportsTrackWriting && (sourceCodec&dp.targetCodecs)!=0; // A&B&C, A&B = Source and Target must support whole Track access, C = Target must support the Codec used in Source
 				// . if possible, analyzing the read Source Track
 				if (trSrc && dp.fullTrackAnalysis){
@@ -1178,7 +1178,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 											targetImageProperties
 										);
 									// : can change Medium only when Source has no explicit Track timing
-									EnableDlgItem( ID_MEDIUM, dos->image->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
+									EnableDlgItem( ID_MEDIUM, dos->image->WriteTrack(0,0,CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
 									// : preselection of current MediumType (if any recognized)
 									Medium::TType mt=Medium::UNKNOWN; // assumption (Medium not recognized)
 									dos->image->GetInsertedMediumType( 0, mt );
@@ -1203,7 +1203,7 @@ setDestination:						// : compacting FileName in order to be better displayable 
 									mt!=Medium::UNKNOWN ? targetImageProperties : nullptr
 								);
 								// : can change Codec only when Source has no explicit Track timing
-								EnableDlgItem( ID_CODEC, dos->image->WriteTrack(0,0,CImage::CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
+								EnableDlgItem( ID_CODEC, dos->image->WriteTrack(0,0,CTrackReaderWriter::Invalid)==ERROR_NOT_SUPPORTED );
 								// : enabling/disabling controls
 								static constexpr WORD Controls[]={ ID_CYLINDER, ID_CYLINDER_N, ID_HEAD, ID_GAP, ID_NUMBER, ID_DEFAULT1, IDOK, 0 };
 								CheckAndEnableDlgItem(

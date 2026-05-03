@@ -27,7 +27,7 @@ using namespace Charting;
 	#define INI_INSPECTION_APPROX _T("insa")
 
 	class CTrackEditor sealed:public Utils::CRideDialog{
-		const CImage::CTrackReader &tr;
+		const CTrackReader &tr;
 		const UINT messageBoxButtons;
 		const bool initAllFeaturesOn;
 		const TLogTime tInitScrollTo;
@@ -49,17 +49,15 @@ using namespace Charting;
 			DEFAULT	= TIME//|SPACING
 		};
 
-		typedef CImage::CTrackReader::CBitSequence CBitSequence;
-
-		typedef CBitSequence::TBit TInspectionWindow;
+		typedef Bit::CSequence::TBit TInspectionWindow;
 			// "uid" = Revolution-wide unique identifier; corresponding bits across Revolutions have the same unique identifier
 		typedef const TInspectionWindow *PCInspectionWindow;
 		
 		class CTimeEditor sealed:public CScrollView{
 			Time::CTimeline timeline;
-			CImage::CTrackReader tr;
+			CTrackReader tr;
 			TLogTime scrollTime;
-			CImage::CTrackReader::TBits inspectionWindows;
+			Track::CBits inspectionWindows;
 			CParseEventList parseEvents;
 			TLogTime draggedTime; // Time at which left mouse button has been pressed
 			TLogTime cursorTime; // Time over which the cursor hovers
@@ -100,7 +98,7 @@ using namespace Charting;
 						Track::Event::TypeColors[12]
 					};
 					const TLogTime iwTimeDefaultHalf=te.tr.GetCurrentProfile().iwTimeDefault/2;
-					for( CImage::CTrackReader tr=te.tr; true; ){
+					for( CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
 						p.repaintEvent.Lock();
 						if (!::IsWindow(te.m_hWnd)) // window closed?
@@ -509,7 +507,7 @@ using namespace Charting;
 			const Utils::CRideFont fontMetaData;
 			bool decimalByteValues;
 
-			CTimeEditor(const CImage::CTrackReader &tr,const CRegionArray &regions)
+			CTimeEditor(const CTrackReader &tr,const CRegionArray &regions)
 				// ctor
 				: timeline( tr.GetTotalTime(), 1, 10 )
 				, tr(tr)
@@ -600,11 +598,11 @@ using namespace Charting;
 				SetScrollTime( t-(GetCenterTime()-scrollTime) );
 			}
 
-			inline const CImage::CTrackReader::TBits &GetInspectionWindows() const{
+			inline const Track::CBits &GetInspectionWindows() const{
 				return inspectionWindows;
 			}
 
-			inline void SetInspectionWindows(const CImage::CTrackReader::TBits &list){
+			inline void SetInspectionWindows(const Track::CBits &list){
 				inspectionWindows=list;
 			}
 
@@ -811,7 +809,7 @@ using namespace Charting;
 			if (!inspectedBits) // pre-requisite not met ?
 				return pAction->TerminateWithError(ERROR_REQUEST_REFUSED);
 			// - analyze the Track, creating ParseEvents as the result
-			CImage::CTrackReader tr=rte.tr; // copy
+			CTrackReader tr=rte.tr; // copy
 			// (1) Each decoder (e.g. Fraser's, Ogden's, etc.) begins by stepping to the NEXT InspectionWindow
 			// (2) All ParseEvents have Start/End set to BEFORE this step took place
 			// (3) So, all ParseEvents are one actual InspectionWindow size BEHIND!
@@ -820,7 +818,7 @@ using namespace Charting;
 			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
 			const TLogTime tIwOffset=tr.GetCurrentProfile().iwTimeDefault/2; // see (7)
-			CImage::CTrackReader::TBits analyzedBits;
+			Track::CBits analyzedBits;
 			const auto peList=std::move(tr.ScanAndAnalyze( *pAction, true, &analyzedBits ));
 			for each( const auto &pair in peList ){
 				ASSERT(pair.second->GetLength()>0);
@@ -841,7 +839,7 @@ using namespace Charting;
 			const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)_pCancelableAction;
 			const CTrackEditor &te=*(const CTrackEditor *)pAction->GetParams();
 			ASSERT( te.timeEditor.GetInspectionWindows() ); // must be set!
-			const CImage::CTrackReader &tr=te.tr;
+			const CTrackReader &tr=te.tr;
 			if (tr.GetIndexCount()<3) // at least two full Revolution must exist ...
 				return pAction->TerminateWithSuccess(); // ... otherwise matching bits can't be linked together
 			pAction->SetProgressTarget(tr.GetTotalTime());
@@ -849,7 +847,7 @@ using namespace Charting;
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
-				const CBitSequence &iwRev=iwList.revs[i-1];
+				const Bit::CSequence &iwRev=iwList.revs[i-1];
 				TInspectionWindow *iw=iwRev.begin();
 				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;
@@ -1324,7 +1322,7 @@ using namespace Charting;
 								if (iwInfo.oneOkPercent!=org || !timeEditor.GetInspectionWindows()){
 									if (timeEditor.IsFeatureShown(TCursorFeatures::INSPECT))
 										timeEditor.ToggleFeature(TCursorFeatures::INSPECT); // declaring the feature hidden ...
-									timeEditor.SetInspectionWindows(CImage::CTrackReader::TBits()); // ... and disposing previous
+									timeEditor.SetInspectionWindows(Track::CBits()); // ... and disposing previous
 									iwInfo.badBlocks.RemoveAll();
 									SendMessage( WM_COMMAND, ID_RECOGNIZE );
 								}
@@ -1332,7 +1330,7 @@ using namespace Charting;
 						}
 						case ID_CHART:{
 							// modal display of scatter plot of time differences
-							CImage::CTrackReader tr=this->tr;
+							CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
 							const Utils::CSharedPodArray<TLogPoint,TIndex> deltaTimes( tr.GetTimesCount() );
 								PLogPoint pLastItem=deltaTimes;
@@ -1398,7 +1396,7 @@ using namespace Charting;
 								} peSeries(peList);
 							class CScatterPlotDialog sealed:public CChartDialog{
 								const CMainWindow::CDynMenu menu;
-								const CImage::CTrackReader &tr;
+								const CTrackReader &tr;
 								Revolution::TType revolution;
 								const CChartView::PCGraphics graphicsBegin; // the following is an implicit array of Graphics ...
 								CXyParseEventSeries &peSeries;
@@ -1406,7 +1404,7 @@ using namespace Charting;
 								CChartView::CXyPointSeries &deltaTimeSeries;
 								CChartView::CXyDisplayInfo di; // ... and this indicates its end
 							public:
-								CScatterPlotDialog(const CImage::CTrackReader &tr,CChartView::CXyPointSeries &deltaTimeSeries,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
+								CScatterPlotDialog(const CTrackReader &tr,CChartView::CXyPointSeries &deltaTimeSeries,CXyParseEventSeries &peSeries,CChartView::CXyOrderedBarSeries &indexSeries)
 									: CChartDialog(di)
 									, menu(IDR_SCATTERPLOT)
 									, tr(tr) , revolution(Revolution::NONE) // show whole Track
@@ -1519,7 +1517,7 @@ using namespace Charting;
 							return TRUE;
 						}
 						case ID_HISTOGRAM:{
-							CImage::CTrackReader tr=this->tr;
+							CTrackReader tr=this->tr;
 							TCHAR caption[80];
 							TLogTime tBegin,tEnd;
 							if (tr.GetIndexCount()>=2){ // will populate the Histogram with Times between first and last Index
@@ -1575,7 +1573,7 @@ using namespace Charting;
 						case ID_FILE_SAVE_AS:
 							// export Track timing
 							class CExportDialog sealed:public Utils::CRideDialog{
-								const CImage::CTrackReader &tr;
+								const CTrackReader &tr;
 								int iContent, iRange, singleRevolution;
 								TCHAR separator;
 
@@ -1636,7 +1634,7 @@ using namespace Charting;
 							public:
 								CString filename;
 
-								CExportDialog(const CImage::CTrackReader &tr)
+								CExportDialog(const CTrackReader &tr)
 									: Utils::CRideDialog( IDR_TRACK_EXPORT )
 									, filename(ELLIPSIS)
 									, tr(tr)
@@ -1649,7 +1647,7 @@ using namespace Charting;
 									// thread to export the Track timing
 									CBackgroundActionCancelable &bac=*(PBackgroundActionCancelable)pCancelableAction;
 									const CExportDialog &d=*(CExportDialog *)bac.GetParams();
-									CImage::CTrackReader tr=d.tr;
+									CTrackReader tr=d.tr;
 									TLogTime tStart,tEnd;
 									switch (d.iRange){
 										default:
@@ -1718,7 +1716,7 @@ using namespace Charting;
 		}
 
 	public:
-		CTrackEditor(const CImage::CTrackReader &tr,const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR captionFormat,va_list argList)
+		CTrackEditor(const CTrackReader &tr,const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR captionFormat,va_list argList)
 			// ctor
 			// - base
 			: Utils::CRideDialog( IDR_TRACK_EDITOR, CWnd::FromHandle(app.GetEnabledActiveWindow()) )
@@ -1740,7 +1738,7 @@ using namespace Charting;
 
 
 
-	BYTE __cdecl CImage::CTrackReader::ShowModal(const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
+	BYTE __cdecl CTrackReader::ShowModal(const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
 			const BYTE result=CTrackEditor( *this, regions, messageBoxButtons, initAllFeaturesOn, tScrollTo, format, argList ).DoModal();
@@ -1748,7 +1746,7 @@ using namespace Charting;
 		return result;
 	}
 
-	void __cdecl CImage::CTrackReader::ShowModal(LPCTSTR format,...) const{
+	void __cdecl CTrackReader::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
 			CTrackEditor( *this, CRegionArray::GetEmpty(), MB_OK, false, 0, format, argList ).DoModal();

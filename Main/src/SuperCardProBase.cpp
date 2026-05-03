@@ -184,7 +184,7 @@
 
 
 
-	CImage::CTrackReaderWriter CSuperCardProBase::StreamToTrack(CFile &f,TCylinder cyl,THead head) const{
+	CTrackReaderWriter CSuperCardProBase::StreamToTrack(CFile &f,TCylinder cyl,THead head) const{
 		// creates and returns a Track representation of the input TrackDataHeader structure and fluxes
 		const auto fBasePos=f.GetPosition();
 		// - extracting the specified TrackDataHeader from the SCP file

@@ -2,7 +2,9 @@
 #include "Charting.h"
 namespace MFM=Codec::Impl::MFM;
 
-	CImage::CTrackReaderBuffers::CTrackReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti)
+namespace Track
+{
+	CReaderBuffers::CReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti)
 		// ctor
 		: CDecoder(decoder)
 		, pLogTimesInfo(pLti)
@@ -14,27 +16,20 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	CImage::CTrackReaderState::CTrackReaderState(const CDecoder &decoder,PLogTimesInfo pLti)
-		// ctor
-		: CTrackReaderBuffers( decoder, pLti )
-		, iNextIndexPulse(0) , nIndexPulses(0) {
-		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
-	}
-
-	CImage::CTrackReader::TLogTimesInfoData::TLogTimesInfoData(bool resetDecoderOnIndex)
+	CReaderBuffers::TLogTimesInfoData::TLogTimesInfoData(bool resetDecoderOnIndex)
 		// ctor
 		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
 		, resetDecoderOnIndex(resetDecoderOnIndex) {
 		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
-	CImage::CTrackReader::CLogTimesInfo::CLogTimesInfo(bool resetDecoderOnIndex)
+	CReaderBuffers::CLogTimesInfo::CLogTimesInfo(bool resetDecoderOnIndex)
 		// "ctor"
 		: TLogTimesInfoData( resetDecoderOnIndex )
 		, nRefs(1) {
 	}
 
-	bool CImage::CTrackReaderState::CLogTimesInfo::Release(){
+	bool CReaderBuffers::CLogTimesInfo::Release(){
 		// "dtor"
 		if (::InterlockedDecrement(&nRefs)==0){
 			delete this;
@@ -48,28 +43,32 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	CImage::CTrackReader::CTrackReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
+	CReader::CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
-		: CTrackReaderState(
+		: CReaderBuffers(
 			CDecoder( method, nLogTimesMax, 0, pLti->metaData ),
 			pLti
-		) {
-		SetCodec(codec); // setting values associated with the specified Codec
+		)
+		, iNextIndexPulse(0) , nIndexPulses(0) {
+		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
+		SetCodec(codec); // init values associated with the specified Codec
 	}
 
-	CImage::CTrackReader::CTrackReader(const CTrackReader &tr)
+	CReader::CReader(const CReader &tr)
 		// copy ctor
-		: CTrackReaderState(tr) {
+		: CReaderBuffers(tr)
+		, iNextIndexPulse(tr.iNextIndexPulse) , nIndexPulses(tr.nIndexPulses) {
 		pLogTimesInfo->AddRef();
 	}
 
-	CImage::CTrackReader::CTrackReader(CTrackReader &&tr)
+	CReader::CReader(CReader &&tr)
 		// move ctor
-		: CTrackReaderState(tr) {
+		: CReaderBuffers(tr)
+		, iNextIndexPulse(tr.iNextIndexPulse) , nIndexPulses(tr.nIndexPulses) {
 		pLogTimesInfo->AddRef();
 	}
 
-	CImage::CTrackReader::~CTrackReader(){
+	CReader::~CReader(){
 		// dtor
 		pLogTimesInfo->Release();
 	}
@@ -77,23 +76,38 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	constexpr TLogTime TimelyFromPrevious=Track::Event::TimelyFromPrevious;
+	constexpr TLogTime TimelyFromPrevious=Event::TimelyFromPrevious;
 
-	void CImage::CTrackReader::SetCurrentTime(TLogTime logTime){
+	void CReader::SetCurrentTime(TLogTime logTime){
 		// seeks to the specified LogicalTime
 		__super::SetCurrentTime(logTime);
+		FindMetaDataIteratorAndApply();
+		//TODO: indexPulses.FindNextGreater( time, arrayLength=0 )
+		//TODO: indexPulses.FindNextGreaterIndex( time, arrayLength=0 )
 		for( iNextIndexPulse=0; iNextIndexPulse<nIndexPulses; iNextIndexPulse++ )
 			if (logTime<indexPulses[iNextIndexPulse])
 				break;
 	}
 
-	void CImage::CTrackReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
+	void CReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
 		// seeks to the specified LogicalTime, setting also the specified Profile at that LogicalTime
 		this->profile=profile; // eventually overridden ...
 		SetCurrentTime(logTime); // ... here
 	}
 
-	TLogTime CImage::CTrackReader::GetIndexTime(TRev index) const{
+	TLogTime CReader::RewindToIndex(TRev index){
+		// navigates back to the first Flux found just after the index pulse
+		SetCurrentTime( GetIndexTime(index) );
+		return GetCurrentTime();
+	}
+
+	TLogTime CReader::RewindToIndexAndResetProfile(TRev index){
+		// navigates back to the first Flux found just after the index pulse
+		profile.Reset();
+		return RewindToIndex( index );
+	}
+
+	TLogTime CReader::GetIndexTime(TRev index) const{
 		// returns the Time at which the specified IndexPulse occurs
 		if (!nLogTimes || (nIndexPulses|index)==0)
 			return 0;
@@ -103,7 +117,7 @@ namespace MFM=Codec::Impl::MFM;
 					: logTimes[nLogTimes-1];
 	}
 
-	TLogTime CImage::CTrackReader::GetAvgIndexDistance() const{
+	TLogTime CReader::GetAvgIndexDistance() const{
 		// given at least two indices, computes and returns the average distance between them, otherwise 0
 		if (nIndexPulses<2)
 			return 0;
@@ -111,12 +125,12 @@ namespace MFM=Codec::Impl::MFM;
 		return (indexPulses[nFullRevs]-*indexPulses)/nFullRevs;
 	}
 
-	TLogTime CImage::CTrackReader::GetTotalTime() const{
+	TLogTime CReader::GetTotalTime() const{
 		// returns the minimum time that covers both Indices and recorded Times
 		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
-	const Utils::CSharedBytes &CImage::CTrackReader::GetRawDeviceData(Track::TTypeId dataId) const{
+	const Utils::CSharedBytes &CReader::GetRawDeviceData(TTypeId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
 			if (r.id==dataId)
@@ -124,7 +138,7 @@ namespace MFM=Codec::Impl::MFM;
 		return Utils::CSharedBytes::GetEmpty();
 	}
 
-	void CImage::CTrackReaderState::SetCodec(Codec::TType codec){
+	void CReader::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
 		if (const Codec::PCProperties p=Codec::GetProperties(codec)){
 			pLogTimesInfo->codec=codec;
@@ -133,7 +147,7 @@ namespace MFM=Codec::Impl::MFM;
 			ASSERT(FALSE); // we shouldn't end up here!
 	}
 
-	void CImage::CTrackReaderState::SetMediumType(Medium::TType mediumType){
+	void CReader::SetMediumType(Medium::TType mediumType){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
 		if ( pLogTimesInfo->mediumProps=Medium::GetProperties(mediumType) )
 			static_cast<Time::Decoder::TLimits &>(profile)=pLogTimesInfo->mediumProps->CreateTimeDecoderLimits();
@@ -143,7 +157,7 @@ namespace MFM=Codec::Impl::MFM;
 		ApplyCurrentTimeMetaData();
 	}
 
-	bool CImage::CTrackReader::ReadBit(TLogTime &rtOutOne){
+	bool CReader::ReadBit(TLogTime &rtOutOne){
 		// returns first bit not yet read
 		const bool value=__super::ReadBit(rtOutOne);
 		if (profile.method!=TDecoderMethod::METADATA)
@@ -155,7 +169,7 @@ namespace MFM=Codec::Impl::MFM;
 		return value;
 	}
 
-	WORD CImage::CTrackReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
+	WORD CReader::Scan(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		profile.Reset();
 		WORD nSectorsFound;
@@ -173,7 +187,7 @@ namespace MFM=Codec::Impl::MFM;
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
+	WORD CReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,CBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		constexpr int StepGranularity=1000;
 		const TRev nFullRevolutions=std::max( 0, GetIndexCount()-1 );
@@ -215,7 +229,7 @@ namespace MFM=Codec::Impl::MFM;
 						if (pe.IsDataStd()) // ... only within a Sector data
 							if (pe.Contains(t0) || pe.Contains(t)){
 								rOutParseEvents.Add(
-									TParseEvent( Track::Event::NONFORMATTED, t0, t, 0 )
+									TParseEvent( Event::NONFORMATTED, t0, t, 0 )
 								);
 								break;
 							}
@@ -321,7 +335,7 @@ namespace MFM=Codec::Impl::MFM;
 							}
 							nBytesInspected++;
 						}
-						peData.Finalize( currentTime, profile, nBytesInspected, Track::Event::DATA_IN_GAP );
+						peData.Finalize( currentTime, profile, nBytesInspected, Event::DATA_IN_GAP );
 						rOutParseEvents.Add( peData );
 					}
 				}
@@ -339,7 +353,7 @@ namespace MFM=Codec::Impl::MFM;
 			Bit::CSharedDiffScript shortesEditScripts[Revolution::MAX];
 			for( TRev i=0; i<nFullRevolutions-1; ){
 				// : comparing the two neighboring Revolutions I and J
-				const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[++i];
+				const Bit::CSequence &jRev=bits.revs[i], &iRev=bits.revs[++i];
 				auto &ses=shortesEditScripts[i];
 				ses=iRev.GetShortestEditScript( jRev, ap.CreateSubactionProgress(StepGranularity) );
 				if (ap.Cancelled)
@@ -355,7 +369,7 @@ namespace MFM=Codec::Impl::MFM;
 				const auto &ses=shortesEditScripts[--i];
 				for( auto k=ses.length; k>0; ses[--k].ConvertToDual() );
 				// : marking different Bits as Fuzzy
-				const CBitSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
+				const Bit::CSequence &jRev=bits.revs[i], &iRev=bits.revs[i-1];
 				iRev.ScriptToLocalDiffs( ses );
 				// : inheriting fuzzyness from next Revolution
 				iRev.InheritFlagsFrom( jRev, ses );
@@ -364,9 +378,9 @@ namespace MFM=Codec::Impl::MFM;
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
 			for( TRev r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
-				const CBitSequence &rev=bits.revs[r];
+				const Bit::CSequence &rev=bits.revs[r];
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
-				CBitSequence::PCBit bit=rev.begin(), lastBit=rev.end();
+				Bit::CSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
 					// : finding next Fuzzy interval
 					while (bit<lastBit && !bit->IsFuzzy()) // skipping Bits that are not Fuzzy
@@ -377,7 +391,7 @@ namespace MFM=Codec::Impl::MFM;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
 					const TLogTime tPrevBit= bit==rev.begin()&&pLogTimesInfo->resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
-					TParseEvent peFuzzy( Track::Event::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
+					TParseEvent peFuzzy( Event::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					while (bit<lastBit && bit->IsFuzzy()) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
 							return nSectorsFound;
@@ -415,13 +429,13 @@ namespace MFM=Codec::Impl::MFM;
 		return nSectorsFound;
 	}
 
-	WORD CImage::CTrackReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
+	WORD CReader::ScanAndAnalyze(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,PLogTime pOutDataEnds,CParseEventList &rOutParseEvents,CActionProgress &ap,bool fullAnalysis,CBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		TProfile idProfiles[Revolution::MAX*(TSector)-1]; TFdcStatus statuses[Revolution::MAX*(TSector)-1];
 		return ScanAndAnalyze( pOutFoundSectors, pOutIdEnds, idProfiles, statuses, pOutDataEnds, rOutParseEvents, ap, fullAnalysis, pOutBits );
 	}
 	
-	CParseEventList CImage::CTrackReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis,TBits *pOutBits){
+	CParseEventList CReader::ScanAndAnalyze(CActionProgress &ap,bool fullAnalysis,CBits *pOutBits){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		CParseEventList peTrack;
 		TSectorId ids[Revolution::MAX*(TSector)-1]; TLogTime idEnds[Revolution::MAX*(TSector)-1]; TLogTime dataEnds[Revolution::MAX*(TSector)-1];
@@ -429,7 +443,7 @@ namespace MFM=Codec::Impl::MFM;
 		return peTrack;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
+	TFdcStatus CReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
@@ -454,227 +468,20 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-	CImage::CTrackReader::CBitSequence::CBitSequence()
-		// ctor
-		: nBits(0) {
-	}
-
-	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader tr,TLogTime tFrom,const CTrackReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent)
-		// ctor
-		// - initialization
-		: nBits(0) {
+	Bit::CSequence CReader::CreateBitSequence(TLogTime tFrom,const CReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent) const{
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
+		CReader tr=*this;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		tTo=std::min( tTo-iwTimeDefaultHalf, tr.GetTotalTime() );
+		Bit::N nBits=0;
 		while (tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
-		// - create and populate the BitBuffer
+		// - create the Sequence
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
-		*this=CBitSequence( tr, nBits, oneOkPercent );
+		return Bit::CSequence( tr, nBits, oneOkPercent );
 	}
 
-	CImage::CTrackReader::CBitSequence::CBitSequence(CTrackReader &tr,int nBitsFromCurrTime,BYTE oneOkPercent)
-		// ctor
-		// - initialization
-		: nBits(0) {
-		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBitsFromCurrTime+2 )->time=tr.GetCurrentTime(); // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
-		pBits=bitBuffer+1; // skip that one hidden Bit
-		TBit *p=pBits;
-		for( TLogTime tOne; nBits<nBitsFromCurrTime; nBits++ ){
-			p->flags=0;
-			p->value=tr.ReadBit(tOne);
-			p->time=tr.GetCurrentTime();
-			if (oneOkPercent && p->value){ // only windows containing "1" are evaluated as for timing
-				const TLogTime iwTimeHalf=tr.GetCurrentProfile().iwTime/2;
-				const TLogTime absDiff=std::abs(tOne-tr.GetCurrentTime());
-				//ASSERT( absDiff <= iwTimeHalf+1 ); // "+1" = when IwTime is odd, e.g. 1665, half of which is 833, not 832
-				p->badTiming=absDiff*100>iwTimeHalf*oneOkPercent;
-			}
-			p->badEncoding=!tr.IsLastReadBitHealthy();
-			p+= p[-1].time<p->time; // may not be the case if Decoder went over Index and got reset
-		}
-		p->time=p[-1].time; // auxiliary terminal Bit
-		p[1].time=Time::Infinity;
-		nBits=p-pBits; // # of Bits may in the end be lower due to dropping of Bits over Indices
-	#ifdef _DEBUG
-		TLogTime tPrev=Time::Invalid;
-		for each( const auto &bit in *this ){
-			ASSERT( tPrev<bit.time );
-			tPrev=bit.time;
-		}
-	#endif
-	}
-
-	CImage::CTrackReader::CBitSequence::CBitSequence(const CBitSequence &base,const TLogTimeInterval &ti)
-		// ctor (subsequence)
-		: bitBuffer(base.bitBuffer)
-		, pBits( const_cast<TBit *>(base.Find(ti.tStart)) )
-		, nBits( base.Find(ti.tEnd)-pBits ) {
-		if (pBits<base.pBits){ // mustn't leave the the range of Base Sequence (e.g. mustn't include hidden Bits)
-			nBits-=base.pBits-pBits;
-			pBits=base.pBits;
-		}
-	}
-
-	CImage::CTrackReader::CBitSequence::TData<WORD> CImage::CTrackReader::CBitSequence::GetWord(int i) const{
-		// 
-		TData<WORD> result;
-		i*=sizeof(result.value)*CHAR_BIT;
-		const int iByteEnd=i+sizeof(result.value)*CHAR_BIT;
-		if (nBits<iByteEnd) // insufficient # of Bits ?
-			return result;
-		while (i<iByteEnd){
-			const auto &bit=pBits[i++];
-			result.value<<=1, result.value|=bit.value;
-			result.flags|=bit.flags;
-		}
-		result.time=pBits[i-1].time;
-		result.Validate();
-		return result;
-	}
-
-	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::Find(TLogTime t) const{
-		// returns the Bit containing the specified LogicalTime
-		auto it=std::lower_bound(
-			begin(), end(), t,
-			[](const TBit &b,TLogTime t){ return b.time<t; }
-		);
-		it-=t<it->time; // unless LogicalTime perfectly aligned with one of Bits, 'lower_bound' finds the immediatelly next Bit - hence going back to the Bit that contains the LogicalTime
-		return it;
-	}
-
-	CImage::CTrackReader::CBitSequence::PCBit CImage::CTrackReader::CBitSequence::FindOrNull(TLogTime t) const{
-		// returns the Bit containing the specified LogicalTime
-		const auto it=Find(t);
-		return	it!=end() ? it : nullptr;
-	}
-
-	Bit::CSharedDiffScript CImage::CTrackReader::CBitSequence::GetShortestEditScript(const CBitSequence &theirs,CActionProgress &ap) const{
-		// creates and returns the shortest edit script (SES)
-		Bit::CSharedDiffScript ses( GetBitCount()+theirs.GetBitCount() );
-		//if (!ses) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
-			//return ses;
-		const int i=CDiff<const TBit>(
-			begin(), GetBitCount()
-		).GetShortestEditScript(
-			theirs.begin(), theirs.GetBitCount(),
-			ses, ses.length,
-			ap
-		);
-		if (i<0) // e.g. Action cancelled
-			ses.reset();
-		else
-			ses.length=i;
-		return ses;
-	}
-
-	Time::CSharedColorIntervalArray CImage::CTrackReader::CBitSequence::ScriptToLocalDiffs(const Bit::CSharedDiffScript &script) const{
-		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller)
-		const Time::CSharedColorIntervalArray result(script.length);
-		for( auto i=script.length; i-->0; ){
-			const auto &si=script[i];
-			auto &rDiff=result[i];
-			rDiff.tStart=pBits[si.iPosA].time;
-			switch (si.operation){
-				case CDiffBase::TScriptItem::INSERTION:
-					// "theirs" contains some extra bits that "this" misses
-					rDiff.color=0xb4; // tinted red
-					rDiff.tEnd=pBits[std::min( si.iPosA+1, nBits )].time; // "+1" = even Insertions must be represented locally!
-					pBits[si.iPosA].cosmeticFuzzy=true;
-					break;
-				default:
-					ASSERT(FALSE); // we shouldn't end up here!
-					//fallthrough
-				case CDiffBase::TScriptItem::DELETION:
-					// "theirs" misses some bits that "this" contains
-					rDiff.color=0x5555ff; // another tinted red
-					int iDeletionEnd=si.iPosA+si.del.nItemsA;
-					if (iDeletionEnd+1<nBits){ // "+1" = see above Insertion (only for cosmetical reasons)
-						rDiff.tEnd=pBits[iDeletionEnd+1].time;
-						pBits[iDeletionEnd].cosmeticFuzzy=true;
-					}else
-						rDiff.tEnd=pBits[iDeletionEnd].time;
-					while (iDeletionEnd>si.iPosA)
-						pBits[--iDeletionEnd].fuzzy=true;
-					break;
-			}
-		}
-		return result;
-	}
-
-	Time::CSharedColorIntervalArray CImage::CTrackReader::CBitSequence::ScriptToLocalRegions(const Bit::CSharedDiffScript &script,COLORREF regionColor) const{
-		// composes Regions of differences that timely match with bits observed in this BitSequence (e.g. for visual display by the caller); returns the number of unique Regions
-		auto &&diffs=ScriptToLocalDiffs(script);
-		TLogTime tLastRegionEnd=Time::Invalid;
-		Bit::CSharedDiffScript::N nRegions=0;
-		for each( const auto &d in diffs ){
-			if (d.tStart>tLastRegionEnd){
-				// disjunct Diffs - create a new Region
-				auto &rRgn=diffs[nRegions++];
-					rRgn.color=regionColor;
-					rRgn.tStart=d.tStart;
-				tLastRegionEnd = rRgn.tEnd = d.tEnd;
-			}else
-				// overlapping BadRegions (Diff: something has been Deleted, something else has been Inserted)
-				tLastRegionEnd = diffs[nRegions-1].tEnd = std::max(tLastRegionEnd,d.tEnd);
-		}
-		diffs.length=nRegions;
-		return diffs;
-	}
-
-	void CImage::CTrackReader::CBitSequence::InheritFlagsFrom(const CBitSequence &theirs,const Bit::CSharedDiffScript &script) const{
-		//
-		typedef Bit::CSharedDiffScript::N N;
-		N iMyBit=0, iTheirBit=0;
-		N iScriptItem=0;
-		do{
-			// . inheriting Flags from Bits identical up to the next ScriptItem
-			const auto &si=script[iScriptItem]; // below never touched when index invalid ...
-			const N iDiffStartPos= iScriptItem<script.length ? si.iPosA : nBits; // ... like here
-			N nIdentical=std::min( iDiffStartPos-iMyBit, theirs.nBits-iTheirBit );
-			while (nIdentical-->0){
-				#ifdef _DEBUG
-					const auto &mine=pBits[iMyBit], &their=theirs.pBits[iTheirBit];
-					ASSERT( mine.value==their.value ); // just to be sure; failing here may point at a bug in Diff implementation!
-				#endif
-				pBits[iMyBit++].flags|=theirs.pBits[iTheirBit++].flags;
-			}
-			// . if no more differences, then we have just processed the common tail Bits
-			if (iScriptItem==script.length)
-				break;
-			// . skipping Bits that are different
-			switch (si.operation){
-				case CDiffBase::TScriptItem::INSERTION:
-					// "theirs" contains some extra bits that "this" misses
-					iTheirBit+=si.op.nItemsB;
-					break;
-				default:
-					ASSERT(FALSE); // we shouldn't end up here!
-					//fallthrough
-				case CDiffBase::TScriptItem::DELETION:
-					// "theirs" misses some bits that "this" contains
-					iMyBit+=si.op.nItemsB;
-					break;
-			}
-			iScriptItem++;
-		} while(true);
-	}
-
-	void CImage::CTrackReader::CBitSequence::OffsetAll(TLogTime dt) const{
-		// offsets each Bit by given constant
-		for each( TBit &p in bitBuffer ) // offset also the padding Bits at the beginning and end
-			p.time+=dt;
-	}
-
-#ifdef _DEBUG
-	void CImage::CTrackReader::CBitSequence::SaveCsv(LPCTSTR filename) const{
-		CFile f( filename, CFile::modeWrite|CFile::modeCreate );
-		for( int b=0; b<nBits; b++ )
-			Utils::WriteToFileFormatted( f, "%c, %d\n", '0'+pBits[b].value, pBits[b].time );
-	}
-#endif
 
 
 
@@ -685,8 +492,7 @@ namespace MFM=Codec::Impl::MFM;
 
 
 
-
-	WORD CImage::CTrackReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
+	WORD CReader::ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		RewindToIndex(0);
@@ -694,14 +500,14 @@ namespace MFM=Codec::Impl::MFM;
 		return 0;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
+	TFdcStatus CReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
 		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
 		return TFdcStatus::SectorNotFound;
 	}
 
-	bool CImage::CTrackReaderWriter::WriteDataFm(TDataParseEvent &peData,TFdcStatus sr){
+	bool CReaderWriter::WriteDataFm(TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
 		ASSERT( pLogTimesInfo->codec==Codec::FM );
 		//TODO
@@ -718,14 +524,14 @@ namespace MFM=Codec::Impl::MFM;
 
 
 		static bool IsWellEncodedMfmSequence(BYTE bits){
-			// see comment at 'CTrackReader::lastReadBits'
+			// see comment at 'CReader::lastReadBits'
 			if ((bits&3)==3) // last valid bit is "1"?
 				return (bits&4)==0; // previous bit must be "0" (and we don't care if it's valid or not)
 			else
 				return bits!=0xaa; // four valid consecutive "0"s are forbidden
 		}
 
-	WORD CImage::CTrackReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
+	WORD CReader::ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,CParseEventList *pOutParseEvents){
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		ASSERT( pOutFoundSectors!=nullptr && pOutIdEnds!=nullptr );
 		// - some Sectors may start just after the IndexPulse (e.g. MDOS 1.0); preparing the scanner for this eventuality by adjusting the frequency and phase shortly BEFORE the IndexPulse
@@ -742,7 +548,7 @@ namespace MFM=Codec::Impl::MFM;
 			if ((sync1&0xffdf)!=0x4489 || (sync23&0xffdfffdf)!=0x44894489)
 				continue;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( Track::Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+				pOutParseEvents->Add( TParseEvent( Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 			sync1=0; // invalidating "buffered" synchronization, so that it isn't reused
 			// . an ID Field mark should follow the synchronization
 			if (!ReadBits16(w)) // Track end encountered
@@ -753,7 +559,7 @@ namespace MFM=Codec::Impl::MFM;
 			if ((data.idam&0xfe)!=0xfe) // not the expected ID Field mark; the least significant bit is always ignored by the FDC [http://info-coach.fr/atari/documents/_mydoc/Atari-Copy-Protection.pdf]
 				continue;			
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( Track::Event::MARK_1BYTE, TimelyFromPrevious, currentTime, data.idam ) );
+				pOutParseEvents->Add( TParseEvent( Event::MARK_1BYTE, TimelyFromPrevious, currentTime, data.idam ) );
 			// . reading SectorId
 			TSectorId &rid=*pOutFoundSectors++;
 			if (!ReadBits16(w)) // Track end encountered
@@ -773,7 +579,7 @@ namespace MFM=Codec::Impl::MFM;
 					TParseEvent base;
 					BYTE etc[80];
 				} peId;
-				Track::Event::TMetaString::Create( peId.base, TimelyFromPrevious, currentTime, rid.ToString() );
+				Event::TMetaString::Create( peId.base, TimelyFromPrevious, currentTime, rid.ToString() );
 				pOutParseEvents->Add( peId.base );
 			}
 			// . reading and comparing ID Field's CRC
@@ -786,7 +592,7 @@ namespace MFM=Codec::Impl::MFM;
 			*pOutIdEnds++=currentTime;
 			*pOutIdProfiles++=profile;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( crcBad?Track::Event::CRC_BAD:Track::Event::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
+				pOutParseEvents->Add( TParseEvent( crcBad?Event::CRC_BAD:Event::CRC_OK, TimelyFromPrevious, currentTime, crc ) );
 			// . sector found
 			nSectors++;
 		}
@@ -794,7 +600,7 @@ namespace MFM=Codec::Impl::MFM;
 		return nSectors;
 	}
 
-	TFdcStatus CImage::CTrackReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
+	TFdcStatus CReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
 		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
@@ -810,7 +616,7 @@ namespace MFM=Codec::Impl::MFM;
 		if (!*this) // Track end encountered
 			return TFdcStatus::NoDataField;
 		if (pOutParseEvents)
-			pOutParseEvents->Add( TParseEvent( Track::Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
+			pOutParseEvents->Add( TParseEvent( Event::SYNC_3BYTES, tSyncStarts[(iSyncStart+256-48)&63], currentTime, 0xa1a1a1 ) );
 		// - a Data Field mark should follow the synchronization
 		if (!ReadBits16(w)) // Track end encountered
 			return TFdcStatus::NoDataField;
@@ -827,11 +633,11 @@ namespace MFM=Codec::Impl::MFM;
 				return TFdcStatus::NoDataField; // not the expected Data mark
 		}
 		if (pOutParseEvents)
-			pOutParseEvents->Add( TParseEvent( Track::Event::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
+			pOutParseEvents->Add( TParseEvent( Event::MARK_1BYTE, TimelyFromPrevious, currentTime, dam ) );
 		// - reading specified amount of Bytes into the Buffer
 		TDataParseEvent peData( sectorId, currentTime );
 		auto *const pbi=peData.GetByteInfos();
-		const CBitSequence bits( *this, nBytesToRead*MFM::CodedByteWidth );
+		const Bit::CSequence bits( *this, nBytesToRead*MFM::CodedByteWidth );
 		WORD nDataBytes=0;
 		for( TLogTime dt=0; nDataBytes<nBytesToRead; )
 			if (const auto &&d=bits.GetWord(nDataBytes)){
@@ -865,16 +671,16 @@ namespace MFM=Codec::Impl::MFM;
 		if (crcReported!=crc){ // no or wrong Data Field CRC
 			result.ExtendWith( TFdcStatus::DataFieldCrcError );
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( Track::Event::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
+				pOutParseEvents->Add( TParseEvent( Event::CRC_BAD, TimelyFromPrevious, currentTime, crcReported ) );
 		}else{
-			peDataPtr->type=Track::Event::DATA_OK;
+			peDataPtr->type=Event::DATA_OK;
 			if (pOutParseEvents)
-				pOutParseEvents->Add( TParseEvent( Track::Event::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
+				pOutParseEvents->Add( TParseEvent( Event::CRC_OK, TimelyFromPrevious, currentTime, crcReported ) );
 		}
 		return result;
 	}
 
-	bool CImage::CTrackReaderWriter::WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr){
+	bool CReaderWriter::WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
 		ASSERT( pLogTimesInfo->codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
@@ -905,7 +711,7 @@ namespace MFM=Codec::Impl::MFM;
 				return false; // not the expected Data mark
 		}
 		// - write new Data Field mark to temporary storage
-		CTrackReaderWriter tmp( peData.GetByteCount()*MFM::CodedByteWidth, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
+		CReaderWriter tmp( peData.GetByteCount()*MFM::CodedByteWidth, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
 		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
 		tmp.AddWord( ti, MFM::EncodeByte(dam) );
 		// - write new Bytes to temporary storage
@@ -951,7 +757,7 @@ namespace MFM=Codec::Impl::MFM;
 		return	ReplaceTimes( tiClear, tmp );
 	}
 
-	char CImage::CTrackReader::ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue){
+	char CReader::ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue){
 		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:
@@ -970,7 +776,7 @@ namespace MFM=Codec::Impl::MFM;
 		}
 	}
 
-	bool CImage::CTrackReader::IsLastReadBitHealthy() const{
+	bool CReader::IsLastReadBitHealthy() const{
 		// True <=> the bit read last by ReadBit* methods is well encoded, otherwise False (first bits on a Track or right after Index may be evaluated unreliably!)
 		switch (pLogTimesInfo->codec){
 			case Codec::FM:
@@ -983,26 +789,26 @@ namespace MFM=Codec::Impl::MFM;
 		}
 	}
 
-	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent) const{
+	Bit::CSequence CReader::CreateBitSequence(const TLogTimeInterval &ti,BYTE oneOkPercent) const{
 		// records Decoder processing between the specified TimeInterval into a BitSequence
-		return CBitSequence( *this, ti.tStart, CreateResetProfile(), ti.tEnd, oneOkPercent );
+		return CreateBitSequence( ti.tStart, CreateResetProfile(), ti.tEnd, oneOkPercent );
 	}
 
-	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(Revolution::TType rev,BYTE oneOkPercent) const{
+	Bit::CSequence CReader::CreateBitSequence(Revolution::TType rev,BYTE oneOkPercent) const{
 		// records Decoder processing of specified full Revolution into a BitSequence
 		return CreateBitSequence( GetFullRevolutionTimeInterval(rev), oneOkPercent );
 	}
 
-	CImage::CTrackReader::CBitSequence CImage::CTrackReader::CreateBitSequence(BYTE oneOkPercent) const{
+	Bit::CSequence CReader::CreateBitSequence(BYTE oneOkPercent) const{
 		// records Decoder processing for the whole Track into a BitSequence
-		return CBitSequence( *this, 0, CreateResetProfile(), GetTotalTime(), oneOkPercent );
+		return CreateBitSequence( 0, CreateResetProfile(), GetTotalTime(), oneOkPercent );
 	}
 
-	CImage::CTrackReader::TBits CImage::CTrackReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
-		TBits result;
-		static_cast<CBitSequence &>(result)=CreateBitSequence(oneOkPercent);
+	CBits CReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
+		CBits result;
+		static_cast<Bit::CSequence &>(result)=CreateBitSequence(oneOkPercent);
 		for( TRev i=1; i<nIndexPulses; i++ )
-			result.revs[i-1]=CBitSequence( result, GetFullRevolutionTimeInterval(i-1) );
+			result.revs[i-1]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i-1) );
 		return result;
 	}
 
@@ -1020,31 +826,31 @@ namespace MFM=Codec::Impl::MFM;
 
 	typedef Time::TMetaDataItem TMetaDataItem;
 
-	const CImage::CTrackReaderWriter CImage::CTrackReaderWriter::Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
+	const CReaderWriter CReaderWriter::Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
+	CReaderWriter::CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CTrackReader(
+		: CReader(
 			nLogTimesMax+LogTimesCountExtra, method,
 			new CLogTimesInfo( resetDecoderOnIndex ),
 			Codec::MFM
 		){
 	}
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReaderWriter &trw,bool shareTimes)
+	CReaderWriter::CReaderWriter(const CReaderWriter &trw,bool shareTimes)
 		// copy ctor
-		: CTrackReader( trw ) {
+		: CReader( trw ) {
 		if (!shareTimes){
-			CTrackReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
-			std::swap<CTrackReaderBuffers>( tmp, *this );
+			CReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
+			std::swap<CReaderBuffers>( tmp, *this );
 			AddExternalTimes( trw.logTimes, trw.nLogTimes );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
 
-	CImage::CTrackReaderWriter::CTrackReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
+	CReaderWriter::CReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
-		: CTrackReader(
+		: CReader(
 			nLogTimes+LogTimesCountExtra, TDecoderMethod::KEIR_FRASER,
 			new CLogTimesInfo( true ),
 			Codec::MFM
@@ -1056,17 +862,17 @@ namespace MFM=Codec::Impl::MFM;
 		Normalize();
 	}
 	
-	CImage::CTrackReaderWriter::CTrackReaderWriter(CTrackReaderWriter &&rTrackReaderWriter)
+	CReaderWriter::CReaderWriter(CReaderWriter &&rTrackReaderWriter)
 		// move ctor
-		: CTrackReader( std::move(rTrackReaderWriter) ) {
+		: CReader( std::move(rTrackReaderWriter) ) {
 	}
 	
-	CImage::CTrackReaderWriter::CTrackReaderWriter(const CTrackReader &tr)
+	CReaderWriter::CReaderWriter(const CReader &tr)
 		// copy ctor
-		: CTrackReader(tr) {
+		: CReader(tr) {
 	}
 
-	void CImage::CTrackReaderWriter::AddTime(TLogTime logTime){
+	void CReaderWriter::AddTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
 		ASSERT( nLogTimes<GetBufferCapacity() );
 		ASSERT( logTime>=0 );
@@ -1074,13 +880,13 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
+	void CReaderWriter::AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 		this->nLogTimes+=nLogTimes;
 	}
 
-	void CImage::CTrackReaderWriter::AddTimes(PCLogTime logTimes,Time::N nLogTimes){
+	void CReaderWriter::AddTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
 		if (this->logTimes+this->nLogTimes==logTimes)
@@ -1093,7 +899,7 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::AddByte(TLogTimeInterval &at,BYTE b){
+	void CReaderWriter::AddByte(TLogTimeInterval &at,BYTE b){
 		// appends given Byte (most significant bit first) at the end of the Track; returns the least significant bit written
 		ASSERT( GetTotalTime()<at.tStart );
 		TLogTime tmpLogTimes[CHAR_BIT],L=at.GetLength(); BYTE nTmpLogTimes=0;
@@ -1104,7 +910,7 @@ namespace MFM=Codec::Impl::MFM;
 		at.tStart=at.tEnd; // advance Time in favor of the caller
 	}
 
-	void CImage::CTrackReaderWriter::AddWord(TLogTimeInterval &at,WORD w){
+	void CReaderWriter::AddWord(TLogTimeInterval &at,WORD w){
 		// appends given Word (most significant bit first) at the end of the Track; returns the least significant bit written
 		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
 		AddByte( TLogTimeInterval(at.tStart,tCenter), HIBYTE(w) );
@@ -1112,7 +918,7 @@ namespace MFM=Codec::Impl::MFM;
 		AddByte( at, LOBYTE(w) );
 	}
 
-	void CImage::CTrackReaderWriter::AddDWord(TLogTimeInterval &at,DWORD dw){
+	void CReaderWriter::AddDWord(TLogTimeInterval &at,DWORD dw){
 		// appends given DWord (most significant bit first) at the end of the Track; returns the least significant bit written
 		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
 		AddWord( TLogTimeInterval(at.tStart,tCenter), HIWORD(dw) );
@@ -1120,7 +926,7 @@ namespace MFM=Codec::Impl::MFM;
 		AddWord( at, LOWORD(dw) );
 	}
 
-	void CImage::CTrackReaderWriter::AddIndexTime(TLogTime logTime){
+	void CReaderWriter::AddIndexTime(TLogTime logTime){
 		// appends LogicalTime representing the position of the index pulse on the disk
 		ASSERT( nIndexPulses<=Revolution::MAX );
 		ASSERT( logTime>=0 );
@@ -1129,14 +935,14 @@ namespace MFM=Codec::Impl::MFM;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::TrimToTimesCount(Time::N nKeptLogTimes){
+	void CReaderWriter::TrimToTimesCount(Time::N nKeptLogTimes){
 		// discards some tail LogicalTimes, keeping only specified amount of them
 		ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
 		nLogTimes=nKeptLogTimes;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CImage::CTrackReaderWriter::AddMetaData(const TMetaDataItem &mdi){
+	void CReaderWriter::AddMetaData(const TMetaDataItem &mdi){
 		// inserts the MetaDataItem, eventually overwritting some existing MetaDataItems
 		if (!mdi) // empty or invalid?
 			return;
@@ -1193,31 +999,31 @@ namespace MFM=Codec::Impl::MFM;
 			metaData.insert(mdi);
 	}
 
-	void CImage::CTrackReaderWriter::SetRawDeviceData(Track::TTypeId dataId,const Utils::CSharedBytes &data){
+	void CReaderWriter::SetRawDeviceData(TTypeId dataId,const Utils::CSharedBytes &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
 		static_cast<Utils::CSharedBytes &>(pLogTimesInfo->rawDeviceData)=data;
 		pLogTimesInfo->rawDeviceData.id=dataId;
 	}
 
-	void CImage::CTrackReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
+	void CReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
 		// removes (or just shortens) all MetaDataItems in specified range
 		AddMetaData( TLogTimeInterval(a,z) );
 		FindMetaDataIteratorAndApply();
 	}
 
-	void CImage::CTrackReaderWriter::ClearAllMetaData(){
+	void CReaderWriter::ClearAllMetaData(){
 		// removes all MetaDataItems
 		auto &metaData=pLogTimesInfo->metaData;
 		metaData.clear();
 		FindMetaDataIteratorAndApply();
 	}
 
-	TLogTime CImage::CTrackReader::GetLastIndexTime() const{
+	TLogTime CReader::GetLastIndexTime() const{
 		// returns the LogicalTime of the last added Index (or 0)
 		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
 	}
 
-	bool CImage::CTrackReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CTrackReader &writeTimes){
+	bool CReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes){
 		// True <=> new LogicalTimes written to the cleared interval, otherwise False
 		ASSERT(writeTimes.GetTimesCount()>0);
 		ASSERT( clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
@@ -1245,7 +1051,7 @@ namespace MFM=Codec::Impl::MFM;
 		return true;
 	}
 
-	bool CImage::CTrackReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr){
+	bool CReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting after specified IdEndTime, otherwise False
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
 		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
@@ -1269,12 +1075,12 @@ namespace MFM=Codec::Impl::MFM;
 		return pTime-logTimes;
 	}
 
-	TStdWinError CImage::CTrackReaderWriter::Normalize(){
+	TStdWinError CReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
 		return NormalizeEx( 0, false, false, true );
 	}
 
-	TStdWinError CImage::CTrackReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
+	TStdWinError CReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
 		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
@@ -1360,7 +1166,7 @@ namespace MFM=Codec::Impl::MFM;
 		return ERROR_SUCCESS;
 	}
 
-	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Reverse(){
+	CReaderWriter &CReaderWriter::Reverse(){
 		// reverses timing of this Track
 		// - reversing Indices
 		const auto tTotal=GetTotalTime();
@@ -1386,8 +1192,9 @@ namespace MFM=Codec::Impl::MFM;
 		return *this;
 	}
 
-	CImage::CTrackReaderWriter &CImage::CTrackReaderWriter::Offset(TLogTime dt){
+	CReaderWriter &CReaderWriter::Offset(TLogTime dt){
 		// offsets timing in this Track
 		for( auto i=nLogTimes; i>0; logTimes[--i]+=dt );
 		return *this;
 	}
+}

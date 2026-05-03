@@ -1076,7 +1076,7 @@ invalidTrack:
 		return ERROR_DISK_CORRUPT;
 	}
 
-	CImage::CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
+	CTrackReader CCapsBase::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if Track already read before, returning the result from before
@@ -1123,7 +1123,7 @@ invalidTrack:
 		return *rit;
 	}
 
-	const CImage::CTrackReader &CCapsBase::ReadExistingTrackUnsafe(TCylinder cyl,THead head) const{
+	const CTrackReader &CCapsBase::ReadExistingTrackUnsafe(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		//EXCLUSIVELY_LOCK_THIS_IMAGE(); // the reason why "unsafe" - up to the caller to lock the Image
 		if (const PInternalTrack pit=GetInternalTrackSafe(cyl,head)){

@@ -224,7 +224,7 @@
 		DWORD sampleCounter;
 		DWORD indexCounter;
 
-		void AddIndexTime(CImage::CTrackReaderWriter &trw,DWORD totalSampleCounter,double sck) const{
+		void AddIndexTime(CTrackReaderWriter &trw,DWORD totalSampleCounter,double sck) const{
 			const DWORD indexSampleCounter=totalSampleCounter+sampleCounter;
 			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
 				trw.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
@@ -233,7 +233,7 @@
 		}
 	};
 
-	CImage::CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
+	CTrackReaderWriter CKryoFluxBase::StreamToTrack(LPBYTE rawBytes,DWORD nBytes) const{
 		// creates and returns a Track representation of the Stream data
 		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
