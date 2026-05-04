@@ -270,7 +270,7 @@ using namespace Charting;
 						if (!continuePainting) // new paint request?
 							continue;
 						// . drawing Times
-						while (continuePainting && tr.GetCurrentTime()<visible.tEnd){
+						while (continuePainting && tr && tr.GetCurrentTime()<visible.tEnd){
 							EXCLUSIVELY_LOCK(p.params);
 							if ( continuePainting=p.params.id==id )
 								g.PerpLine( tr.ReadTime(), TIME_HEIGHT );
