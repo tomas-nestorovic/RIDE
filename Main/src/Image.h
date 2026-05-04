@@ -32,44 +32,6 @@
 
 	#define DEVICE_NAME_CHARS_MAX 48
 
-	typedef struct TFormat sealed{
-		static const TFormat Unknown;
-
-		union{
-			Medium::TType supportedMedia;
-			Medium::TType mediumType;
-		};
-		union{
-			Codec::TType supportedCodecs;
-			Codec::TType codecType;
-		};
-		TCylinder nCylinders;
-		THead nHeads;
-		TSector nSectors;
-		enum TLengthCode:Sector::LC{
-			LENGTHCODE_128	=0,
-			LENGTHCODE_256	=1,
-			LENGTHCODE_512	=2,
-			LENGTHCODE_1024	=3,
-			LENGTHCODE_2048	=4,
-			LENGTHCODE_4096	=5,
-			LENGTHCODE_8192	=6,
-			LENGTHCODE_16384=7,
-			LAST
-		} sectorLengthCode;
-		Sector::L sectorLength;
-		WORD clusterSize; // in Sectors
-
-		inline operator bool() const{ return !operator==(Unknown); }
-		bool operator==(const TFormat &fmt2) const;
-		DWORD GetCountOfAllSectors() const;
-		WORD GetCountOfSectorsPerCylinder() const;
-		TTrack GetCountOfAllTracks() const;
-	} *PFormat;
-	typedef const TFormat *PCFormat,&RCFormat;
-
-
-
 
 	#define MAKE_IMAGE_ID(char1,char2,char3,char4,char5,char6,char7,char8)\
 		( (((((((Track::TTypeId)char1<<4^char2)<<4^char3)<<4^char4)<<4^char5)<<4^char6)<<4^char7)<<4^char8 )

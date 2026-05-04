@@ -34,6 +34,44 @@ namespace Medium
 		inline Time::Decoder::TLimits CreateTimeDecoderLimits(BYTE iwTimeTolerancePercent=4) const{ return Time::Decoder::TLimits(cellTime,iwTimeTolerancePercent); }
 	} *PCProperties;
 
+	struct TFormat sealed{
+		static const TFormat Unknown;
+
+		union{
+			TType supportedMedia;
+			TType mediumType;
+		};
+		union{
+			Codec::TType supportedCodecs;
+			Codec::TType codecType;
+		};
+		TCylinder nCylinders;
+		THead nHeads;
+		TSector nSectors;
+		enum TLengthCode:Sector::LC{
+			LENGTHCODE_128	=0,
+			LENGTHCODE_256	=1,
+			LENGTHCODE_512	=2,
+			LENGTHCODE_1024	=3,
+			LENGTHCODE_2048	=4,
+			LENGTHCODE_4096	=5,
+			LENGTHCODE_8192	=6,
+			LENGTHCODE_16384=7,
+			LAST
+		} sectorLengthCode;
+		Sector::L sectorLength;
+		WORD clusterSize; // in Sectors
+
+		inline operator bool() const{ return !operator==(Unknown); }
+		bool operator==(const TFormat &fmt2) const;
+		DWORD GetCountOfAllSectors() const;
+		WORD GetCountOfSectorsPerCylinder() const;
+		Track::N GetCountOfAllTracks() const;
+	};
+
 	LPCTSTR GetDescription(TType mediumType);
 	PCProperties GetProperties(TType mediumType);
 }
+
+typedef Medium::TFormat TFormat,*PFormat;
+typedef const Medium::TFormat *PCFormat,&RCFormat;
