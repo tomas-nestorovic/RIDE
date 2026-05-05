@@ -48,6 +48,10 @@
 		if (pSingleInstance==this)
 			pSingleInstance=nullptr; // no longer accepting any requests
 		dos=nullptr; // to not destroy the Image (as DOS and Image are one structure in memory that is disposed at once)
+		if (::OleIsCurrentClipboard(dataInClipboard)==S_OK){ // render data to clipboard
+			::OleFlushClipboard();
+			dataInClipboard.Release();
+		}
 		(HACCEL)menu.hAccel=0; // for DiskDos accelerators to be not destroyed
 	}
 
