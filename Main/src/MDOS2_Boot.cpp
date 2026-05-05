@@ -6,24 +6,24 @@
 
 	const TPhysicalAddress CMDOS2::TBootSector::CHS={ 0, 0, {0,0,1,MDOS2_SECTOR_LENGTH_STD_CODE} };
 
-	TStdWinError CMDOS2::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CMDOS2::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,10, MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
 		if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))
 			if (boot->sdos==SDOS_TEXT){
-				*pFormatBoot=fmt;
+				outFormatBoot=fmt;
 				if (MDOS2_TRACK_SECTORS_MIN<=boot->current.nSectors && boot->current.nSectors<=MDOS2_TRACK_SECTORS_MAX
 					&&
-					( pFormatBoot->nCylinders=boot->current.nCylinders )
+					( outFormatBoot.nCylinders=boot->current.nCylinders )
 					*
-					( pFormatBoot->nHeads=1+(boot->current.diskFlags.doubleSided) )
+					( outFormatBoot.nHeads=1+(boot->current.diskFlags.doubleSided) )
 					*
-					( pFormatBoot->nSectors=boot->current.nSectors )
+					( outFormatBoot.nSectors=boot->current.nSectors )
 					>= // testing minimal number of Sectors
 					MDOS2_DATA_LOGSECTOR_FIRST
 				)
@@ -35,8 +35,8 @@
 	#define CYLINDER_COUNT_MIN	2
 	#define CYLINDER_COUNT_MAX	FDD_CYLINDERS_MAX
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CMDOS2(image,pFormatBoot);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CMDOS2(image,formatBoot);
 	}
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("3.5\" DS 80x9"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,9,MDOS2_SECTOR_LENGTH_STD_CODE,MDOS2_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },

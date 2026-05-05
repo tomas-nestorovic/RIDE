@@ -26,7 +26,7 @@
 	public:
 		Sector::L GetUsableSectorLength(Sector::LC sectorLengthCode) const;
 		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
-		TStdWinError SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override;
 		Sector::CReaderWriter::CComPtr CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override sealed;
 		TLogTime EstimateNanosecondsPerOneByte() const override;

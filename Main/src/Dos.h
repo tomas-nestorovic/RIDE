@@ -111,8 +111,8 @@
 		} *PPathString,&RPathString;
 		typedef const CPathString *PCPathString,&RCPathString;
 
-		typedef TStdWinError (*TFnRecognize)(PImage image,PFormat pFormatBoot);
-		typedef PDos (*TFnInstantiate)(PImage image,PCFormat pFormatBoot);
+		typedef TStdWinError (*TFnRecognize)(PImage image,TFormat &outFormatBoot);
+		typedef PDos (*TFnInstantiate)(PImage image,RCFormat formatBoot);
 		typedef TStdWinError (CDos::*TFnCreateSubdirectory)(RCPathString name,DWORD winAttr,PFile &rCreatedSubdir);
 		typedef TStdWinError (CDos::*TFnChangeCurrentDirectory)(PFile directory);
 		typedef TStdWinError (CDos::*TFnMoveFileToCurrDir)(PFile file,RCPathString exportFileNameAndExt,PFile &rMovedFile);
@@ -318,7 +318,7 @@
 		bool generateShellCompliantExportNames;
 		TGetFileSizeOptions getFileSizeDefaultOption;
 		
-		CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
+		CDos(PImage _image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView * _pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus);
 
 		int __getProfileInt__(LPCTSTR entryName,int defaultValue) const;
 		void __writeProfileInt__(LPCTSTR entryName,int value) const;
@@ -360,7 +360,7 @@
 			BYTE GetOrderIndex(PCProperties props) const;
 			BYTE GetFirstRecognizedDosPosition() const;
 			PCProperties GetNextRecognizedDos(BYTE &pos) const;
-			PCProperties Perform(PImage image,PFormat pOutFormatBoot) const;
+			PCProperties Perform(PImage image,TFormat &outFormatBoot) const;
 		};
 
 		static Utils::CPtrList<PCProperties> Known; // list of known DOSes (registered in CRideApp::InitInstance)

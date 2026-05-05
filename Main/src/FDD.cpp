@@ -1176,20 +1176,20 @@ fdrawcmd:				return	::DeviceIoControl( _HANDLE, IOCTL_FD_SET_DATA_RATE, &transfe
 		return ERROR_SUCCESS;
 	}
 
-	TStdWinError CFDD::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CFDD::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		LOG_ACTION(_T("TStdWinError CFDD::SetMediumTypeAndGeometry"));
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		const auto mediaCombination= floppyType!=Medium::UNKNOWN ? floppyType|pFormat->mediumType : Medium::HDD_RAW|pFormat->mediumType; // make sure two bits are always set
-		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+		const auto mediaCombination= floppyType!=Medium::UNKNOWN ? floppyType|format.mediumType : Medium::HDD_RAW|format.mediumType; // make sure two bits are always set
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(format,sideMap,firstSectorNumber))
 			return LOG_ERROR(err);
 		// - setting the transfer speed according to current FloppyType (DD/HD)
 		if ((mediaCombination&Medium::FLOPPY_HD_ANY)!=mediaCombination) // HD floppies have identical data rate (5.25" == 3.5"), so no need to dispose InternalTracks
 			__freeInternalTracks__();
 		if (floppyType!=Medium::UNKNOWN
 			&&
-			(floppyType&Medium::FLOPPY_ANY)!=0 // set in base method to "pFormat->mediumType"
+			(floppyType&Medium::FLOPPY_ANY)!=0 // set in base method to "format.mediumType"
 		)
 			return SetDataTransferSpeed(floppyType);
 		// - automatically recognizing the Type of inserted floppy

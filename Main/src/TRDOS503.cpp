@@ -162,10 +162,10 @@
 	#define INI_TRDOS	_T("TRDOS")
 	#define INI_ALLOW_ZERO_LENGTH_FILES	_T("fm0files")
 
-	CTRDOS503::CTRDOS503(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps)
+	CTRDOS503::CTRDOS503(PImage image,RCFormat formatBoot,PCProperties pTrdosProps)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk, TSectorStatus::UNAVAILABLE )
+		: CSpectrumDos( image, formatBoot, TTrackScheme::BY_CYLINDERS,pTrdosProps, IDR_TRDOS, &fileManager, TGetFileSizeOptions::SizeOnDisk, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, boot(	this,
 				(pTrdosProps==&Properties)*TRDOS503_BOOT_LABEL_LENGTH_MAX

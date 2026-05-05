@@ -762,24 +762,24 @@ invalidTrack:
 
 	#define SCANNED_CYLINDERS	3
 
-	TStdWinError CCapsBase::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CCapsBase::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		// - determining if library initialized ok
 		if (capsLibLoadingError)
 			return capsLibLoadingError;
 		// - Medium set correctly if some Sectors can be extracted from one of Tracks
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (pFormat->mediumType==Medium::UNKNOWN){
+		if (format.mediumType==Medium::UNKNOWN){
 			// no particular Medium specified - enumerating all supported floppy Types
 			WORD scoreMax=0; // arbitering the MediumType by scores
 			Medium::TType bestMediumType=Medium::UNKNOWN;
-			TFormat tmp=*pFormat;
+			TFormat tmp=format;
 			for( DWORD type=1; type!=0; type<<=1 )
 				if (type&forcedMediumType){
 					WORD score=0;
 					tmp.mediumType=(Medium::TType)type;
 					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
-					const TStdWinError err=SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+					const TStdWinError err=SetMediumTypeAndGeometry( tmp, sideMap, firstSectorNumber );
 					if (params.userForcedMedium && tmp.mediumType==floppyType)
 						return ERROR_SUCCESS;
 					if (err)
@@ -794,22 +794,22 @@ invalidTrack:
 				}
 			if (scoreMax>0){
 				tmp.mediumType=bestMediumType;
-				return SetMediumTypeAndGeometry( &tmp, sideMap, firstSectorNumber );
+				return SetMediumTypeAndGeometry( tmp, sideMap, firstSectorNumber );
 			}
-		}else if (!params.userForcedMedium || params.userForcedMedium&&pFormat->mediumType==floppyType){
+		}else if (!params.userForcedMedium || params.userForcedMedium&&format.mediumType==floppyType){
 			// a particular Medium specified
 			// . determining if this is yet a non-formatted disk
 			bool blankMedium=true;
 			for( TCylinder cyl=0; cyl<FDD_CYLINDERS_MAX; cyl++ )
 				blankMedium&=internalTracks[cyl][0]==internalTracks[cyl][1]; // equal only if both Null
 			// . loading pre-compensation parameters for the specified FloppyType
-			precompensation.Load( pFormat->mediumType );
+			precompensation.Load( format.mediumType );
 			// . if a fresh formatted new disk, we are done - as the rest is VERY time-consuming when applied for the whole disk, it's forbidden to change MediumType at this state
-			const bool newMediumTypeDifferent=floppyType!=pFormat->mediumType;
+			const bool newMediumTypeDifferent=floppyType!=format.mediumType;
 			if (m_strPathName.IsEmpty() && !blankMedium)
 				return	newMediumTypeDifferent ? ERROR_NOT_SUPPORTED : ERROR_SUCCESS;
 			// . base
-			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber ))
+			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber ))
 				return err;
 			// . if blank (not yet formatted) new disk, we are done
 			if (m_strPathName.IsEmpty() && blankMedium)
@@ -821,7 +821,7 @@ invalidTrack:
 						if (auto &rit=internalTracks[cyl][head]){
 							CTrackReaderWriter trw=*rit; // extract fluxes
 							delete rit;
-							rit=CInternalTrack::CreateFrom( *this, std::move(trw), pFormat->mediumType );
+							rit=CInternalTrack::CreateFrom( *this, std::move(trw), format.mediumType );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks that usually contain the Boot Sector of implemented DOSes
 			if (params.userForcedMedium)

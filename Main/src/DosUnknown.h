@@ -5,7 +5,7 @@
 	public:
 		static const TProperties Properties;
 
-		CUnknownDos(PImage image,PCFormat pFormatBoot);
+		CUnknownDos(PImage image,RCFormat formatBoot);
 
 		// boot
 		void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)

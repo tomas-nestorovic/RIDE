@@ -7,10 +7,10 @@
 
 	#define FAT_LOGSECTOR_FIRST		1
 
-	CMDOS2::CMDOS2(PImage image,PCFormat pFormatBoot)
+	CMDOS2::CMDOS2(PImage image,RCFormat formatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_MDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
+		: CSpectrumDos( image, formatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_MDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, boot(this) , fileManager(this) , version(AUTODETECT) {
 		deDefault.attributes=__getProfileInt__(	INI_DEFAULT_ATTRIBUTES,

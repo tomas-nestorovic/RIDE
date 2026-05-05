@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #include "TRDOS.h"
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CTRDOS505(image,pFormatBoot);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CTRDOS505(image,formatBoot);
 	}
 
-	TStdWinError CTRDOS505::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CTRDOS505::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		if (const TStdWinError err=CTRDOS503::__recognizeDisk__(image,pFormatBoot)) // explicitly calling TR-DOS 5.03 recognition routine, thus bypassing TR-DOS 5.04 recognition routine
+		if (const TStdWinError err=CTRDOS503::__recognizeDisk__(image,outFormatBoot)) // explicitly calling TR-DOS 5.03 recognition routine, thus bypassing TR-DOS 5.04 recognition routine
 			return err;
 		else if (TBootSector::Get(image)->__getLabelLengthEstimation__()==TRDOS505_BOOT_LABEL_LENGTH_MAX)
 			return ERROR_SUCCESS;
@@ -45,8 +45,8 @@
 
 
 
-	CTRDOS505::CTRDOS505(PImage image,PCFormat pFormatBoot)
+	CTRDOS505::CTRDOS505(PImage image,RCFormat formatBoot)
 		// ctor
-		: CTRDOS504( image, pFormatBoot, &Properties ) {
+		: CTRDOS504( image, formatBoot, &Properties ) {
 	}
 

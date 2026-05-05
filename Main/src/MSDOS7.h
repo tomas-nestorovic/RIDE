@@ -130,9 +130,9 @@
 			bool __recognize__(WORD sectorLength) const;
 			bool __isUsable__() const;
 			TLogSector32 __getCountOfAllSectors__() const;
-			void __getGeometry__(PFormat pFormat) const;
+			void GetGeometry(TFormat &outFormat) const;
 			Medium::TType GetMediumType() const;
-			void __init__(PCFormat pFormatBoot,CFormatDialog::PCParameters params,CFat &rOutFat);
+			void __init__(RCFormat formatBoot,CFormatDialog::PCParameters params,CFat &rOutFat);
 			DWORD __getCountOfSectorsInOneFatCopy__() const;
 			TLogSector32 __getRootDirectoryFirstSector__() const;
 			TLogSector16 __getCountOfPermanentRootDirectorySectors__() const;
@@ -294,8 +294,8 @@
 			~CMsdos7FileManagerView();
 		} fileManager;
 
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
-		static PDos __instantiate__(PImage image,PCFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
+		static PDos __instantiate__(PImage image,RCFormat formatBoot);
 		static TLogSector32 __cluster2logSector__(TCluster32 c,PCBootSector boot);
 		static UINT AFX_CDECL __removeLongNames_thread__(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
@@ -322,7 +322,7 @@
 	public:
 		static const TProperties Properties;
 
-		CMSDOS7(PImage image,PCFormat pFormatBoot);
+		CMSDOS7(PImage image,RCFormat formatBoot);
 
 		// boot
 		RCPhysicalAddress GetBootSectorAddress() const override;

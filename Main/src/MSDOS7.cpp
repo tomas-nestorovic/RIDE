@@ -7,10 +7,10 @@
 	#define INI_DONT_SHOW_DOT			_T("dotoff")
 	#define INI_DONT_SHOW_DOTDOT		_T("dotdotoff")
 
-	CMSDOS7::CMSDOS7(PImage image,PCFormat pFormatBoot)
+	CMSDOS7::CMSDOS7(PImage image,RCFormat formatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::StrCmpNIW, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
+		: CDos( image, formatBoot, TTrackScheme::BY_CYLINDERS, &Properties, ::StrCmpNIW, CDos::StdSidesMap, IDR_MSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNAVAILABLE )
 		// - initialization
 		, fat(*this) , fsInfo(this)
 		, boot(this) , fileManager(this)
@@ -1121,7 +1121,7 @@
 		const PBootSector bootSector=boot.GetSectorData();
 		if (!bootSector) // Boot Sector may not be found after unsuccessfull formatting
 error:		return Utils::FatalError( _T("Cannot initialize the medium"), ::GetLastError() );
-		bootSector->__init__( &formatBoot, params, fat ); // also initializes the Type of FAT
+		bootSector->__init__( formatBoot, params, fat ); // also initializes the Type of FAT
 		boot.MarkSectorAsDirty();
 		if (fat.type==CFat::FAT32){
 			chs.sectorId.sector=MSDOS7_SECTOR_BKBOOT;

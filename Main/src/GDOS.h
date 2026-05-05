@@ -163,7 +163,7 @@
 			CGdosFileManagerView(PGDOS gdos);
 		} fileManager;
 
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 
 		bool zeroLengthFilesEnabled;
@@ -172,7 +172,7 @@
 	public:
 		static const TProperties Properties;
 
-		CGDOS(PImage image,PCFormat pFormatBoot);
+		CGDOS(PImage image,RCFormat formatBoot);
 
 		// boot
 		void FlushToBootSector() const override; // projects information stored in internal FormatBoot back to the Boot Sector (e.g. called automatically by BootView)

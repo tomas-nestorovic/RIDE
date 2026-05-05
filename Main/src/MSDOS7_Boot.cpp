@@ -21,13 +21,13 @@
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
 		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 					fmt.mediumType=Medium::FLOPPY_HD_525;
-					if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+					if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 						if (pSuccess) *pSuccess=false; // unknown Medium
 						return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
 					}
@@ -92,16 +92,16 @@
 		}
 	}
 
-	void CMSDOS7::TBootSector::__getGeometry__(PFormat pFormat) const{
+	void CMSDOS7::TBootSector::GetGeometry(TFormat &outFormat) const{
 		// extracts information on geometry from this Boot Sector
 		if (const WORD nSectorsOnCylinder=nHeads*nSectorsOnTrack)
-			pFormat->nCylinders=__getCountOfAllSectors__()/nSectorsOnCylinder;
+			outFormat.nCylinders=__getCountOfAllSectors__()/nSectorsOnCylinder;
 		else
-			pFormat->nCylinders=0;
-		pFormat->nHeads=nHeads;
-		pFormat->nSectors=nSectorsOnTrack;
-		pFormat->sectorLength=sectorSize;
-		pFormat->clusterSize=nSectorsInCluster;
+			outFormat.nCylinders=0;
+		outFormat.nHeads=nHeads;
+		outFormat.nSectors=nSectorsOnTrack;
+		outFormat.sectorLength=sectorSize;
+		outFormat.clusterSize=nSectorsInCluster;
 	}
 
 	Medium::TType CMSDOS7::TBootSector::GetMediumType() const{
@@ -124,18 +124,18 @@
 		}
 	}
 
-	void CMSDOS7::TBootSector::__init__(PCFormat pFormatBoot,CFormatDialog::PCParameters params,CFat &rOutFat){
+	void CMSDOS7::TBootSector::__init__(RCFormat formatBoot,CFormatDialog::PCParameters params,CFat &rOutFat){
 		// initializes this Boot Sector
-		const DWORD nSectorsInTotal=pFormatBoot->GetCountOfAllSectors();
+		const DWORD nSectorsInTotal=formatBoot.GetCountOfAllSectors();
 		::ZeroMemory( this, MSDOS7_SECTOR_LENGTH_STD );
 		// - initializing information that all Types of FAT have in common
 		jmpInstruction.opCode=0xeb;
 		jmpInstruction.param=0x903c;
 		::lstrcpyA(oemName,"MSWIN4.1");
-		sectorSize=pFormatBoot->sectorLength;
-		nSectorsInCluster=pFormatBoot->clusterSize;
+		sectorSize=formatBoot.sectorLength;
+		nSectorsInCluster=formatBoot.clusterSize;
 		nFatCopies=params->nAllocationTables;
-		switch (pFormatBoot->mediumType){
+		switch (formatBoot.mediumType){
 			case Medium::FLOPPY_HD_350:
 			case Medium::FLOPPY_HD_525: //TODO: is it correct?
 				medium=DISK_35_1440_DS_18;	break;
@@ -148,8 +148,8 @@
 			default:
 				ASSERT(FALSE);
 		}
-		nSectorsOnTrack=pFormatBoot->nSectors;
-		nHeads=pFormatBoot->nHeads;
+		nSectorsOnTrack=formatBoot.nSectors;
+		nHeads=formatBoot.nHeads;
 		//nSectorsHidden=0; // see ZeroMemory above
 		AA55mark=0xaa55;
 		// - determining the Type of FAT
@@ -175,7 +175,7 @@
 				else
 					nSectorsInTotal16=nSectorsInTotal32=nSectorsInTotal;
 				nSectorsFat16=nSectorsFat;
-				fat1216.mediumType= pFormatBoot->mediumType&Medium::FLOPPY_ANY
+				fat1216.mediumType= formatBoot.mediumType&Medium::FLOPPY_ANY
 									? TMsdosMediumType::FLOPPY
 									: TMsdosMediumType::HDD;
 				fat1216.volume.__init__(rOutFat);
@@ -186,7 +186,7 @@
 				//fat32.rootDirectoryFirstCluster=... // initialized by caller when creating root Directory
 				fat32.fsInfo=MSDOS7_SECTOR_FSINFO;
 				fat32.bootCopy=MSDOS7_SECTOR_BKBOOT;
-				fat32.mediumType=	pFormatBoot->mediumType&Medium::FLOPPY_ANY
+				fat32.mediumType=	formatBoot.mediumType&Medium::FLOPPY_ANY
 									? TMsdosMediumType::FLOPPY
 									: TMsdosMediumType::HDD;
 				fat32.volume.__init__(rOutFat);
@@ -234,7 +234,7 @@
 
 
 
-	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		TFormat fmt={ Medium::UNKNOWN, Codec::MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 };
 		// - finding Boot Sector
@@ -244,9 +244,9 @@
 			return ERROR_UNRECOGNIZED_VOLUME; // neither normal nor backup Boot Sector recognized
 		const PCBootSector bootSector=(PCBootSector)image->GetHealthySectorData(bootChs);
 		// - MS-DOS recognized
-		*pFormatBoot=fmt;
-		bootSector->__getGeometry__(pFormatBoot); // receives only geometry; Medium Type received in MS-DOS ctor
-		if (pFormatBoot->GetCountOfAllSectors()
+		outFormatBoot=fmt;
+		bootSector->GetGeometry(outFormatBoot); // receives only geometry; Medium Type received in MS-DOS ctor
+		if (outFormatBoot.GetCountOfAllSectors()
 			>= // testing minimal number of Sectors
 			__cluster2logSector__( MSDOS7_DATA_CLUSTER_FIRST, bootSector )
 		){
@@ -256,15 +256,15 @@
 			){ 
 				const Medium::TType officialMediumType=bootSector->GetMediumType();
 				if (officialMediumType!=Medium::UNKNOWN)
-					pFormatBoot->mediumType=officialMediumType; // ... adopting the OfficialMediumType from BootSector
+					outFormatBoot.mediumType=officialMediumType; // ... adopting the OfficialMediumType from BootSector
 			}
 			return ERROR_SUCCESS;
 		}else
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
 	}
 
-	PDos CMSDOS7::__instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CMSDOS7(image,pFormatBoot);
+	PDos CMSDOS7::__instantiate__(PImage image,RCFormat formatBoot){
+		return new CMSDOS7(image,formatBoot);
 	}
 
 	#define BOOSTED_CAPACITY	_T("Boosted capacity (beware under WinNT!)")
@@ -328,7 +328,7 @@
 				) {
 		// - extracting information from Boot Sector (for the case that the Image is being "Opened as")
 		if (const PCBootSector sector=GetSectorData()) // if Null, it's an indirect proof that we are "Opening as" (the opening will be rejected in CreateUserInterface)
-			sector->__getGeometry__(&msdos->formatBoot);
+			sector->GetGeometry(msdos->formatBoot);
 	}
 
 

@@ -61,17 +61,17 @@
 
 	#define PASSWORD_FILLER_BYTE	' '
 
-	void CTRDOS503::TBootSector::__init__(PCFormat pFormatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed){
+	void CTRDOS503::TBootSector::__init__(RCFormat formatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed){
 		// initializes the Boot Sector to the specified Format
 		::ZeroMemory(this,sizeof(*this));
 		if (userDataInSysTrackAllowed){
 			firstFree.sector=TRDOS503_BOOT_SECTOR_NUMBER; // firstFree.track = see ZeroMemory above
-			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT
+			nFreeSectors =	formatBoot.GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT
 							+
 							TRDOS503_TRACK_SECTORS_COUNT+TRDOS503_SECTOR_FIRST_NUMBER-TRDOS503_BOOT_SECTOR_NUMBER;
 		}else{
 			firstFree.track=1; // firstFree.sector = see ZeroMemory above
-			nFreeSectors =	pFormatBoot->GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
+			nFreeSectors =	formatBoot.GetCountOfAllSectors()-TRDOS503_SECTOR_RESERVED_COUNT;
 		}
 		id=BOOT_ID;
 		::memcpy(	::memset( label, ' ', nCharsInLabel ),
@@ -79,14 +79,14 @@
 					sizeof(VOLUME_LABEL_DEFAULT_ANSI_8CHARS)-1
 				);
 		::memset( password, PASSWORD_FILLER_BYTE, TRDOS503_BOOT_PASSWORD_LENGTH_MAX );
-		__setDiskType__(pFormatBoot);
+		__setDiskType__(formatBoot);
 	}
-	void CTRDOS503::TBootSector::__setDiskType__(PCFormat pFormatBoot){
+	void CTRDOS503::TBootSector::__setDiskType__(RCFormat formatBoot){
 		// sets information on disk Format to one of predefined values that is closest
-		if (pFormatBoot->nCylinders<=40)
-			format= pFormatBoot->nHeads==1 ? SS40 : DS40 ;
+		if (formatBoot.nCylinders<=40)
+			format= formatBoot.nHeads==1 ? SS40 : DS40 ;
 		else
-			format= pFormatBoot->nHeads==1 ? SS80 : DS80 ;
+			format= formatBoot.nHeads==1 ? SS80 : DS80 ;
 	}
 
 	CTRDOS503::PBootSector CTRDOS503::TBootSector::Get(PImage image){
@@ -100,27 +100,27 @@
 		return TBootSector::Get(image);
 	}
 
-	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		TFormat fmt={ Medium::FLOPPY_DD, Codec::MFM, 1,2,TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		if (image->SetMediumTypeAndGeometry(fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD_525;
-			if (image->SetMediumTypeAndGeometry(&fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+			if (image->SetMediumTypeAndGeometry(fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
 		const PCBootSector boot=TBootSector::Get(image);
 		if (boot && boot->id==BOOT_ID){
-			*pFormatBoot=fmt;
+			outFormatBoot=fmt;
 			switch ( const BYTE f=boot->format ){
 				case DS80:
 				case DS40:
-					pFormatBoot->nCylinders= f&1 ? 40 : 80;
-					pFormatBoot->nHeads=2;
+					outFormatBoot.nCylinders= f&1 ? 40 : 80;
+					outFormatBoot.nHeads=2;
 					break;
 				case SS80:
 				case SS40:
-					pFormatBoot->nCylinders= f&1 ? 40 : 80;
-					pFormatBoot->nHeads=1;
+					outFormatBoot.nCylinders= f&1 ? 40 : 80;
+					outFormatBoot.nHeads=1;
 					break;
 				default:
 					return ERROR_UNRECOGNIZED_VOLUME;
@@ -138,8 +138,8 @@
 	#define SS80_CAPTION	_T("3.5\" SS 80 cylinders")
 	#define SS40_CAPTION	_T("5.25\" SS 40 cylinders")
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CTRDOS503(image,pFormatBoot,&CTRDOS503::Properties);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CTRDOS503(image,formatBoot,&CTRDOS503::Properties);
 	}
 
 	#define TRDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all 16 Sectors fit in a Track */
@@ -376,7 +376,7 @@
 	void CTRDOS503::FlushToBootSector() const{
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=GetBootSector()){
-			boot->__setDiskType__(&formatBoot);
+			boot->__setDiskType__(formatBoot);
 			this->boot.MarkSectorAsDirty();
 		}
 	}
@@ -385,7 +385,7 @@
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		// . initializing the Boot Sector
 		if (const PBootSector bootSector=GetBootSector()){
-			bootSector->__init__( &formatBoot, boot.nCharsInLabel, importToSysTrack );
+			bootSector->__init__( formatBoot, boot.nCharsInLabel, importToSysTrack );
 			FlushToBootSector(); // already carried out in CDos::__formatStdCylinders__ but overwritten by ZeroMemory above
 		}
 		// . empty Directory

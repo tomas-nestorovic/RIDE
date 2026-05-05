@@ -211,7 +211,7 @@
 			CBsdos308FileManagerView(CBSDOS308 *bsdos);
 		} fileManager;
 
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 		static BYTE __getFatChecksum__(PCSectorData *pSectorData,WORD nSectors);
 		static UINT AFX_CDECL FatReadabilityVerification_thread(PVOID pCancelableAction);
 
@@ -228,7 +228,7 @@
 	public:
 		static const TProperties Properties;
 
-		CBSDOS308(PImage image,PCFormat pFormatBoot);
+		CBSDOS308(PImage image,RCFormat formatBoot);
 
 		// boot
 		RCPhysicalAddress GetBootSectorAddress() const override;

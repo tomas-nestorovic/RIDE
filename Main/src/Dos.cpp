@@ -25,11 +25,11 @@
 	#define INI_SHELL_COMPLIANT_EXPORT_NAMES	_T("shcomp")
 	#define INI_GETFILESIZE_OPTION				_T("gfsopt")
 
-	CDos::CDos(PImage _image,PCFormat _pFormatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
+	CDos::CDos(PImage _image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
 		: image(_image) , properties(_properties) , fnCompareNames(_fnCompareNames)
 		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
-		, formatBoot(*_pFormatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
+		, formatBoot(formatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
 		, currentDir(DOS_DIR_ROOT)
 		, generateShellCompliantExportNames( __getProfileBool__(INI_SHELL_COMPLIANT_EXPORT_NAMES,true) ) // True <=> the GetFileExportNameAndExt function must produce names that are compliant with the FAT32 file system, otherwise False
@@ -342,7 +342,7 @@
 					return err;
 				if (!image->EditSettings(true))
 					return ERROR_CANCELLED;
-				if (const TStdWinError err=image->SetMediumTypeAndGeometry( &rd.params.format, sideMap, properties->firstSectorNumber ))
+				if (const TStdWinError err=image->SetMediumTypeAndGeometry( rd.params.format, sideMap, properties->firstSectorNumber ))
 					return err;
 			}
 			// . carrying out the formatting

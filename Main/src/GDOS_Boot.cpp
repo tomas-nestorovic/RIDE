@@ -1,25 +1,25 @@
 #include "stdafx.h"
 #include "GDOS.h"
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CGDOS(image,pFormatBoot);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CGDOS(image,formatBoot);
 	}
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("DS 80x10"), 0, {Medium::FLOPPY_DD,Codec::MFM,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
-	TStdWinError CGDOS::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CGDOS::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - setting up the biggest possible geometry
 		//static const TFormat Fmt={ Medium::FLOPPY_DD, 1,1,10, GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD, 1 };
 		//if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS) return false;
-		( *pFormatBoot=StdFormats[0].params.format ).nCylinders++;
-		if (const TStdWinError err=image->SetMediumTypeAndGeometry( pFormatBoot, StdSidesMap, Properties.firstSectorNumber ))
+		( outFormatBoot=StdFormats[0].params.format ).nCylinders++;
+		if (const TStdWinError err=image->SetMediumTypeAndGeometry( outFormatBoot, StdSidesMap, Properties.firstSectorNumber ))
 			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
 		// - checking disjunction of File FatPaths in the root Directory (each Sector must be allocated to a single File or be unallocated)
-		const CGDOS gdos(image,pFormatBoot);
+		const CGDOS gdos(image,outFormatBoot);
 		TDirectoryEntry::TSectorAllocationBitmap allocatedSectorsOnDisk;
 		BYTE nDirectorySectorsBad=0;
 		for( TGdosDirectoryTraversal dt(&gdos); dt.AdvanceToNextEntry(); )

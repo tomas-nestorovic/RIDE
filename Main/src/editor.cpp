@@ -319,7 +319,7 @@
 			const PImage image=d.fnImage(d.deviceName);
 			CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(image); // for the CImage::GetActive function to work
 			// . formatting Image under selected DOS
-			PDos dos = image->dos = d.dosProps->fnInstantiate(image,&TFormat::Unknown);
+			PDos dos = image->dos = d.dosProps->fnInstantiate(image,TFormat::Unknown);
 				image->writeProtected=false; // just to be sure
 				if (dos->ProcessCommand(ID_DOS_FORMAT)==CDos::TCmdResult::REFUSED || !image->GetCylinderCount()){
 					// A|B, A = formatting cancelled by the user, B = formatting failed; the conditions cannot be switched (because of short-circuit evaluation)
@@ -330,8 +330,8 @@
 			delete dos;
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
 			TFormat formatBoot;
-			dos = image->dos = CDos::CRecognition().Perform(image,&formatBoot)->fnInstantiate(image,&formatBoot);
-			image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
+			dos = image->dos = CDos::CRecognition().Perform(image,formatBoot)->fnInstantiate(image,formatBoot);
+			image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
 			CMainWindow::CTdiTemplate::pSingleInstance->RemoveDocument(image); // added back in CreateUserInterface below
 			if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
@@ -420,7 +420,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			do{
 				::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-				dosProps=CDos::CRecognition().Perform( image.get(), &formatBoot );
+				dosProps=CDos::CRecognition().Perform( image.get(), formatBoot );
 				if (!dosProps) // if recognition sequence cancelled ...
 					return nullptr; // ... no Image or disk is accessed
 				if (!dosProps->IsKnown()){
@@ -522,7 +522,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					Utils::FatalError( _T("Can't recognize the medium"), err, _T("The disk can't be open.") );
 					return nullptr;
 			}
-			if (const TStdWinError err=image->SetMediumTypeAndGeometry( &formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
+			if (const TStdWinError err=image->SetMediumTypeAndGeometry( formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
 				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The disk can't be open.") );
 				return nullptr;
 			}
@@ -531,10 +531,10 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 				Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS
-		const PDos dos = image->dos = dosProps->fnInstantiate( image.get(), &formatBoot );
+		const PDos dos = image->dos = dosProps->fnInstantiate( image.get(), formatBoot );
 		if (!dos)
 			return nullptr;
-		image->SetMediumTypeAndGeometry( &formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
+		image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
 		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
 		image->SetModifiedFlag(FALSE); // just to be sure

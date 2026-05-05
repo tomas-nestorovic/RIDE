@@ -1356,7 +1356,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder ...
 									? deducedSides.map // ... adopt them
 									: dos->sideMap; // otherwise adopt Sides defined by the DOS
-			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( &targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
+			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
 				goto error;
 			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping

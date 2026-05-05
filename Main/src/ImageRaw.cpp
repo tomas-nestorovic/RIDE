@@ -296,7 +296,7 @@ trackNotFound:
 			return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(PCFormat pFormat,PCSide _sideMap,TSector _firstSectorNumber){
+	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - if geometry already set manually by the user, we are successfully done
 		if (explicitSides)
@@ -307,9 +307,9 @@ trackNotFound:
 								: 0;
 		// - setting up geometry
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
-		if (pFormat->mediumType!=Medium::UNKNOWN){
+		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=pFormat->nHeads, nSectors=pFormat->nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=pFormat->sectorLength );
+			nHeads=format.nHeads, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				__freeBufferOfCylinders__();
 				const int nSectorsInTotal=fileSize/sectorLength;
@@ -326,7 +326,7 @@ trackNotFound:
 						break;
 					}
 					case TTrackScheme::BY_HEADS:{
-						const int nSectorsOnSide=( nCylinders=pFormat->nCylinders )*nSectors; // NumberOfCylinders constant ...
+						const int nSectorsOnSide=( nCylinders=format.nCylinders )*nSectors; // NumberOfCylinders constant ...
 						nHeads=div( nSectorsInTotal+nSectorsOnSide-1, nSectorsOnSide ).quot; // ... and NumberOfHeads computed
 						break;
 					}
@@ -347,7 +347,7 @@ trackNotFound:
 		return ERROR_SUCCESS;		
 	}
 
-	TStdWinError CImageRaw::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CImageRaw::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if geometry already set manually by the user, we are successfully done
@@ -362,7 +362,7 @@ trackNotFound:
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		*/
 		// - setting up Medium's Type and geometry
-		return __setMediumTypeAndGeometry__(pFormat,sideMap,firstSectorNumber);
+		return __setMediumTypeAndGeometry__(format,sideMap,firstSectorNumber);
 	}
 
 	static constexpr TCHAR Custom[]=_T("Custom");
@@ -648,7 +648,7 @@ trackNotFound:
 					fmt.nSectors=nSectors;
 					fmt.sectorLengthCode=(TFormat::TLengthCode)sectorLengthCode;
 					fmt.sectorLength=Sector::GetLength(sectorLengthCode);
-				return rawImage.SetMediumTypeAndGeometry( &fmt, sideNumbers, firstSectorNumber );
+				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );
 			}
 		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result

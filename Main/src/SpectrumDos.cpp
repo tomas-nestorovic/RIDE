@@ -1,9 +1,9 @@
 #include "stdafx.h"
 
-	CSpectrumDos::CSpectrumDos(PImage image,PCFormat pFormatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
+	CSpectrumDos::CSpectrumDos(PImage image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
 		// - base
-		: CSpectrumBase(image,pFormatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption,unformatFatStatus)
+		: CSpectrumBase(image,formatBoot,trackAccessScheme,properties,nResId,pFileManager,getFileSizeDefaultOption,unformatFatStatus)
 		// - loading MRU Tapes
 		, mruTapes( 0, INI_SPECTRUM _T("MruTapes"), _T("T%d"), 4 ) {
 		mruTapes.ReadList();

@@ -1,17 +1,17 @@
 #include "stdafx.h"
 #include "BSDOS.h"
 
-	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,PFormat pFormatBoot){
+	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - determining the Type of Medium (type of floppy)
 		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
-		if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 					fmt.mediumType=Medium::FLOPPY_HD_525;
-					if (image->SetMediumTypeAndGeometry(&fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+					if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 						return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 				}
 			}
@@ -29,7 +29,7 @@
 				fmt.nHeads=boot->nHeads;
 				fmt.nSectors=boot->nSectorsPerTrack;
 				fmt.clusterSize=boot->nSectorsPerCluster;
-				*pFormatBoot=fmt;
+				outFormatBoot=fmt;
 				return ERROR_SUCCESS;
 			}
 		// - not recognized
@@ -58,8 +58,8 @@
 				);
 	}
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CBSDOS308(image,pFormatBoot);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CBSDOS308(image,formatBoot);
 	}
 
 	#define BSDOS_SECTOR_GAP3	32 /* smaller than regular IBM norm-compliant Gap to make sure all Sectors fit in a Track */

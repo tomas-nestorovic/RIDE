@@ -200,7 +200,7 @@
 			CMdos2FileManagerView(PMDOS2 mdos);
 		} fileManager;
 
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static UINT AFX_CDECL FatVerification_thread(PVOID pCancelableAction);
 
@@ -216,7 +216,7 @@
 	public:
 		static const TProperties Properties;
 
-		CMDOS2(PImage image,PCFormat pFormatBoot);
+		CMDOS2(PImage image,RCFormat formatBoot);
 
 		// boot
 		RCPhysicalAddress GetBootSectorAddress() const override;

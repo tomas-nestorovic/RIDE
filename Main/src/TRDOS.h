@@ -63,8 +63,8 @@
 			WORD reserved3; // e.g., for extended Label
 
 			BYTE __getLabelLengthEstimation__() const; // for TR-DOS version recognition
-			void __init__(PCFormat pFormatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed);
-			void __setDiskType__(PCFormat pFormatBoot);
+			void __init__(RCFormat formatBoot,BYTE nCharsInLabel,bool userDataInSysTrackAllowed);
+			void __setDiskType__(RCFormat formatBoot);
 		} *PBootSector;
 		typedef const TBootSector *PCBootSector;
 	protected:
@@ -150,7 +150,7 @@
 
 		static const CFormatDialog::TStdFormat StdFormats[];
 
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 		static UINT AFX_CDECL Defragmentation_thread(PVOID _pCancelableAction);
 		static void __informationWithCheckableShowNoMore__(LPCTSTR text,LPCTSTR messageId);
 		static UINT AFX_CDECL CrossLinkedFilesVerification_thread(PVOID pCancelableAction);
@@ -169,7 +169,7 @@
 	public:
 		static const TProperties Properties;
 
-		CTRDOS503(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps);
+		CTRDOS503(PImage image,RCFormat formatBoot,PCProperties pTrdosProps);
 
 		// boot
 		RCPhysicalAddress GetBootSectorAddress() const override;
@@ -203,11 +203,11 @@
 	#define TRDOS504_BOOT_LABEL_LENGTH_MAX	8
 
 	class CTRDOS504:public CTRDOS503{
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 	public:
 		static const TProperties Properties;
 
-		CTRDOS504(PImage image,PCFormat pFormatBoot,PCProperties pTrdosProps);
+		CTRDOS504(PImage image,RCFormat formatBoot,PCProperties pTrdosProps);
 	};
 
 
@@ -216,11 +216,11 @@
 	#define TRDOS505_BOOT_LABEL_LENGTH_MAX	10
 
 	class CTRDOS505 sealed:public CTRDOS504{
-		static TStdWinError __recognizeDisk__(PImage image,PFormat pFormatBoot);
+		static TStdWinError __recognizeDisk__(PImage image,TFormat &outFormatBoot);
 	public:
 		static const TProperties Properties;
 
-		CTRDOS505(PImage image,PCFormat pFormatBoot);
+		CTRDOS505(PImage image,RCFormat formatBoot);
 	};
 
 

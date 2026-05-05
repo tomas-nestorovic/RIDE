@@ -223,13 +223,13 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ::GetCellTime(dataBitRate*1000);
 	}
 
-	TStdWinError CHFE::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CHFE::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
 		/* // commented out as the 'floppyInterface' value seems to be not trusted (came across a MS-DOS HD disk where set to ATARI_ST_DD)
 		if (header.floppyInterface<TFloppyInterface::LAST_KNOWN)
-			switch (pFormat->mediumType){
+			switch (format.mediumType){
 				case Medium::FLOPPY_DD:{
 					static constexpr TFloppyInterface Compatibles[]={ TFloppyInterface::IBM_PC_DD, TFloppyInterface::ATARI_ST_DD, TFloppyInterface::AMIGA_DD, TFloppyInterface::CPC_DD, TFloppyInterface::GENERIC_SHUGART, TFloppyInterface::MSX2_DD, TFloppyInterface::C64_DD, TFloppyInterface::EMU_SHUGART, TFloppyInterface::S950_DD };
 					if (::memchr( Compatibles, header.floppyInterface, sizeof(Compatibles) ))
@@ -253,16 +253,16 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 					return ERROR_UNRECOGNIZED_MEDIA;
 			}*/
 		// - must be setting Medium compatible with the nominal # of Cells
-		if (pFormat->mediumType!=Medium::UNKNOWN
+		if (format.mediumType!=Medium::UNKNOWN
 			&&
 			header.dataBitRate // zero when creating a new image
 		){
-			const auto mp=Medium::GetProperties(pFormat->mediumType);
+			const auto mp=Medium::GetProperties(format.mediumType);
 			if (!mp->IsAcceptableCountOfCells( mp->revolutionTime/header.GetCellTime() ))
 				return ERROR_UNRECOGNIZED_MEDIA;
 		}
 		// - base
-		return __super::SetMediumTypeAndGeometry( pFormat, sideMap, firstSectorNumber );
+		return __super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber );
 	}
 
 	bool CHFE::EditSettings(bool initialEditing){

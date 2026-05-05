@@ -73,13 +73,13 @@
 	struct TRecognitionParams sealed{
 		const CDos::CRecognition &recognition;
 		const PImage image;
-		const PFormat pOutFormatBoot;
+		TFormat &outFormatBoot;
 		BYTE pos;
 		CDos::PCProperties props;
 
-		TRecognitionParams(const CDos::CRecognition &recognition,PImage image,PFormat pOutFormatBoot)
+		TRecognitionParams(const CDos::CRecognition &recognition,PImage image,TFormat &outFormatBoot)
 			// ctor
-			: recognition(recognition) , image(image) , pOutFormatBoot(pOutFormatBoot)
+			: recognition(recognition) , image(image) , outFormatBoot(outFormatBoot)
 			, pos( recognition.GetFirstRecognizedDosPosition() )
 			, props(nullptr) {
 		}
@@ -94,7 +94,7 @@
 			if (bac.Cancelled)
 				return ERROR_CANCELLED;
 			else
-				switch (( rp.props=rp.recognition.GetNextRecognizedDos(rp.pos) )->fnRecognize(rp.image,rp.pOutFormatBoot)){
+				switch (( rp.props=rp.recognition.GetNextRecognizedDos(rp.pos) )->fnRecognize(rp.image,rp.outFormatBoot)){
 					case ERROR_SUCCESS:
 						return bac.TerminateWithSuccess();
 					case ERROR_CANCELLED:
@@ -102,13 +102,13 @@
 				}
 			bac.IncrementProgress();
 		}
-		( rp.props=&CUnknownDos::Properties )->fnRecognize( rp.image, rp.pOutFormatBoot ); // just a formality to properly fill up the FormatBoot
+		( rp.props=&CUnknownDos::Properties )->fnRecognize( rp.image, rp.outFormatBoot ); // just a formality to properly fill up the FormatBoot
 		return bac.TerminateWithSuccess();
 	}
 
-	CDos::PCProperties CDos::CRecognition::Perform(PImage image,PFormat pOutFormatBoot) const{
+	CDos::PCProperties CDos::CRecognition::Perform(PImage image,TFormat &outFormatBoot) const{
 		// returns Properties of DOS recognized in the specified Image (populates the output Format recognized in the boot Sector); returns UnknownDos if no DOS can be recognized; returns Null if recognition sequence cancelled by the user
-		TRecognitionParams rp( *this, image, pOutFormatBoot );
+		TRecognitionParams rp( *this, image, outFormatBoot );
 		return	CBackgroundActionCancelable(
 					Thread,
 					&rp,

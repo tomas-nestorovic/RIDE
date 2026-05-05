@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "BSDOS.h"
 
-	CBSDOS308::CBSDOS308(PImage image,PCFormat pFormatBoot)
+	CBSDOS308::CBSDOS308(PImage image,RCFormat formatBoot)
 		// ctor
 		// - base
-		: CSpectrumDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
+		: CSpectrumDos( image, formatBoot, TTrackScheme::BY_CYLINDERS, &Properties, IDR_BSDOS, &fileManager, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN )
 		// - initialization
 		, boot(this)
 		, dirsSector(this)

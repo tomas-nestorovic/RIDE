@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "MDOS2.h" // included to refer to one of its StandardFormats
 
-	static PDos __instantiate__(PImage image,PCFormat pFormatBoot){
-		return new CUnknownDos(image,pFormatBoot);
+	static PDos __instantiate__(PImage image,RCFormat formatBoot){
+		return new CUnknownDos(image,formatBoot);
 	}
-	static TStdWinError __recognize__(PImage image,PFormat pFormatBoot){
+	static TStdWinError __recognize__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		*pFormatBoot=TFormat::Unknown;
+		outFormatBoot=TFormat::Unknown;
 		return ERROR_SUCCESS;
 	}
 	const CDos::TProperties CUnknownDos::Properties={
@@ -32,10 +32,10 @@
 		0,0 // number of reserved Bytes at the beginning and end of each Sector
 	};
 
-	CUnknownDos::CUnknownDos(PImage image,PCFormat pFormatBoot)
+	CUnknownDos::CUnknownDos(PImage image,RCFormat formatBoot)
 		// ctor
 		// - base
-		: CDos( image, pFormatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN ) {
+		: CDos( image, formatBoot, TTrackScheme::BY_CYLINDERS, &Properties, nullptr, image->GetSideMap()?image->GetSideMap():StdSidesMap, IDR_DOS_UNKNOWN, nullptr, TGetFileSizeOptions::OfficialDataLength, TSectorStatus::UNKNOWN ) {
 	}
 
 

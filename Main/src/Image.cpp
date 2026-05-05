@@ -873,7 +873,7 @@ namespace Sector
 			return ERROR_NO_MEDIA_IN_DRIVE;
 	}
 
-	TStdWinError CImage::SetMediumTypeAndGeometry(PCFormat,PCSide,TSector){
+	TStdWinError CImage::SetMediumTypeAndGeometry(RCFormat,PCSide,TSector){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		return ERROR_SUCCESS;
 	}

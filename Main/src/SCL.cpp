@@ -91,14 +91,14 @@
 			return ERROR_SECTOR_NOT_FOUND;
 	}
 
-	TStdWinError CSCL::SetMediumTypeAndGeometry(PCFormat pFormat,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CSCL::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(pFormat,sideMap,firstSectorNumber))
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(format,sideMap,firstSectorNumber))
 			return err; // we should always succeeed, but just to be sure
 		// - allowed are only TRDOS-compliant formats
-		if (pFormat->nSectors!=TRDOS503_TRACK_SECTORS_COUNT || pFormat->sectorLength!=TRDOS503_SECTOR_LENGTH_STD || pFormat->sectorLengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
+		if (format.nSectors!=TRDOS503_TRACK_SECTORS_COUNT || format.sectorLength!=TRDOS503_SECTOR_LENGTH_STD || format.sectorLengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
 			return Utils::ErrorByOs( ERROR_VHD_FORMAT_UNKNOWN, ERROR_NOT_SUPPORTED ); // not a TRDOS format
 		// - attempting to read as TRDOS 5.0x Image
 		if (f.m_hFile!=CFile::hFileNull){ // handle doesn't exist if creating a new Image
@@ -119,10 +119,10 @@
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
 						const TFormat fmt={
 							Medium::FLOPPY_DD, Codec::MFM, 80,
-							explicitSides ? GetHeadCount() : pFormat->nHeads,
+							explicitSides ? GetHeadCount() : format.nHeads,
 							TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1
 						};
-						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,&fmt) );
+						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,fmt) );
 						break;
 					}
 				}
