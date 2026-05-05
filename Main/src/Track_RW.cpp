@@ -164,7 +164,6 @@ namespace Track
 			if (currentTime>=indexPulses[iNextIndexPulse]){
 				if (pLogTimesInfo->resetDecoderOnIndex)
 					RewindToIndexAndResetProfile(iNextIndexPulse);
-				iNextIndexPulse++;
 			}
 		return value;
 	}
@@ -468,14 +467,14 @@ namespace Track
 
 
 
-	Bit::CSequence CReader::CreateBitSequence(TLogTime tFrom,const CReader::TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent) const{
+	Bit::CSequence CReader::CreateBitSequence(TLogTime tFrom,const TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent) const{
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
 		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		CReader tr=*this;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		tTo=std::min( tTo-iwTimeDefaultHalf, tr.GetTotalTime() );
 		Bit::N nBits=0;
-		while (tr.GetCurrentTime()<tTo)
+		while (tr && tr.GetCurrentTime()<tTo)
 			tr.ReadBit(), nBits++;
 		// - create the Sequence
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
