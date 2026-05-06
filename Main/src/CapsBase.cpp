@@ -975,7 +975,7 @@ invalidTrack:
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - scanning what's been written
-		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], nullptr ); // forcing rescan
+		const CTrackTempReset pit0( internalTracks[cyl][head] ); // forcing rescan
 			ScanTrack( cyl, head );
 		std::unique_ptr<CInternalTrack> tmp( internalTracks[cyl][head] );
 		if (cancelled)
@@ -1051,7 +1051,7 @@ invalidTrack:
 		pit->modified=true; // to pass the save conditions
 		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
 			// . saving the test Track
-	{		const Utils::CVarTempReset<PInternalTrack> pit0( internalTracks[cyl][head], pit.get() );
+	{		const CTrackTempReset pit0( internalTracks[cyl][head], pit.get() );
 			if (const TStdWinError err=SaveTrack( cyl, head, cancelled ))
 				return err;
 	}		// . reading the test Track back

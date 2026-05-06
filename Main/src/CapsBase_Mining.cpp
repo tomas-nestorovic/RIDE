@@ -305,7 +305,7 @@ using namespace Charting;
 					}
 					// . putting existing Track aside
 					std::unique_ptr<CInternalTrack> pitMined;
-			{		const Utils::CVarTempReset<PInternalTrack> pitOrg( rit, nullptr );
+			{		const CTrackTempReset pit0( rit );
 					// . rescanning the Track
 					TSectorId foundSectors[(TSector)-1];
 					const TSector nFoundSectors=d.cb.ScanTrack( d.cyl, d.head, nullptr, foundSectors );

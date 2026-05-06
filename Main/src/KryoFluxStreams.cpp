@@ -169,7 +169,7 @@
 		const auto fLength=f.GetLength();
 		if (const auto &&data=Utils::CSharedBytes(fLength))
 			if (f.Read( data, fLength )==fLength)
-				if (CTrackReaderWriter trw=StreamToTrack( data, f.GetLength() )){
+				if (CTrackReaderWriter &&trw=StreamToTrack( data, f.GetLength() )){
 					// it's a KryoFlux Stream whose data make sense
 					if (head && params.flippyDisk)
 						trw.Reverse();

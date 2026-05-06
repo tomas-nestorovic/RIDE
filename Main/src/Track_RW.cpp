@@ -1162,6 +1162,9 @@ namespace Track
 		nLogTimes+=iTime-iNextTime;
 		SetCurrentTime(0); // setting valid state
 		// - successfully normalized
+		#ifdef _DEBUG
+			VerifyChronology();
+		#endif
 		return ERROR_SUCCESS;
 	}
 

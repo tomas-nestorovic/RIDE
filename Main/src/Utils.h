@@ -182,11 +182,12 @@ namespace Utils{
 
 	template<typename T>
 	class CVarBackup{
-		const T value0;
 		bool valid;
 	protected:
 		T &var;
 	public:
+		const T value0;
+
 		inline CVarBackup(T &var)
 			: value0(var) , var(var) , valid(true) {
 		}
