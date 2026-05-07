@@ -58,6 +58,8 @@ namespace Time
 		}
 	};
 
+	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ);
+
 	struct TColorInterval:public TInterval{
 		COLORREF color;
 	};

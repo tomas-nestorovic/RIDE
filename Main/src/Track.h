@@ -114,6 +114,27 @@ namespace Track
 
 
 
+	struct TCorrections{
+		union{
+			struct{
+				WORD valid:1;
+				WORD use:1;
+				WORD indexTiming:1;
+				WORD cellCountPerRevolution:1;
+				WORD fitTimesIntoIwMiddles:1;
+				WORD offsetIndices:1;
+			};
+			WORD w;
+		};
+		short indexOffsetMicroseconds;
+
+		TCorrections(); // no Corrections
+		TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")); // load
+
+		void Save(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")) const;
+		bool ShowModal(CWnd *pParentWnd);
+	};
+
 	class CReaderWriter:public CReader{
 		enum{
 			LogTimesCountExtra=1
@@ -146,7 +167,7 @@ namespace Track
 		void ClearAllMetaData();
 		bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,Event::TData &peData,TFdcStatus sr);
 		TStdWinError Normalize();
-		TStdWinError NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime);
+		TStdWinError Apply(const TCorrections &c);
 		CReaderWriter &Reverse();
 		CReaderWriter &Offset(TLogTime dt);
 	};

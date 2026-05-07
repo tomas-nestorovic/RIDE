@@ -199,7 +199,7 @@
 			trw.SetMediumType(floppyType); // keeps timing intact, just presets codec parameters (codec itself determined below)
 			if (cb.dos!=nullptr) // DOS already known (aka. creating final version of the Track)
 				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
-					cb.params.corrections.ApplyTo(trw);
+					trw.Apply( cb.params.corrections );
 			//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
 			//else if (params.corrections.indexTiming) // DOS still being recognized ...
 				//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
@@ -1593,7 +1593,7 @@ invalidTrack:
 		rOut.Add40TrackDrive(fortyTrackDrive);
 		rOut.AddDoubleTrackStep( doubleTrackStep, userForcedDoubleTrackStep );
 		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
-		corrections.EnumSettings(rOut);
+		rOut.AddTrackCorrections(corrections);
 	}
 
 
@@ -1607,101 +1607,21 @@ invalidTrack:
 
 
 
-	CCapsBase::TCorrections::TCorrections()
-		// ctor of "no" Corrections
-		: valid(true)
-		, use(false) {
-	}
-	
-	CCapsBase::TCorrections::TCorrections(LPCTSTR iniSection,LPCTSTR iniName)
-		// ctor
-		// - the defaults
-		: valid(true)
-		, use(false)
-		, indexTiming(true)
-		, cellCountPerTrack(true)
-		, fitFluxesIntoIwMiddles(true)
-		, offsetIndices(false)
-		, indexOffsetMicroseconds(1500) {
-		// - attempting to load existing values from last session
-		if (const DWORD settings=app.GetProfileInt(iniSection,iniName,0)) // do Valid settings exist?
-			*(PDWORD)this=settings;
-	}
-
-	void CCapsBase::TCorrections::Save(LPCTSTR iniSection,LPCTSTR iniName) const{
-		// dtor
-		app.WriteProfileInt( iniSection, iniName, *(PDWORD)this );
-	}
-
-	bool CCapsBase::TCorrections::ShowModal(CWnd *pParentWnd){
-		// shows a dialog with exposed settings
-		// - defining the Dialog
-		class CCorrectionsDialog sealed:public Utils::CRideDialog{
-			void DoDataExchange(CDataExchange *pDX) override{
-				__super::DoDataExchange(pDX);
-				int tmp=corr.indexTiming;
-					DDX_Check( pDX, ID_ALIGN,	tmp );
-				corr.indexTiming=tmp!=BST_UNCHECKED;
-				tmp=corr.cellCountPerTrack;
-					DDX_Check( pDX, ID_NUMBER, tmp );
-				corr.cellCountPerTrack=tmp!=BST_UNCHECKED;
-				tmp=corr.fitFluxesIntoIwMiddles;
-					DDX_Check( pDX, ID_ACCURACY, tmp );
-				corr.fitFluxesIntoIwMiddles=tmp!=BST_UNCHECKED;
-				tmp=corr.offsetIndices;
-					DDX_Check( pDX, ID_ADDRESS, tmp );
-				corr.offsetIndices=tmp!=BST_UNCHECKED;
-				tmp=corr.indexOffsetMicroseconds;
-					DDX_Text( pDX, ID_TIME, tmp );
-						DDV_MinMaxInt( pDX, tmp, SHRT_MIN, SHRT_MAX );
-				corr.indexOffsetMicroseconds=tmp;
-			}
-		public:
-			TCorrections corr;
-
-			CCorrectionsDialog(const TCorrections &c,CWnd *pParentWnd)
-				: Utils::CRideDialog( IDR_CAPS_CORRECTIONS, pParentWnd )
-				, corr(c) {
-			}
-		} d( *this, pParentWnd );
-		// - showing the Dialog and processing its result
-		if (d.DoModal()==IDOK){
-			*this=d.corr;
-			return true;
-		}else
-			return false;
-	}
-
-	TStdWinError CCapsBase::TCorrections::ApplyTo(CTrackReaderWriter &trw) const{
-		// attempts to apply current Correction settings to the specified Track; returns Windows standard i/o error
-		ASSERT( valid );
-		if (use)
-			return	trw.NormalizeEx(
-						offsetIndices ? TIME_MICRO(indexOffsetMicroseconds) : 0, // micro- to nanoseconds
-						fitFluxesIntoIwMiddles,
-						cellCountPerTrack,
-						indexTiming
-					);
-		else
-			return ERROR_SUCCESS;
-	}
-
-	void CCapsBase::TCorrections::EnumSettings(CSettings &rOut) const{
-		// returns a collection of relevant settings for this Image
+	void CImage::CSettings::AddTrackCorrections(const Track::TCorrections &c){
 		TCHAR buf[256], *p=buf;
 		*p++='{';
-		if (use){
-			if (indexTiming)
+		if (c.use){
+			if (c.indexTiming)
 				p+=::wsprintf( p, _T("revolution time, ") );
-			if (cellCountPerTrack)
+			if (c.cellCountPerRevolution)
 				p+=::wsprintf( p, _T("bit count, ") );
-			if (fitFluxesIntoIwMiddles)
+			if (c.fitTimesIntoIwMiddles)
 				p+=::wsprintf( p, _T("bit positions, ") );
-			if (offsetIndices)
-				p+=::wsprintf( p, _T("indices offset %d us, "), indexOffsetMicroseconds );
+			if (c.offsetIndices)
+				p+=::wsprintf( p, _T("indices offset %d us, "), c.indexOffsetMicroseconds );
 			if (p>buf+1) // more than just the opening '{' bracket?
 				p-=2; // drop tail comma
 		}
 		::lstrcpy( p, _T("}") );
-		rOut.SetAt( _T("corrections"), buf );
+		SetAt( _T("corrections"), buf );
 	}

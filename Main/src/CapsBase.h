@@ -100,24 +100,6 @@
 			TStdWinError ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter trw) const;
 		} precompensation;
 
-		struct TCorrections sealed{
-			WORD valid:1;
-			WORD use:1;
-			WORD indexTiming:1;
-			WORD cellCountPerTrack:1;
-			WORD fitFluxesIntoIwMiddles:1;
-			WORD offsetIndices:1;
-			short indexOffsetMicroseconds;
-
-			TCorrections(); // no Corrections
-			TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt"));
-
-			void Save(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")) const;
-			bool ShowModal(CWnd *pParentWnd);
-			TStdWinError ApplyTo(CTrackReaderWriter &trw) const;
-			void EnumSettings(CSettings &rOut) const;
-		};
-
 		struct TParams{
 			// persistent (saved and loaded)
 			LPCTSTR iniSectionName;
@@ -138,7 +120,7 @@
 			} mutable calibrationAfterError;
 			bool calibrationAfterErrorOnlyForKnownSectors;
 			BYTE calibrationStepDuringFormatting;
-			TCorrections corrections;
+			Track::TCorrections corrections;
 			bool verifyWrittenTracks, verifyBadSectors;
 			// volatile (current session only)
 			bool userForcedMedium;

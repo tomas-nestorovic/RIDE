@@ -1065,107 +1065,14 @@ namespace Track
 		}
 	}
 
-	static Time::N InterpolateTimes(PLogTime logTimes,Time::N nLogTimes,TLogTime tSrcA,Time::N iSrcA,TLogTime tSrcZ,TLogTime tDstA,TLogTime tDstZ){
-		// in-place interpolation of LogicalTimes in specified range; returns an "index-pointer" to the first unprocessed LogicalTime (outside the range)
-		const Utils::CVarTempReset<TLogTime> tStopOrg( logTimes[nLogTimes], Time::Infinity ); // stop-condition
-			PLogTime pTime=logTimes+iSrcA;
-			for( const TLogTime tSrcInterval=tSrcZ-tSrcA,tDstInterval=tDstZ-tDstA; *pTime<tSrcZ; pTime++ )
-				*pTime = tDstA+(LONGLONG)(*pTime-tSrcA)*tDstInterval/tSrcInterval;
-		return pTime-logTimes;
-	}
-
 	TStdWinError CReaderWriter::Normalize(){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
-		return NormalizeEx( 0, false, false, true );
-	}
-
-	TStdWinError CReaderWriter::NormalizeEx(TLogTime indicesOffset,bool fitTimesIntoIwMiddles,bool correctCellCountPerRevolution,bool correctRevolutionTime){
-		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
-		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
-		// - if the Track contains less than two Indices, we are successfully done
-		if (nIndexPulses<2)
-			return ERROR_SUCCESS;
-		// - MediumType must be supported
-		const Medium::PCProperties mp=pLogTimesInfo->mediumProps;
-		if (!mp)
-			return ERROR_UNRECOGNIZED_MEDIA;
-		ClearAllMetaData();
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
-		// - shifting Indices by shifting all Times in oposite direction
-		const TLogTime tLastIndexOrg=GetLastIndexTime();
-		if (indicesOffset){
-			const TLogTime dt= indicesOffset<0
-				? std::max(*indexPulses+indicesOffset,0)-*indexPulses // mustn't run into negative timing
-				: indicesOffset;
-			for( TRev i=nIndexPulses; i; indexPulses[--i]+=dt );
-		}
-		// - ignoring what's before the first Index
-		TLogTime tCurrIndexOrg=RewindToIndex(0);
-		// - normalization
-		const Time::N iModifStart=iNextTime;
-		Time::N iTime=iModifStart;
-		const Time::CSharedArray buffer( GetBufferCapacity() );
-		const PLogTime ptModified=buffer;
-		for( TRev nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
-			// . resetting inspection conditions
-			profile.Reset();
-			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);
-			const Time::N iModifRevStart=iTime;
-			// . alignment of LogicalTimes to inspection window centers
-			Time::N nAlignedCells=0;
-			if (fitTimesIntoIwMiddles){
-				// alignment wanted
-				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
-					if (ReadBit())
-						if (iTime<buffer.length)
-							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
-						else
-							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
-			}else
-				// alignment not wanted - just copying the Times in current Revolution
-				while (*this && logTimes[iNextTime]<tNextIndexOrg)
-					ptModified[iTime++]=ReadTime();
-			Time::N iModifRevEnd=iTime;
-			// . shortening/prolonging this revolution to correct number of cells
-			if (correctCellCountPerRevolution){
-				ptModified[iModifRevEnd]=Time::Infinity; // stop-condition
-				if (nAlignedCells>0){ // are we working with time-corrected cells?
-					iModifRevEnd=iModifRevStart;
-					const TLogTime tRevEnd=tCurrIndexOrg+mp->revolutionTime;
-					while (ptModified[iModifRevEnd]<tRevEnd)
-						iModifRevEnd++;
-					nAlignedCells=mp->nCells;
-				}//else
-					//nop (not applicable)
+		static const struct TCorrectRevolutionTime:public TCorrections{
+			inline TCorrectRevolutionTime(){
+				indexTiming=true;
 			}
-			// . correction of index-to-index time distance
-			if (correctRevolutionTime) // index-to-index time correction enabled?
-				indexPulses[nextIndex]=indexPulses[nextIndex-1]+mp->revolutionTime;
-			const TLogTime tNextIndexWork =	nAlignedCells>0 // are we working with time-corrected cells?
-											? tCurrIndexOrg+nAlignedCells*profile.iwTimeDefault
-											: tNextIndexOrg;
-			if (tCurrIndexOrg!=indexPulses[nextIndex-1] || tNextIndexWork!=indexPulses[nextIndex])
-				InterpolateTimes(
-					ptModified, iModifRevEnd,
-					tCurrIndexOrg, iModifRevStart, tNextIndexWork,
-					indexPulses[nextIndex-1], indexPulses[nextIndex]
-				);
-			// . next Revolution
-			tCurrIndexOrg=tNextIndexOrg;
-			iTime=iModifRevEnd;
-		}
-		// - copying Modified LogicalTimes to the Track
-		const TLogTime dtLast=GetLastIndexTime()-tLastIndexOrg;
-		for( auto i=iNextTime; i<nLogTimes; logTimes[i++]+=dtLast );
-		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
-		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
-		nLogTimes+=iTime-iNextTime;
-		SetCurrentTime(0); // setting valid state
-		// - successfully normalized
-		#ifdef _DEBUG
-			VerifyChronology();
-		#endif
-		return ERROR_SUCCESS;
+		} C;
+		return Apply(C);
 	}
 
 	CReaderWriter &CReaderWriter::Reverse(){

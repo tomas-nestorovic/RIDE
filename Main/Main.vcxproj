@@ -301,6 +301,7 @@
     <ClCompile Include="src\Medium.cpp" />
     <ClCompile Include="src\Sector.cpp" />
     <ClCompile Include="src\Time.cpp" />
+    <ClCompile Include="src\TrackCorrections.cpp" />
     <ClCompile Include="src\TrackEvent.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Sector_RW.cpp" />

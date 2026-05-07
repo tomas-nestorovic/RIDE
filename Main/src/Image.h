@@ -105,6 +105,7 @@
 			void Add40TrackDrive(bool value);
 			void AddDoubleTrackStep(bool isDouble,bool userForced);
 			void AddBaudRate(int baudRate);
+			void AddTrackCorrections(const Track::TCorrections &c);
 		};
 
 		CMainWindow::CMessageBar draftVersionMessageBar;

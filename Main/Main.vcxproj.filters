@@ -557,6 +557,9 @@
     <ClCompile Include="src\Bit.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
+    <ClCompile Include="src\TrackCorrections.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

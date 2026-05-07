@@ -4,6 +4,15 @@ namespace Time
 {
 	const TInterval TInterval::Invalid( Infinity, Invalid );
 
+	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ){
+		// in-place interpolation
+		ASSERT( tSrcA<tSrcZ );
+		ASSERT( tDstA<tDstZ );
+		for( const T dtSrc=tSrcZ-tSrcA,dtDst=tDstZ-tDstA; n-->0; p++ )
+			*p= tDstA + (LONGLONG)(*p-tSrcA)*dtDst/dtSrc;
+	}
+
+
 
 
 	const TCHAR Prefixes[]=_T("nnnµµµmmm   "); // nano, micro, milli, no-prefix

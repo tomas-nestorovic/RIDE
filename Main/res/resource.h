@@ -61,7 +61,7 @@
 #define IDR_TRACK_EDITOR                222
 #define IDR_CHARTFRAME_XY               223
 #define IDR_CAPS_PRECOMPENSATION        224
-#define IDR_CAPS_CORRECTIONS            225
+#define IDR_TRACK_CORRECTIONS           225
 #define IDR_TRACK_EDITOR_GOTO_TIME      226
 #define IDR_FILEMANAGER_GENERAL_CONTEXT 227
 #define IDR_FDD_TEST                    228

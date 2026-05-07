@@ -89,7 +89,7 @@
 		const BYTE nTrials=std::min( ptp.nTrials, (BYTE)ARRAYSIZE(trialResults) );
 		const Medium::PCProperties pMediumProps=Medium::GetProperties(rPrecomp.floppyType);
 		const Utils::CVarTempReset<Medium::TType> mt0( const_cast<CCapsBase *>(&ptp.cb)->floppyType, rPrecomp.floppyType ); // force selected Medium
-		const Utils::CVarTempReset<TCorrections> cor0( const_cast<CCapsBase *>(&ptp.cb)->params.corrections, TCorrections() ); // disable Corrections
+		const Utils::CVarTempReset<Track::TCorrections> cor0( const_cast<CCapsBase *>(&ptp.cb)->params.corrections, Track::TCorrections() ); // disable Corrections
 		if (!pMediumProps)
 			return pAction->TerminateWithError(ERROR_UNRECOGNIZED_MEDIA);
 		const auto &mediumProps=*pMediumProps;

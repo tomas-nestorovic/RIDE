@@ -192,7 +192,7 @@
 			if (const TStdWinError err=UnscanTrack( cyl, head ))
 				return err;
 			// . creation of new empty Track
-			const Utils::CVarTempReset<TCorrections> cor0( params.corrections, TCorrections() ); // disable Corrections
+			const Utils::CVarTempReset<Track::TCorrections> cor0( params.corrections, Track::TCorrections() ); // disable Corrections
 			CTrackReaderWriter trw( mp->nCells, floppyType );
 			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,std::move(trw)) ){
 				SetModifiedFlag( pit->modified=true );
