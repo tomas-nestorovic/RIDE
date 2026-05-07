@@ -83,7 +83,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			::SetLastError( ERROR_CANCELLED );
 			return FALSE;
 		}
-		header.flags.normalized|=params.corrections.valid&&params.corrections.use;
+		header.flags.normalized|=params.corrections.use;
 		return TRUE;
 	}
 

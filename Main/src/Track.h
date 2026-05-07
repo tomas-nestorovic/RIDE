@@ -117,7 +117,7 @@ namespace Track
 	struct TCorrections{
 		union{
 			struct{
-				WORD valid:1;
+				WORD reserved:1;
 				WORD use:1;
 				WORD indexTiming:1;
 				WORD cellCountPerRevolution:1;

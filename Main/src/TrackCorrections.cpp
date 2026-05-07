@@ -5,14 +5,12 @@ namespace Track
 	TCorrections::TCorrections()
 		// ctor of "no" Corrections
 		: w(0) , indexOffsetMicroseconds(0) {
-		valid=true;
 	}
 	
 	TCorrections::TCorrections(LPCTSTR iniSection,LPCTSTR iniName)
 		// ctor
 		// - the defaults
-		: valid(true)
-		, use(false)
+		: use(false)
 		, indexTiming(true)
 		, cellCountPerRevolution(true)
 		, fitTimesIntoIwMiddles(true)
