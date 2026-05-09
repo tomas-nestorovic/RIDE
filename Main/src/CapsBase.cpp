@@ -198,7 +198,10 @@
 				return new CInternalTrack( trw, nullptr, 0 );
 			trw.SetMediumType(floppyType); // keeps timing intact, just presets codec parameters (codec itself determined below)
 			if (cb.dos!=nullptr) // DOS already known (aka. creating final version of the Track)
-				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty()) // normalization makes sense only for existing Images - it's useless for Images just created
+				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty() // normalization makes sense only for existing Images - it's useless for Images just created
+					&&
+					!trw.GetMetaData() // can't apply to Track with explicit timing
+				)
 					trw.Apply( cb.params.corrections );
 			//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
 			//else if (params.corrections.indexTiming) // DOS still being recognized ...
