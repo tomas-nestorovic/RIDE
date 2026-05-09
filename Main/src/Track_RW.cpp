@@ -109,12 +109,12 @@ namespace Track
 
 	TLogTime CReader::GetIndexTime(TRev index) const{
 		// returns the Time at which the specified IndexPulse occurs
-		if (!nLogTimes || (nIndexPulses|index)==0)
-			return 0;
-		else
-			return	index<nIndexPulses
-					? indexPulses[index]
-					: logTimes[nLogTimes-1];
+		if (index<nIndexPulses)
+			return indexPulses[index];
+		ASSERT(FALSE); // the case of ending here requires an attention!
+		return	nLogTimes
+				? logTimes[nLogTimes-1]
+				: 0;
 	}
 
 	TLogTime CReader::GetAvgIndexDistance() const{
