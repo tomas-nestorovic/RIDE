@@ -222,9 +222,7 @@ namespace Time
 
 		PCMetaDataItem CBase::FindMetaDataIteratorAndApply(){
 			// the CurrentTime has changed randomly
-			itCurrMetaData=pMetaData->upper_bound( TInterval(currentTime,Infinity) ); // 'upper_bound' = don't search the sharp beginning but rather something bigger ...
-			if (itCurrMetaData!=pMetaData->cbegin())
-				itCurrMetaData--; // ... and then iterate back, because that's the usual case when "randomly" pinning in the timeline
+			itCurrMetaData=pMetaData->upper_bound( TInterval(Invalid,currentTime) );
 			return ApplyCurrentTimeMetaData();
 		}
 

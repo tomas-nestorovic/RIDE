@@ -73,7 +73,7 @@ namespace Time
 		TMetaDataItem(const TInterval &ti); // to clear MetaData in specified Interval
 		TMetaDataItem(const TInterval &ti,bool isFuzzy,Bit::N nBits);
 
-		inline bool operator<(const TMetaDataItem &r) const{ return tStart<r.tStart; }
+		inline bool operator<(const TMetaDataItem &r) const{ return tEnd<r.tEnd; } // e.g. so that for Time=150ns a MetaDataItem=(100ns,200ns) is found
 		inline bool IsDefault() const{ return nBits<=0; }
 		inline T GetStartTimeSafe() const{ return this?tStart:0; }
 		T GetBitTimeAvg() const;

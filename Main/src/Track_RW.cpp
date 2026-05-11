@@ -154,7 +154,7 @@ namespace Track
 		else
 			ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
 		profile.Reset();
-		ApplyCurrentTimeMetaData();
+		FindMetaDataIteratorAndApply();
 	}
 
 	bool CReader::ReadBit(TLogTime &rtOutOne){
