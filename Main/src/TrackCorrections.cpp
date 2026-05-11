@@ -73,6 +73,9 @@ namespace Track
 
 	TStdWinError CReaderWriter::Apply(const TCorrections &c){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
+		// - mustn't apply corrections twice
+		if (pLogTimesInfo->corrected)
+			return ERROR_SUCCESS;
 		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
 		if (nIndexPulses<2)
@@ -83,6 +86,7 @@ namespace Track
 			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		pLogTimesInfo->corrected=true;
 		// - shifting Indices by shifting all Times in oposite direction
 		const TLogTime tLastIndexOrg=GetLastIndexTime();
 		if (c.offsetIndices){
@@ -96,7 +100,7 @@ namespace Track
 		// - normalization
 		const Time::N iModifStart=iNextTime;
 		Time::N iTime=iModifStart;
-		const Time::CSharedArray buffer( GetBufferCapacity() );
+		const Time::CSharedArray buffer( GetBufferCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
 		const PLogTime ptModified=buffer;
 		for( TRev nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
@@ -109,10 +113,7 @@ namespace Track
 				// alignment wanted
 				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
 					if (ReadBit())
-						if (iTime<buffer.length)
 							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
-						else
-							return ERROR_INSUFFICIENT_BUFFER; // mustn't overrun the Buffer
 			}else
 				// alignment not wanted - just copying the Times in current Revolution
 				while (*this && logTimes[iNextTime]<tNextIndexOrg)

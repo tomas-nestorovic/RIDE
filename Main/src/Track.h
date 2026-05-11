@@ -26,6 +26,7 @@ namespace Track
 		struct TLogTimesInfoData abstract{
 			Medium::PCProperties mediumProps;
 			bool resetDecoderOnIndex;
+			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 			Codec::TType codec;
 			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 			Time::CMetaData metaData;
