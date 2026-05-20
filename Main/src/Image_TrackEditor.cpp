@@ -108,7 +108,7 @@ using namespace Charting;
 							const WORD id=p.params.id;
 							const TLogTimeInterval visible=p.params.visible;
 						p.params.locker.Unlock();
-						if (visible.tStart<0 && visible.tEnd<0) // window closing?
+						if (Time::IsInvalid( visible.tStart & visible.tEnd )) // window closing?
 							break;
 						const CClientDC dc( const_cast<CTimeEditor *>(&te) );
 						const auto &&g=te.timeline.CreateGraphics(dc);
@@ -402,11 +402,11 @@ using namespace Charting;
 					}
 					case WM_LBUTTONUP:
 						// left mouse button released
-						draggedTime=-1;
+						draggedTime=Time::Invalid;
 						//fallthrough
 					case WM_MOUSEMOVE:
 						// mouse moved
-						if (draggedTime>=0) // left mouse button pressed
+						if (!Time::IsInvalid(draggedTime)) // left mouse button pressed
 							SetScrollTime(
 								scrollTime
 								+
@@ -517,8 +517,8 @@ using namespace Charting;
 				, fontMetaData( Utils::CRideFont::Small.CreateRotated(90) )
 				, painter(*this)
 				, decimalByteValues( app.GetProfileBool(INI_SECTION,INI_DECADIC) )
-				, draggedTime(-1)
-				, cursorTime(-1) , cursorFeaturesShown(false)
+				, draggedTime(Time::Invalid)
+				, cursorTime(Time::Invalid) , cursorFeaturesShown(false)
 				, cursorFeatures( TCursorFeatures::DEFAULT | tr.GetMetaData()*TCursorFeatures::METADATA )
 				, scrollTime(0) {
 			}
@@ -570,7 +570,7 @@ using namespace Charting;
 			}
 
 			void SetScrollTime(TLogTime t){
-				if (t<0) t=0;
+				if (Time::IsInvalid(t)) t=0;
 				else if (t>timeline.GetLength()) t=timeline.GetLength();
 				SetScrollPos( SB_HORZ, timeline.GetScrollPos(t) );
 				if (const long scroll=timeline.GetPixelCount(scrollTime)-timeline.GetPixelCount(t)){ // scrolling needed?
@@ -1088,7 +1088,7 @@ using namespace Charting;
 									TCHAR buf[80];
 									GetDlgItemText( ID_TIME, buf );
 									LPCTSTR p=::CharLower(buf);
-									TLogTime tResult=-1; // assumption (no or invalid time entered)
+									TLogTime tResult=Time::Invalid; // assumption (no or invalid time entered)
 									char iLastUnitUsed=100; // no unit yet used
 									for( int t,i,u=0; *p; p+=i ){
 										const int nItems=_stscanf(p,_T("%d%n%c%n"),&t,&i,&u,&i);
@@ -1105,7 +1105,7 @@ using namespace Charting;
 											iLastUnitUsed=iUnit;
 										}else
 											return-1; // unknown unit used
-										if (tResult<0)
+										if (Time::IsInvalid(tResult))
 											tResult=0; // the user input is at least partially valid
 										LONGLONG t64=t; // temporarily a 64-bit precision
 										switch (u){
@@ -1116,7 +1116,7 @@ using namespace Charting;
 											default: t64=TIME_NANO(t64);	break;
 										}
 										if (tResult+t64>Time::Infinity)
-											return -1; // specified time is out of range
+											return Time::Invalid; // specified time is out of range
 										tResult+=t64;
 									}
 									return tResult;
@@ -1126,7 +1126,7 @@ using namespace Charting;
 									__super::DoDataExchange(pDX);
 									if (pDX->m_bSaveAndValidate){
 										tCenter=ParseTime();
-										if (tCenter<0)
+										if (Time::IsInvalid(tCenter))
 											pDX->Fail();
 									}else{
 										char iLargestUnit=-1;

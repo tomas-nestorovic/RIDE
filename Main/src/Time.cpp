@@ -230,7 +230,7 @@ namespace Time
 			// seeks to the specified LogicalTime
 			if (!nLogTimes)
 				return;
-			if (logTime<0)
+			if (IsInvalid(logTime))
 				logTime=0;
 			if (logTime<*logTimes.begin()){
 				iNextTime=0;

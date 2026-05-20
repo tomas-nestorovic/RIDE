@@ -575,7 +575,7 @@
 						*startTimesNanoseconds++=ris.GetAverageIdEndTime(*pit);
 					else{
 						ASSERT(FALSE); // we shouldn't end up here - all floppy Types should be covered!
-						*startTimesNanoseconds++=-1;
+						*startTimesNanoseconds++=Time::Invalid;
 						break;
 					}
 			}

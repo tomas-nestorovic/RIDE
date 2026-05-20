@@ -58,6 +58,7 @@ namespace Time
 		}
 	};
 
+	inline bool IsInvalid(T t){ return t<0; }
 	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ);
 
 	struct TColorInterval:public TInterval{
