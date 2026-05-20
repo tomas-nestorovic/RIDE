@@ -19,7 +19,7 @@ namespace Track
 	CReaderBuffers::TLogTimesInfoData::TLogTimesInfoData(bool resetDecoderOnIndex)
 		// ctor
 		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
-		, resetDecoderOnIndex(resetDecoderOnIndex) {
+		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
 		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
