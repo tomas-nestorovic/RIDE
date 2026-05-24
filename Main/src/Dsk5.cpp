@@ -601,7 +601,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return err;
 			// . updating the NumberOfCylinders
 			if (params.preserveEmptyTracks)
-				diskInfo.nCylinders=std::max<BYTE>( 1+cyl, diskInfo.nCylinders );
+				diskInfo.nCylinders=std::max( BYTE(1+cyl), diskInfo.nCylinders );
 			else{
 				for( cyl=diskInfo.nCylinders; cyl--; )
 					if (__findTrack__(cyl,0)!=__findTrack__(cyl,1)) // equal only if both Sides are Null

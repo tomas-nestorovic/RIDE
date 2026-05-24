@@ -109,7 +109,7 @@ using namespace Yahel;
 
 	void CDirEntriesView::OnUpdate(CView *pSender,LPARAM lHint,CObject *pHint){
 		// request to refresh the display of content
-		const Utils::CVarTempReset<WORD> sl0( DOS->formatBoot.sectorLength, sectorLength );
+		const Utils::CVarTempReset<Sector::L> sl0( DOS->formatBoot.sectorLength, sectorLength );
 		f.Attach( new CDirectoryEntriesReaderWriter(DOS,directory) );
 		Update( f, f, f->GetLength() );
 	}

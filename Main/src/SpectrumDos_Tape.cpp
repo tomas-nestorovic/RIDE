@@ -746,7 +746,7 @@ putHeaderBack:			// the block has an invalid Checksum and thus cannot be conside
 						//fallthrough
 					case ID_FILEMANAGER_DIR_HEXAMODE:{
 						// browsing of Tape Headers in hexa mode
-						const Utils::CVarTempReset<WORD> sl0( DOS->formatBoot.sectorLength, sizeof(THeader) );
+						const Utils::CVarTempReset<Sector::L> sl0( DOS->formatBoot.sectorLength, sizeof(THeader) );
 						return __super::OnCmdMsg(nID,nCode,pExtra,pHandlerInfo);
 					}
 				}

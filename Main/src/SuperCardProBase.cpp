@@ -259,7 +259,7 @@
 		const TLogTime sampleClockTime=header.GetSampleClockTime();
 		BYTE r=0; // TRevolutionInfo index
 		TLogTime tBase= header.flags.indexAligned ? tr.GetIndexTime(0) : 0;
-		for( BYTE u=header.flags.indexAligned,const iLastIndex=std::min<BYTE>(header.nAvailableRevolutions+u,tr.GetIndexCount()); u<iLastIndex; u++ ){
+		for( BYTE u=header.flags.indexAligned,const iLastIndex=std::min(TRev(header.nAvailableRevolutions+u),tr.GetIndexCount()); u<iLastIndex; u++ ){
 			// . writing Fluxes of current Revolution
 			tr.SetCurrentTime( tBase );
 			const TLogTime tNext=tr.GetIndexTime(u); // base Time for the next Revolution

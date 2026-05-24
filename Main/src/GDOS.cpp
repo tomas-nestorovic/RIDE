@@ -378,7 +378,7 @@
 		de->SetNameAndExt(newName,newExt);
 		// - modifying information of a standard ROM File (e.g. standard parameters)
 		if (de->__isStandardRomFile__()){
-			de->etc.stdZxType.romId=(TZxRom::TFileType)std::min<BYTE>(de->fileType-1,TZxRom::TFileType::CODE); // min = retyping Screen to Code
+			de->etc.stdZxType.romId=std::min( TZxRom::TFileType(de->fileType-1), TZxRom::TFileType::CODE ); // min = retyping Screen to Code
 			de->__setStdParameter1__(stdParams.param1), de->__setStdParameter2__(stdParams.param2);
 			de->__setDataSizeByFileType__(dataSize);
 		}
