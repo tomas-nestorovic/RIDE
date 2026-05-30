@@ -199,7 +199,7 @@
 		for( BYTE u=nUniqueRevolutions; u>0; nFluxesTotally+=tdh.revolutions[iUniqueRevolutions[--u]].nFluxes );
 		CTrackReaderWriter result( nFluxesTotally*125/100, params.fluxDecoder, params.resetFluxDecoderOnIndex ); // allowing for 25% of false "ones" introduced by "FDC-like" decoders
 		if (header.flags.indexAligned) // if NOT index-aligned, there is no information on original index pulses as the disk was revolving (based on the drive RPM information, the SCP device just slices whatever fluxes have been read into 200/166ms intervals, thus merely "imitating" indices) - placing here any Indices thus makes no sense
-			result.AddIndexTime(0);
+			result.AppendIndexTime(0);
 		for( BYTE u=0; u<nUniqueRevolutions; u++ ){
 			// . fluxes
 			const auto &ri=tdh.revolutions[iUniqueRevolutions[u]];
@@ -211,7 +211,7 @@
 							TLogTime t=result.GetLastIndexTime();
 							for( DWORD i=0; i<ri.nFluxes; i++ )
 								if (const auto &sampleCount=fluxes[i])
-									result.AddTime( t+=sampleCount*sampleClockTime );
+									result.AppendTime( t+=sampleCount*sampleClockTime );
 								else // sample counter overrun (e.g. "unformatted area" copy-protection)
 									t+=256*sampleClockTime;
 							break;
@@ -224,7 +224,7 @@
 							TLogTime t=result.GetLastIndexTime();
 							for( DWORD i=0; i<ri.nFluxes; i++ )
 								if (const auto &sampleCount=fluxes[i])
-									result.AddTime( t+=sampleCount*sampleClockTime );
+									result.AppendTime( t+=sampleCount*sampleClockTime );
 								else // sample counter overrun (e.g. "unformatted area" copy-protection)
 									t+=65536*sampleClockTime;
 							break;
@@ -236,7 +236,7 @@
 			}
 			// . index
 			if (header.flags.indexAligned) // if NOT index-aligned, there is no information on original index pulses as the disk was revolving (based on the drive RPM information, the SCP device just slices whatever fluxes have been read into 200/166ms intervals, thus merely "imitating" indices) - placing here any Indices thus makes no sense
-				result.AddIndexTime(
+				result.AppendIndexTime(
 					std::max<TLogTime>( // early Greaseweazle versions may report that the full Revolution time is actually smaller than the sum of all flux transitions in the Revolution!
 						result.GetLastIndexTime()+ri.durationCounter*INDEX_CLOCK_TIME,
 						result.GetTotalTime()

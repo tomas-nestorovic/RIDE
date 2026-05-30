@@ -167,7 +167,7 @@
 					return nullptr;
 				}
 			}
-		trw.AddIndexTime(0);
+		trw.AppendIndexTime(0);
 		TLogTime currentTime=0, *pFluxTime=trw.GetBuffer();
 		for( TRev r=0; r<nRevs; r++ ){
 			// . add fluxes
@@ -182,9 +182,9 @@
 					*pFluxTime++=currentTime;
 			}
 			// . finish Revolution with an Index
-			trw.AddIndexTime( currentTime );
+			trw.AppendIndexTime( currentTime );
 		}
-		trw.AddTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
+		trw.AppendTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
 		// - creating a Track from above reconstructed flux information
 		return CreateFrom( cb, std::move(trw) );
 	}

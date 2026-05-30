@@ -224,12 +224,12 @@
 		DWORD sampleCounter;
 		DWORD indexCounter;
 
-		void AddIndexTime(CTrackReaderWriter &trw,DWORD totalSampleCounter,double sck) const{
+		void AppendIndexTime(CTrackReaderWriter &trw,DWORD totalSampleCounter,double sck) const{
 			const DWORD indexSampleCounter=totalSampleCounter+sampleCounter;
 			if (sck==0) // default Sample-Clock, allowing for relatively precise computation of absolute timing
-				trw.AddIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
+				trw.AppendIndexTime( (LONGLONG)TIME_SECOND(1)*indexSampleCounter/SampleClockDefault ); // temporary 64-bit precision even on 32-bit machines
 			else // custom Sample-Clock, involving floating-point number computation
-				trw.AddIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
+				trw.AppendIndexTime( (double)TIME_SECOND(1)*indexSampleCounter/sck ); // temporary 64-bit precision even on 32-bit machines
 		}
 	};
 
@@ -405,7 +405,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				}
 			// . adding an index pulse if its time has already been reached
 			if (pis-inStreamData>=nearestIndexPulsePos){
-				indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
+				indexPulses[nearestIndexPulse].AppendIndexTime( result, totalSampleCounter, sck );
 				nearestIndexPulsePos= ++nearestIndexPulse<nIndexPulses ? indexPulses[nearestIndexPulse].posInStreamData : INT_MAX;
 			}
 			// . adding the flux into the Buffer
@@ -416,10 +416,10 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				*pLogTime++= (double)TIME_SECOND(1)*totalSampleCounter/sck; // temporary 64-bit precision even on 32-bit machines
 			sampleCounter=0;
 		}
-		result.AddTimes( buffer, pLogTime-buffer );
+		result.AppendTimes( buffer, pLogTime-buffer );
 		// - final index pulse might not have been added if the Track ends with an unformatted area
 		if (nearestIndexPulse<nIndexPulses)
-			indexPulses[nearestIndexPulse].AddIndexTime( result, totalSampleCounter, sck );
+			indexPulses[nearestIndexPulse].AppendIndexTime( result, totalSampleCounter, sck );
 		// - preserve the input RawBytes for fast copying between compatible disks
 		result.SetRawDeviceData( KF_STREAM_ID, rawBytesOrg );
 		return result;

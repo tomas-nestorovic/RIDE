@@ -712,7 +712,7 @@ namespace Track
 		// - write new Data Field mark to temporary storage
 		CReaderWriter tmp( peData.GetByteCount()*MFM::CodedByteWidth, TDecoderMethod::KEIR_FRASER, true ); // temporary storage for new fluxes
 		MFM::g_prevDataBit=true; // the previous data bit in a distorted 0xA1 sync mark is a "1"
-		tmp.AddWord( ti, MFM::EncodeByte(dam) );
+		tmp.AppendWord( ti, MFM::EncodeByte(dam) );
 		// - write new Bytes to temporary storage
 		auto *const pbi=peData.GetByteInfos();
 		ASSERT( currentTime-profile.iwTime<peData.tStart && peData.tStart<currentTime+profile.iwTime ); // sanity check (we shouldn't be much off the original Start)
@@ -721,9 +721,9 @@ namespace Track
 			auto &org=rbi.org;
 			ti.tEnd=peData.GetByteTime(i+1);
 			if (peData.bytes[i]==org.value) // Byte not changed
-				tmp.AddWord( ti, org.encoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
+				tmp.AppendWord( ti, org.encoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
 			else{
-				tmp.AddWord( ti,
+				tmp.AppendWord( ti,
 					org.encoded = MFM::EncodeByte(
 						org.value = peData.bytes[i]
 					)
@@ -746,7 +746,7 @@ namespace Track
 		if (sr.DescribesDataFieldCrcError())
 			crc=~crc;
 		ti.tEnd=currentTime;
-		tmp.AddDWord( ti, MFM::EncodeWord(crc) );
+		tmp.AppendDWord( ti, MFM::EncodeWord(crc) );
 		// - write an extra "0" bit if the CRC ends with "1" (leaving this case uncovered often leads to magnetic problems)
 		if (MFM::g_prevDataBit) // CRC ends with "1" ...
 			ReadBit(); // ... so the gap must begin with "0" (this read bit will be reset)
@@ -842,7 +842,7 @@ namespace Track
 		if (!shareTimes){
 			CReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
 			std::swap<CReaderBuffers>( tmp, *this );
-			AddExternalTimes( trw.logTimes, trw.nLogTimes );
+			AppendExternalTimes( trw.logTimes, trw.nLogTimes );
 			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
@@ -855,9 +855,9 @@ namespace Track
 			Codec::MFM
 		){
 		SetMediumType(mediumType);
-		AddIndexTime(0);
-			for( TLogTime t=0; t<nLogTimes; AddTime(++t) );
-		AddIndexTime( nLogTimes );
+		AppendIndexTime(0);
+			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
+		AppendIndexTime( nLogTimes );
 		Normalize();
 	}
 	
@@ -871,7 +871,7 @@ namespace Track
 		: CReader(tr) {
 	}
 
-	void CReaderWriter::AddTime(TLogTime logTime){
+	void CReaderWriter::AppendTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
 		ASSERT( nLogTimes<GetBufferCapacity() );
 		ASSERT( logTime>=0 );
@@ -879,13 +879,13 @@ namespace Track
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CReaderWriter::AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
+	void CReaderWriter::AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
 		this->nLogTimes+=nLogTimes;
 	}
 
-	void CReaderWriter::AddTimes(PCLogTime logTimes,Time::N nLogTimes){
+	void CReaderWriter::AppendTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
 		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
 		if (this->logTimes+this->nLogTimes==logTimes)
@@ -893,39 +893,39 @@ namespace Track
 			this->nLogTimes+=nLogTimes;
 		else{
 			// caller used its own buffer to store new LogicalTimes
-			AddExternalTimes( logTimes, nLogTimes );
+			AppendExternalTimes( logTimes, nLogTimes );
 		}
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CReaderWriter::AddByte(TLogTimeInterval &at,BYTE b){
+	void CReaderWriter::AppendByte(TLogTimeInterval &at,BYTE b){
 		// appends given Byte (most significant bit first) at the end of the Track; returns the least significant bit written
 		ASSERT( GetTotalTime()<at.tStart );
 		TLogTime tmpLogTimes[CHAR_BIT],L=at.GetLength(); BYTE nTmpLogTimes=0;
 		for( BYTE i=0; b!=0; b<<=1,i++ )
 			if ((char)b<0)
 				tmpLogTimes[nTmpLogTimes++]=at.tStart+i*L/CHAR_BIT;
-		AddTimes( tmpLogTimes, nTmpLogTimes );
+		AppendTimes( tmpLogTimes, nTmpLogTimes );
 		at.tStart=at.tEnd; // advance Time in favor of the caller
 	}
 
-	void CReaderWriter::AddWord(TLogTimeInterval &at,WORD w){
+	void CReaderWriter::AppendWord(TLogTimeInterval &at,WORD w){
 		// appends given Word (most significant bit first) at the end of the Track; returns the least significant bit written
 		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
-		AddByte( TLogTimeInterval(at.tStart,tCenter), HIBYTE(w) );
+		AppendByte( TLogTimeInterval(at.tStart,tCenter), HIBYTE(w) );
 		at.tStart=tCenter; // advance Time in favor of the caller
-		AddByte( at, LOBYTE(w) );
+		AppendByte( at, LOBYTE(w) );
 	}
 
-	void CReaderWriter::AddDWord(TLogTimeInterval &at,DWORD dw){
+	void CReaderWriter::AppendDWord(TLogTimeInterval &at,DWORD dw){
 		// appends given DWord (most significant bit first) at the end of the Track; returns the least significant bit written
 		const TLogTime tCenter=at.tStart+at.GetLength()/2; // avoid overflow
-		AddWord( TLogTimeInterval(at.tStart,tCenter), HIWORD(dw) );
+		AppendWord( TLogTimeInterval(at.tStart,tCenter), HIWORD(dw) );
 		at.tStart=tCenter; // advance Time in favor of the caller
-		AddWord( at, LOWORD(dw) );
+		AppendWord( at, LOWORD(dw) );
 	}
 
-	void CReaderWriter::AddIndexTime(TLogTime logTime){
+	void CReaderWriter::AppendIndexTime(TLogTime logTime){
 		// appends LogicalTime representing the position of the index pulse on the disk
 		ASSERT( nIndexPulses<=Revolution::MAX );
 		ASSERT( logTime>=0 );
@@ -941,8 +941,8 @@ namespace Track
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
-	void CReaderWriter::AddMetaData(const TMetaDataItem &mdi){
-		// inserts the MetaDataItem, eventually overwritting some existing MetaDataItems
+	void CReaderWriter::InsertMetaData(const TMetaDataItem &mdi){
+		// inserts the MetaDataItem at correct chronological position, eventually overwritting some existing MetaDataItems
 		if (!mdi) // empty or invalid?
 			return;
 		auto &metaData=pLogTimesInfo->metaData;
@@ -1006,7 +1006,7 @@ namespace Track
 
 	void CReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
 		// removes (or just shortens) all MetaDataItems in specified range
-		AddMetaData( TLogTimeInterval(a,z) );
+		InsertMetaData( TLogTimeInterval(a,z) );
 		FindMetaDataIteratorAndApply();
 	}
 

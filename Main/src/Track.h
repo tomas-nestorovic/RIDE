@@ -141,7 +141,7 @@ namespace Track
 			LogTimesCountExtra=1
 		};
 
-		void AddExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
+		void AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
 		bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes);
 		bool WriteDataFm(Event::TData &peData,TFdcStatus sr);
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
@@ -155,13 +155,13 @@ namespace Track
 		inline PLogTime GetBuffer() const{ return logTimes; }
 		inline Time::N GetBufferCapacity() const{ return logTimes.length-LogTimesCountExtra; }
 
-		void AddTime(TLogTime logTime);
-		void AddTimes(PCLogTime logTimes,Time::N nLogTimes);
-		void AddByte(TLogTimeInterval &inOutAt,BYTE b);
-		void AddWord(TLogTimeInterval &inOutAt,WORD w);
-		void AddDWord(TLogTimeInterval &inOutAt,DWORD dw);
-		void AddIndexTime(TLogTime logTime);
-		void AddMetaData(const Time::TMetaDataItem &mdi);
+		void AppendTime(TLogTime logTime);
+		void AppendTimes(PCLogTime logTimes,Time::N nLogTimes);
+		void AppendByte(TLogTimeInterval &inOutAt,BYTE b);
+		void AppendWord(TLogTimeInterval &inOutAt,WORD w);
+		void AppendDWord(TLogTimeInterval &inOutAt,DWORD dw);
+		void AppendIndexTime(TLogTime logTime);
+		void InsertMetaData(const Time::TMetaDataItem &mdi);
 		void SetRawDeviceData(TTypeId dataId,const Utils::CSharedBytes &data);
 		void TrimToTimesCount(Time::N nKeptLogTimes);
 		void ClearMetaData(TLogTime a,TLogTime z);

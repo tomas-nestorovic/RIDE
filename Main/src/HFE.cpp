@@ -357,7 +357,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			for( BYTE nFollowingDataBitsToSkip=0,fuzzyQuot=0; p<pLast; )
 				switch (BYTE b=*p++){
 					case TOpCode::SETINDEX:
-						trw.AddIndexTime( tCurr );
+						trw.AppendIndexTime( tCurr );
 						break;
 					case TOpCode::SETBITRATE:
 						if (p<pLast)
@@ -384,18 +384,18 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 						Time::TMetaDataItem mdi( TLogTimeInterval(tCurr,Time::Infinity), fuzzyQuot!=0, nBits );
 						for( BYTE data=b<<nFollowingDataBitsToSkip,i=0; data; data<<=1,i++ )
 							if ((char)data<0){
-								trw.AddTime( tCurr + i*tCell+tFuzzy );
+								trw.AppendTime( tCurr + i*tCell+tFuzzy );
 								tFuzzy=-tFuzzy;
 							}
 						mdi.tEnd = tCurr+=tSpan;
-						trw.AddMetaData(mdi);
+						trw.InsertMetaData(mdi);
 						nFollowingDataBitsToSkip = fuzzyQuot = 0;
 						break;
 				}
 			if (trw.GetIndexCount()<1)
-				trw.AddIndexTime(0);
+				trw.AppendIndexTime(0);
 			if (trw.GetIndexCount()<2)
-				trw.AddIndexTime(tCurr);
+				trw.AppendIndexTime(tCurr);
 			return CInternalTrack::CreateFrom( *this, std::move(trw), floppyType );
 		}else{
 			CapsTrackInfoT2 cti={};

@@ -117,19 +117,19 @@
 			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
 	{		CTrackReaderWriter trw( mediumProps.nCells, Time::Decoder::KEIR_FRASER, false );
 				trw.SetMediumType(rPrecomp.floppyType);
-				trw.AddIndexTime(0);
-				trw.AddIndexTime(mediumProps.revolutionTime);
+				trw.AppendIndexTime(0);
+				trw.AppendIndexTime(mediumProps.revolutionTime);
 			for( BYTE n=200; n>0; n-- ) // MFM-like inspection window stabilisation
-				trw.AddTime( t+=doubleCellTime );
+				trw.AppendTime( t+=doubleCellTime );
 			for( BYTE n=10; n>0; n-- ) // indication of beginning of test data
-				trw.AddTime( t+=5*mediumProps.cellTime );
+				trw.AppendTime( t+=5*mediumProps.cellTime );
 			for( WORD n=0; n<sizeof(distances); n++ ){ // generating test data
 				distances[n]=std::min( 4, 2+(::rand()&3) ); // "2+" = between two 1's must always be at least one 0 (otherwise pre-compensation is useless, e.g. FM encoding)
-				trw.AddTime( t+=distances[n]*mediumProps.cellTime );
+				trw.AppendTime( t+=distances[n]*mediumProps.cellTime );
 			}
 			while (t<mediumProps.revolutionTime) // filling the remainder of the Track
-				trw.AddTime( t+=doubleCellTime );
-			trw.AddTime( t+=doubleCellTime ); // one extra flux
+				trw.AppendTime( t+=doubleCellTime );
+			trw.AppendTime( t+=doubleCellTime ); // one extra flux
 			// . saving the test Track
 			const CTrackTempReset rit(
 				ptp.cb.internalTracks[cyl][ptp.head],

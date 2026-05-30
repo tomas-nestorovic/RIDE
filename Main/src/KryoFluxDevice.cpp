@@ -582,7 +582,7 @@
 		// - converting UniqueFluxesUsed to an auxiliary Track (with LogicalTime set to SampleCounter) so that nearest neighbors can be used to approximate fluxes excluded from the Histogram
 		CTrackReaderWriter trwFluxes( nUniqueFluxesUsed, CTrackReader::TDecoderMethod::NONE, false );
 		for( BYTE i=0; i<nUniqueFluxesUsed; i++ )
-			trwFluxes.AddTime( histogram[i] );
+			trwFluxes.AppendTime( histogram[i] );
 		std::sort( trwFluxes.GetBuffer(), trwFluxes.GetBuffer()+nUniqueFluxesUsed );
 		// - writing fluxes
 		const PBYTE fluxesStart=pb;
@@ -684,7 +684,7 @@
 		pit->FlushSectorBuffers(); // convert all modifications into flux transitions
 		// - extracting the "best" Revolution into a temporary Track
 		CTrackReaderWriter trw( pit->GetTimesCount(), CTrackReader::TDecoderMethod::KEIR_FRASER, false );
-		trw.AddIndexTime(0);
+		trw.AppendIndexTime(0);
 			// . finding the Revolution with the most of healthy Sectors
 			struct{
 				BYTE i;
@@ -730,8 +730,8 @@
 				tWritingEnd+= tOverhang - 500*pit->GetCurrentProfile().iwTimeMax; // "-N" = 12x sync 0x00, 3x distorted 0xA1, 1x mark Byte, 4x ID Bytes, 2x CRC Bytes, making 22 Bytes in total, or 176 data bits, or 352 cells on the disk, allowing for some reserve
 			}
 			while (*pit && pit->GetCurrentTime()<tWritingEnd)
-				trw.AddTime( pit->ReadTime()-tIndex0 );
-		trw.AddIndexTime( tIndex1-tIndex0 );
+				trw.AppendTime( pit->ReadTime()-tIndex0 );
+		trw.AppendIndexTime( tIndex1-tIndex0 );
 		if (floppyType!=Medium::UNKNOWN){
 			trw.SetMediumType( floppyType );
 			trw.Normalize();

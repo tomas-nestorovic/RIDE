@@ -444,7 +444,7 @@
 						return Track::Invalid;
 					sampleCounter+=250+(i-250)*255+*p-1;
 				}
-				result.AddTime(
+				result.AppendTime(
 					result.GetLastIndexTime()+sampleClock*( sampleCounterSinceIndex+=sampleCounter )
 				);
 				sampleCounter=0;
@@ -458,7 +458,7 @@
 							return Track::Invalid;
 						const int value=ReadBits28(p);
 						p+=sizeof(int)-1; // "-1" = see "p++" at the end of cycle
-						result.AddIndexTime(
+						result.AppendIndexTime(
 							result.GetLastIndexTime()+sampleClock*( sampleCounterSinceIndex+sampleCounter+value )
 						);
 						sampleCounterSinceIndex= -(sampleCounter+value);
