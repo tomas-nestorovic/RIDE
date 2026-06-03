@@ -1,7 +1,8 @@
 # Briefly
+- Yes, you can use it for precise archival at magnetic flux level (see [this FAQ](http://nestorovic.eu/ride/html/faq_createStreams.html)).
+- Yes, it can _directly_ work with KryoFlux (starting with 1.6 also for direct writing, no DTC needed).
+- Yes, it can _directly_ work with Greaseweazle (no Python needed).
 - Yes, it can access internal floppy drives on your PC.
-- Yes, it can _directly_ work with KryoFlux (starting with 1.6 also for direct writing).
-- Yes, it can _directly_ work with Greaseweazle.
 - Yes, this Windows XP application is confirmed to work in Linux via Wine (see [this FAQ](http://nestorovic.eu/ride/html/faq_linux.html)).
 
 # Introduction (aka. "Why and What For")
