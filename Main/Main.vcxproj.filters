@@ -464,8 +464,8 @@
     <ClCompile Include="src\KryoFluxStreams.cpp">
       <Filter>Source Files\Image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Image_TrackEditor.cpp">
-      <Filter>Source Files\Image</Filter>
+    <ClCompile Include="src\TrackEditor.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
     <ClCompile Include="src\KryoFluxDevice.cpp">
       <Filter>Source Files\Image</Filter>

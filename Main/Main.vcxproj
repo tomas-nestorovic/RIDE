@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug in RAMdisk|Win32">
@@ -305,7 +305,7 @@
     <ClCompile Include="src\TrackEvent.cpp" />
     <ClCompile Include="src\XmlDocs.cpp" />
     <ClCompile Include="src\Sector_RW.cpp" />
-    <ClCompile Include="src\Image_TrackEditor.cpp" />
+    <ClCompile Include="src\TrackEditor.cpp" />
     <ClCompile Include="src\Track_RW.cpp" />
     <ClCompile Include="src\IPF.cpp" />
     <ClCompile Include="src\KryoFluxBase.cpp" />
