@@ -836,14 +836,14 @@ namespace Track
 		){
 	}
 
-	CReaderWriter::CReaderWriter(const CReaderWriter &trw,bool shareTimes)
+	CReaderWriter::CReaderWriter(const CReader &tr,bool shareTimes)
 		// copy ctor
-		: CReader( trw ) {
+		: CReader( tr ) {
 		if (!shareTimes){
-			CReaderWriter tmp( trw.GetBufferCapacity(), trw.profile.method, trw.pLogTimesInfo->resetDecoderOnIndex );
+			CReaderWriter tmp( GetBufferCapacity(), profile.method, pLogTimesInfo->resetDecoderOnIndex );
+			tmp.AppendExternalTimes( logTimes, nLogTimes );
+			*static_cast<TLogTimesInfoData *>(tmp.pLogTimesInfo)=*pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
-			AppendExternalTimes( trw.logTimes, trw.nLogTimes );
-			*static_cast<TLogTimesInfoData *>(pLogTimesInfo)=*trw.pLogTimesInfo;
 		}
 	}
 
@@ -866,11 +866,6 @@ namespace Track
 		: CReader( std::move(rTrackReaderWriter) ) {
 	}
 	
-	CReaderWriter::CReaderWriter(const CReader &tr)
-		// copy ctor
-		: CReader(tr) {
-	}
-
 	void CReaderWriter::AppendTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
 		ASSERT( nLogTimes<GetBufferCapacity() );
@@ -1004,9 +999,9 @@ namespace Track
 		pLogTimesInfo->rawDeviceData.id=dataId;
 	}
 
-	void CReaderWriter::ClearMetaData(TLogTime a,TLogTime z){
+	void CReaderWriter::ClearMetaData(const TLogTimeInterval &ti){
 		// removes (or just shortens) all MetaDataItems in specified range
-		InsertMetaData( TLogTimeInterval(a,z) );
+		InsertMetaData(ti);
 		FindMetaDataIteratorAndApply();
 	}
 
@@ -1024,8 +1019,8 @@ namespace Track
 
 	bool CReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes){
 		// True <=> new LogicalTimes written to the cleared interval, otherwise False
-		ASSERT(writeTimes.GetTimesCount()>0);
-		ASSERT( clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
+		ASSERT( !writeTimes || writeTimes.GetTimesCount()>0 );
+		ASSERT( !writeTimes || clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
 		// - determining the number of LogicalTimes in the interval to clear
 		SetCurrentTime(clearTimes.tStart);
 		const auto iLogTimeToClearA=iNextTime;

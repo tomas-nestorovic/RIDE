@@ -60,6 +60,10 @@ namespace Track
 
 	class CReader:public CReaderBuffers{
 	protected:
+		enum{
+			LogTimesCountExtra=1
+		};
+
 		TRev iNextIndexPulse,nIndexPulses;
 
 		CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
@@ -75,6 +79,7 @@ namespace Track
 
 		inline TRev GetIndexCount() const{ return nIndexPulses; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
+		inline Time::N GetBufferCapacity() const{ return logTimes.length-LogTimesCountExtra; }
 		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }
 
 		inline
@@ -137,23 +142,16 @@ namespace Track
 	};
 
 	class CReaderWriter:public CReader{
-		enum{
-			LogTimesCountExtra=1
-		};
-
 		void AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
-		bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes);
 		bool WriteDataFm(Event::TData &peData,TFdcStatus sr);
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
 	public:
 		CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
-		CReaderWriter(const CReaderWriter &trw,bool shareTimes=true);
+		CReaderWriter(const CReader &tr,bool shareTimes=true);
 		CReaderWriter(CReaderWriter &&trw);
-		CReaderWriter(const CReader &tr);
 
 		inline PLogTime GetBuffer() const{ return logTimes; }
-		inline Time::N GetBufferCapacity() const{ return logTimes.length-LogTimesCountExtra; }
 
 		void AppendTime(TLogTime logTime);
 		void AppendTimes(PCLogTime logTimes,Time::N nLogTimes);
@@ -164,7 +162,8 @@ namespace Track
 		void InsertMetaData(const Time::TMetaDataItem &mdi);
 		void SetRawDeviceData(TTypeId dataId,const Utils::CSharedBytes &data);
 		void TrimToTimesCount(Time::N nKeptLogTimes);
-		void ClearMetaData(TLogTime a,TLogTime z);
+		bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes);
+		void ClearMetaData(const TLogTimeInterval &ti);
 		void ClearAllMetaData();
 		bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,Event::TData &peData,TFdcStatus sr);
 		TStdWinError Normalize();
