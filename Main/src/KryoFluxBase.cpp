@@ -237,7 +237,7 @@
 		// creates and returns a Track representation of the Stream data
 		const PCBYTE inStreamData=rawBytes; // "in-stream-data" only
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
-		const Utils::CSharedBytes rawBytesOrg( nBytes, rawBytes );
+		const Memory::CSharedBytes rawBytesOrg( nBytes, rawBytes );
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=rawBytes; // "in-stream-data" only
 		DWORD nFluxes=0;

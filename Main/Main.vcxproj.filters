@@ -270,6 +270,9 @@
     <ClInclude Include="src\Track.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Memory.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">

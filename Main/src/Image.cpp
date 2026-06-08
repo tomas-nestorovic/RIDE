@@ -292,8 +292,8 @@ namespace Sector
 		return result;
 	}
 
-	Utils::CPtrList<CImage::PCProperties> CImage::Known;
-	Utils::CPtrList<CImage::PCProperties> CImage::Devices;
+	Memory::CPtrList<CImage::PCProperties> CImage::Known;
+	Memory::CPtrList<CImage::PCProperties> CImage::Devices;
 
 	CImage::PCProperties CImage::DetermineType(LPCTSTR fileName){
 		// determines and returns Properties for an Image with a given FileName; returns Null if the file represents an unknown Image

@@ -333,14 +333,14 @@ trackNotFound:
 					default:
 						ASSERT(FALSE);
 				}
-				bufferOfCylinders=Utils::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
-				bufferOfCylinders=Utils::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}
@@ -497,7 +497,7 @@ trackNotFound:
 											sectorLengthCode=pf->sectorLengthCode;
 										}
 										// . Sides
-										Utils::CIntList list;
+										Memory::CIntList list;
 										for( THead h=0; h<nHeads; list.AddTail(sideNumbers[h++]) );
 										SetDlgItemIntList( ID_SIDE, list );
 										ignoreUiNotifications--; // give way to UI updates
@@ -549,7 +549,7 @@ trackNotFound:
 							if (!ignoreUiNotifications){
 								ignoreUiNotifications++;
 									static const PropGrid::Integer::TUpDownLimits SideLimits={ 0, (TSide)-1 };
-									Utils::CIntList list;
+									Memory::CIntList list;
 									if (GetDlgItemIntList( ID_SIDE, list, SideLimits, 1, (THead)-1 )){
 										nHeads=list.GetCount();
 										SetDlgItemFormattedText( ID_HEAD, _T("%d head%c"), nHeads, nHeads>1?'s':'\0' );
@@ -656,7 +656,7 @@ trackNotFound:
 			if (d.manualRecognition){
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides=Utils::MakeSharedPodArray<TSide,THead>(d.nHeads,d.sideNumbers);
+				explicitSides=Memory::MakeSharedPodArray<TSide,THead>(d.nHeads,d.sideNumbers);
 				nHeads=d.nHeads;
 			}else
 				explicitSides.reset();

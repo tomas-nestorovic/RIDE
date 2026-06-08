@@ -114,7 +114,7 @@ namespace Event
 
 	CList::CList(CList &&r)
 		// move-ctor
-		: Utils::CPodList<T>( std::move(r) )
+		: Memory::CPodList<T>( std::move(r) )
 		, logStarts( std::move(r.logStarts) )
 		, logEnds( std::move(r.logEnds) ) {
 		::memcpy( peTypeCounts, r.peTypeCounts, sizeof(peTypeCounts) );

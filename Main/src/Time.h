@@ -6,7 +6,7 @@ namespace Time
 
 	typedef TLogValue T,*P; // time in nanoseconds
 	typedef const T *PC;
-	typedef Utils::CSharedPodArray<T,N> CSharedArray;
+	typedef Memory::CSharedPodArray<T,N> CSharedArray;
 
 	enum{
 		Invalid=INT_MIN,
@@ -65,7 +65,7 @@ namespace Time
 		COLORREF color;
 	};
 
-	typedef Utils::CSharedPodArray<TColorInterval> CSharedColorIntervalArray;
+	typedef Memory::CSharedPodArray<TColorInterval> CSharedColorIntervalArray;
 
 	typedef const struct TMetaDataItem sealed:public TInterval{
 		Bit::N nBits; // 0 = no explicit # of bits, use DPLL algorithm to adjust next IW size

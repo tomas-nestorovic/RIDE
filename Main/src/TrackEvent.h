@@ -87,9 +87,9 @@ namespace Track
 
 
 
-		typedef Utils::CSharedPodPtr<T> CSharedPtr;
+		typedef Memory::CSharedPodPtr<T> CSharedPtr;
 
-		class CList:private Utils::CPodList<T>{
+		class CList:private Memory::CPodList<T>{
 			N peTypeCounts[LAST];
 
 			CList(const CList &r); //delete

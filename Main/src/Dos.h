@@ -205,7 +205,7 @@
 				FILE			=16	// invalid File entry to find path of, e.g. an empty Directory entry
 			} error;
 		private:
-			Utils::CSharedPodArray<TItem,DWORD> buffer;
+			Memory::CSharedPodArray<TItem,DWORD> buffer;
 			DWORD nItems;
 			TItem *pLastItem;
 		public:
@@ -363,7 +363,7 @@
 			PCProperties Perform(PImage image,TFormat &outFormatBoot) const;
 		};
 
-		static Utils::CPtrList<PCProperties> Known; // list of known DOSes (registered in CRideApp::InitInstance)
+		static Memory::CPtrList<PCProperties> Known; // list of known DOSes (registered in CRideApp::InitInstance)
 
 		static PDos GetFocused();
 		static void __errorCannotDoCommand__(TStdWinError cause);

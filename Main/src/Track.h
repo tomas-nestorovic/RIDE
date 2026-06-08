@@ -30,7 +30,7 @@ namespace Track
 			Codec::TType codec;
 			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 			Time::CMetaData metaData;
-			struct:public Utils::CSharedBytes{
+			struct:public Memory::CSharedBytes{
 				TTypeId id;
 			} rawDeviceData; // valid until Track modified, then disposed
 
@@ -99,7 +99,7 @@ namespace Track
 		TLogTime GetLastIndexTime() const;
 		TLogTime GetAvgIndexDistance() const;
 		TLogTime GetTotalTime() const;
-		const Utils::CSharedBytes &GetRawDeviceData(TTypeId dataId) const;
+		const Memory::CSharedBytes &GetRawDeviceData(TTypeId dataId) const;
 		bool ReadBit(TLogTime &rtOutOne=Time::Ignore);
 		bool IsLastReadBitHealthy() const;
 		Bit::CSequence CreateBitSequence(TLogTime tFrom,const TProfile &profileFrom,TLogTime tTo,BYTE oneOkPercent=0) const;
@@ -160,7 +160,7 @@ namespace Track
 		void AppendDWord(TLogTimeInterval &inOutAt,DWORD dw);
 		void AppendIndexTime(TLogTime logTime);
 		void InsertMetaData(const Time::TMetaDataItem &mdi);
-		void SetRawDeviceData(TTypeId dataId,const Utils::CSharedBytes &data);
+		void SetRawDeviceData(TTypeId dataId,const Memory::CSharedBytes &data);
 		void TrimToTimesCount(Time::N nKeptLogTimes);
 		bool ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes);
 		void ClearMetaData(const TLogTimeInterval &ti);

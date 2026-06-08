@@ -28,7 +28,7 @@ using namespace Charting;
 			const CString trackName;
 			const Utils::CRidePen minedTimingPen;
 			const Utils::CRidePen minedIndexPen;
-			Utils::CSharedPodArray<TLogPoint,TIndex> minedTrackDeltaTiming;
+			Memory::CSharedPodArray<TLogPoint,TIndex> minedTrackDeltaTiming;
 			TLogPoint minedTrackIndices[Revolution::MAX+1];
 			struct TGraphics sealed{
 				CChartView::PCGraphics list[2];

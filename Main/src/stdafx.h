@@ -154,6 +154,7 @@ namespace Track
 	typedef int N; // index or count
 }
 
+#include "Memory.h"
 #include "Utils.h"
 #include "BackgroundAction.h"
 #include "Diff.h"

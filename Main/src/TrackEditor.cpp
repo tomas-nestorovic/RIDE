@@ -36,7 +36,7 @@ using namespace Charting;
 		HANDLE hAutoscrollTimer;
 		struct{
 			BYTE oneOkPercent; // a window with logical "1" appearing less than this value is considered OK, otherwise Bad
-			Utils::CPodList<TLogTimeInterval> badBlocks; // blocks of consecutive InspectionWindows evaluated as Bad
+			Memory::CPodList<TLogTimeInterval> badBlocks; // blocks of consecutive InspectionWindows evaluated as Bad
 		} iwInfo;
 
 		enum TCursorFeatures:BYTE{
@@ -1332,7 +1332,7 @@ using namespace Charting;
 							// modal display of scatter plot of time differences
 							CTrackReader tr=this->tr;
 							tr.SetCurrentTimeAndProfile( 0, tr.CreateResetProfile() );
-							const Utils::CSharedPodArray<TLogPoint,TIndex> deltaTimes( tr.GetTimesCount() );
+							const Memory::CSharedPodArray<TLogPoint,TIndex> deltaTimes( tr.GetTimesCount() );
 								PLogPoint pLastItem=deltaTimes;
 								for( TLogTime t0=0; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();
@@ -1343,7 +1343,7 @@ using namespace Charting;
 								auto deltaTimeSeries=CChartView::CXyPointSeries(
 									pLastItem-deltaTimes, deltaTimes, dotPen
 								);
-							const Utils::CSharedPodArray<TLogPoint,TIndex> indexTimes( tr.GetIndexCount() );
+							const Memory::CSharedPodArray<TLogPoint,TIndex> indexTimes( tr.GetIndexCount() );
 								for( TRev i=0; i<tr.GetIndexCount(); i++ ){
 									auto &r=indexTimes[i];
 										r.x=tr.GetIndexTime(i);
@@ -1528,7 +1528,7 @@ using namespace Charting;
 								::lstrcpy( caption, _T("Timing histogram for whole track") );
 							}
 							tr.SetCurrentTimeAndProfile( tBegin, tr.CreateResetProfile() );
-							const Utils::CSharedPodArray<TLogPoint,TIndex> data( tr.GetTimesCount() );
+							const Memory::CSharedPodArray<TLogPoint,TIndex> data( tr.GetTimesCount() );
 								PLogPoint pLastItem=data;
 								for( TLogTime t0=tBegin; tr; pLastItem++ ){
 									const TLogTime t = pLastItem->x = tr.ReadTime();

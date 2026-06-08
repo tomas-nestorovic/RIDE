@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug in RAMdisk|Win32">
@@ -221,6 +221,7 @@
     <ClInclude Include="src\HexaEditor.h" />
     <ClInclude Include="src\HFE.h" />
     <ClInclude Include="src\Medium.h" />
+    <ClInclude Include="src\Memory.h" />
     <ClInclude Include="src\Revolution.h" />
     <ClInclude Include="src\Sector.h" />
     <ClInclude Include="src\Time.h" />

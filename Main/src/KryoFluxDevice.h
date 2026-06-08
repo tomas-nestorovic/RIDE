@@ -61,7 +61,7 @@
 			WINUSB
 		} driver;
 		const BYTE fddId;
-		const Utils::CSharedBytes dataBuffer;
+		const Memory::CSharedBytes dataBuffer;
 		struct{
 			mutable CMutex locker;
 			HANDLE handle;

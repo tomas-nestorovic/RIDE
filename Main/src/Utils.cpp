@@ -2,8 +2,6 @@
 
 namespace Utils{
 
-	const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
-
 	#define SCREEN_DPI_DEFAULT	USER_DEFAULT_SCREEN_DPI
 
 	TLogicalUnitScaleFactor::TLogicalUnitScaleFactor()
@@ -2137,7 +2135,7 @@ namespace Utils{
 	static constexpr TCHAR RangeSign='-'; // "minus"
 	static constexpr TCHAR Delimiters[]={ ',', ';', RangeSign, '\0' }; // valid integer delimiters, INCLUDING RangeSign
 
-	bool CRideDialog::GetDlgItemIntList(WORD id,CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin,int nIntsMax) const{
+	bool CRideDialog::GetDlgItemIntList(WORD id,Memory::CIntList &rOutList,const PropGrid::Integer::TUpDownLimits &limits,int nIntsMin,int nIntsMax) const{
 		// True <=> item with the specified ID contains list of integer values (grammar bellow), otherwise False
 		// - elimination of white spaces from the content
 		TCHAR buf[16384], *pEnd=buf;
@@ -2186,7 +2184,7 @@ namespace Utils{
 		return true;
 	}
 
-	void CRideDialog::SetDlgItemIntList(WORD id,const CIntList &list) const{
+	void CRideDialog::SetDlgItemIntList(WORD id,const Memory::CIntList &list) const{
 		// populates item with the specified ID with textual representation of the integer values
 		TCHAR buf[16384], *p=buf;
 		for( POSITION pos=list.GetHeadPosition(); pos; ){
@@ -2850,4 +2848,13 @@ void DDX_Check(CDataExchange *pDX,int nIDC,bool &value){
 	int tmp=value;
 		DDX_Check( pDX, nIDC, tmp );
 	value=tmp!=BST_UNCHECKED;
+}
+
+
+
+
+
+namespace Memory
+{
+	const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
 }

@@ -93,7 +93,7 @@
 
 	CHFE::CTrackBytes::CTrackBytes(WORD count)
 		// ctor
-		: Utils::CSharedBytes( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)) )
+		: Memory::CSharedBytes( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)) )
 		, count(count) {
 		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
 	}

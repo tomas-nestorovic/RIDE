@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 	const TSide CDos::StdSidesMap[]={ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
-	Utils::CPtrList<CDos::PCProperties> CDos::Known;
+	Memory::CPtrList<CDos::PCProperties> CDos::Known;
 
 
 	PDos CDos::GetFocused(){

@@ -25,7 +25,7 @@ namespace Bit
 		TLogTime time;
 	};
 
-	typedef Utils::CSharedPodArray<CDiffBase::TScriptItem,N> CSharedDiffScript;
+	typedef Memory::CSharedPodArray<CDiffBase::TScriptItem,N> CSharedDiffScript;
 
 
 
@@ -49,7 +49,7 @@ namespace Bit
 			inline void Validate(){ __super::value=1; }
 		};
 	private:
-		Utils::CSharedPodArray<TBit,N> bitBuffer;
+		Memory::CSharedPodArray<TBit,N> bitBuffer;
 		TBit *pBits;
 		N nBits;
 	public:

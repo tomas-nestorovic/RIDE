@@ -130,12 +130,12 @@ namespace Track
 		return	std::max( GetLastTime(), GetLastIndexTime() );
 	}
 
-	const Utils::CSharedBytes &CReader::GetRawDeviceData(TTypeId dataId) const{
+	const Memory::CSharedBytes &CReader::GetRawDeviceData(TTypeId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
 			if (r.id==dataId)
 				return r;
-		return Utils::CSharedBytes::GetEmpty();
+		return Memory::CSharedBytes::GetEmpty();
 	}
 
 	void CReader::SetCodec(Codec::TType codec){
@@ -993,9 +993,9 @@ namespace Track
 			metaData.insert(mdi);
 	}
 
-	void CReaderWriter::SetRawDeviceData(TTypeId dataId,const Utils::CSharedBytes &data){
+	void CReaderWriter::SetRawDeviceData(TTypeId dataId,const Memory::CSharedBytes &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
-		static_cast<Utils::CSharedBytes &>(pLogTimesInfo->rawDeviceData)=data;
+		static_cast<Memory::CSharedBytes &>(pLogTimesInfo->rawDeviceData)=data;
 		pLogTimesInfo->rawDeviceData.id=dataId;
 	}
 

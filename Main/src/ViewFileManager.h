@@ -31,7 +31,7 @@
 			short columnWidthDefault;
 			BYTE flags;
 		} *PCFileInfo;
-		typedef Utils::CPtrList<::CDos::PFile> CFileList;
+		typedef Memory::CPtrList<::CDos::PFile> CFileList;
 
 		enum TDisplayMode:BYTE{ // options must be in same order as LVS_{ICON,REPORT,SMALLICON,LIST}
 			BIG_ICONS	=1,
@@ -104,8 +104,8 @@
 		COleDropTarget dropTarget;
 		WORD nativelyLastFile; // index of a file that is natively the last one in current Directory
 		CMapPtrToWord nativeOrderOfFiles; // map of native order of Files as they are discovered in current Directory (i.e. without Ordering)
-		Utils::CPtrList<const CMainWindow::CTdiView::TTab *> ownedTabs;
-		Utils::CPtrList<CWnd *> ownedWindows;
+		Memory::CPtrList<const CMainWindow::CTdiView::TTab *> ownedTabs;
+		Memory::CPtrList<CWnd *> ownedWindows;
 		CFileList previousDirectories;
 
 		void __updateSummaryInStatusBar__() const;

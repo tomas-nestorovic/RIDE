@@ -130,7 +130,7 @@
 			CFile f; CFileException e;
 			if (!f.Open( GetStreamFileName(cyl,head), CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive, &e ))
 				return e.m_cause;
-			Utils::CSharedBytes data=pit->GetRawDeviceData( KF_STREAM_ID );
+			Memory::CSharedBytes data=pit->GetRawDeviceData( KF_STREAM_ID );
 			if (!data) // Track has been really modified and original KF Stream disposed ...
 				data.length=TrackToStream( // ... must reconstruct it from current state of the Track
 					head && params.flippyDisk
@@ -167,7 +167,7 @@
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		PInternalTrack &rit=internalTracks[cyl][head];
 		const auto fLength=f.GetLength();
-		if (const auto &&data=Utils::CSharedBytes(fLength))
+		if (const auto &&data=Memory::CSharedBytes(fLength))
 			if (f.Read( data, fLength )==fLength)
 				if (CTrackReaderWriter &&trw=StreamToTrack( data, f.GetLength() )){
 					// it's a KryoFlux Stream whose data make sense

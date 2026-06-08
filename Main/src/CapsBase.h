@@ -54,7 +54,7 @@
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,TRev nRevs,UDWORD lockFlags);
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType=Medium::UNKNOWN);
 
-			const Utils::CSharedPodArray<TInternalSector,TSector> sectors;
+			const Memory::CSharedPodArray<TInternalSector,TSector> sectors;
 			bool modified;
 			
 			void ReadSector(TInternalSector &ris,TRev rev);
