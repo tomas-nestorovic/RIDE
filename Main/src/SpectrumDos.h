@@ -407,7 +407,7 @@
 			CTape(LPCTSTR fileName,const CSpectrumDos *diskDos,bool makeCurrentTab);
 			~CTape();
 
-			void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts) override;
+			void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts,TRev *outRevs) override;
 			TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE nSectorsToSkip,PCFdcStatus pFdcStatus,bool flush) override;
 
 			// boot

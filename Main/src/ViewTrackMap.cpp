@@ -250,10 +250,9 @@
 			if (pvtm->displayType>=TDisplayType::DATA_OK_ONLY){
 				if (!::IsWindow(pvtm->m_hWnd)) // TrackMap may not exist if, for instance, switched to another view while still scanning some Track(s)
 					continue;
-				PByteInfo byteInfos[(TSector)-1];
+				PVOID ignored[(TSector)-1];
 				TFdcStatus statuses[(TSector)-1];
-				TLogTime tDataStarts[(TSector)-1];
-				image->GetTrackData( cyl, head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, byteInfos, tmp.bufferLength, statuses, tDataStarts );
+				image->GetTrackData( cyl, head, Revolution::CURRENT, tmp.bufferId, sectorIdAndPositionIdentity, tmp.nSectors, tmp.bufferSectorData, (PByteInfo *)ignored, tmp.bufferLength, statuses, (PLogTime)ignored, (TRev *)ignored );
 				for( TSector n=0; n<tmp.nSectors; n++ )
 					if (pvtm->displayType!=TDisplayType::DATA_ALL && !statuses[n].IsWithoutError())
 						tmp.bufferSectorData[n]=nullptr;

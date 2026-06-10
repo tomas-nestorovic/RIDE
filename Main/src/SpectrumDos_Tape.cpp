@@ -63,11 +63,11 @@
 
 
 
-	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead head,Revolution::TType,PCSectorId,PCBYTE,TSector,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
+	void CSpectrumDos::CTape::GetTrackData(TCylinder cyl,THead head,Revolution::TType,PCSectorId,PCBYTE,TSector,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts,TRev *outRevs){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=nullptr && outByteInfos!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr );
+		ASSERT( outBufferData!=nullptr && outByteInfos!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outRevs!=nullptr );
 		*outFdcStatuses=TFdcStatus::WithoutError; // assumption
-		*outDataStarts=0, *outByteInfos=nullptr;
+		*outDataStarts=0, *outByteInfos=nullptr, *outRevs=0;
 		switch (head){
 			case 0: // want Data
 				if (cyl<fileManager.nFiles)

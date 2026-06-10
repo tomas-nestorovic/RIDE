@@ -607,9 +607,9 @@
 		return ERROR_SUCCESS;
 	}
 
-	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts){
+	void CCapsBase::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts,TRev *outRevs){
 		// populates output buffers with specified Sectors' data, usable lengths, and FDC statuses; ALWAYS attempts to buffer all Sectors - caller is then to sort out eventual read errors (by observing the FDC statuses); caller can call ::GetLastError to discover the error for the last Sector in the input list
-		ASSERT( outBufferData!=nullptr && outByteInfos!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr );
+		ASSERT( outBufferData!=nullptr && outByteInfos!=nullptr && outBufferLengths!=nullptr && outFdcStatuses!=nullptr && outDataStarts!=nullptr && outRevs!=nullptr );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead) // can Track actually exist?
 			goto invalidTrack;
@@ -629,7 +629,7 @@
 				// . if Sector with given ID not found in the Track, we are done
 				*outBufferLengths++=GetUsableSectorLength(sectorId.lengthCode); // e.g. Sector with LengthCode 167 has no data
 				if (!n){
-					*outBufferData++=nullptr, *outByteInfos++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound, *outDataStarts++=0;
+					*outBufferData++=nullptr, *outByteInfos++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound, *outDataStarts++=0, *outRevs++=0;
 					continue;
 				}
 				// . setting initial Revolution
@@ -640,7 +640,7 @@
 					pis->currentRevolution=rev; // wanted particular existing Revolution
 				else if (rev<Revolution::MAX){
 					*outFdcStatuses++=TFdcStatus::SectorNotFound; // wanted particular non-existent Revolution
-					*outBufferData++=nullptr, *outByteInfos++=nullptr, *outDataStarts++=0;
+					*outBufferData++=nullptr, *outByteInfos++=nullptr, *outDataStarts++=0, *outRevs++=0;
 					continue;
 				}else
 					switch (rev){
@@ -676,6 +676,7 @@
 				// . returning (any) Data
 				*outDataStarts++=optRev->idEndTime;
 				*outFdcStatuses++=optRev->fdcStatus;
+				*outRevs++=pis->currentRevolution;
 				if (optRev->peData){
 					*outBufferData++=optRev->peData->bytes;
 					*outByteInfos++=optRev->peData->GetByteInfos();
@@ -688,7 +689,7 @@
 		else
 invalidTrack:
 			while (nSectors-->0)
-				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound, *outDataStarts++=0;
+				*outBufferData++=nullptr, *outFdcStatuses++=TFdcStatus::SectorNotFound, *outDataStarts++=0, *outRevs++=0;
 		::SetLastError( *--outBufferData ? ERROR_SUCCESS : ERROR_SECTOR_NOT_FOUND );
 	}
 
