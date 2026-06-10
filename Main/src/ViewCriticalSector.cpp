@@ -41,7 +41,9 @@
 		fSectorData.Attach( new CDos::CFileReaderWriter(dos,rChs,OnDataWritten) );
 		const TPhysicalAddress &chs=GetPhysicalAddress();
 		Sector::L sectorDataRealLength=Sector::GetLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
-		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength );
+		TRev healthyRev;
+		IMAGE->GetHealthySectorData( chs, &sectorDataRealLength, 0, &healthyRev );
+		fSectorData->SetCurrentRevolution( (Revolution::TType)healthyRev );
 		hexaEditor.Reset( fSectorData, fSectorData, sectorDataRealLength );
 	}
 
