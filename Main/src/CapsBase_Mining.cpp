@@ -103,7 +103,7 @@ using namespace Charting;
 				SetDlgItemSingleCharUsingFont( ID_SECTOR, 0xf09d, Utils::CRideFont::Webdings120 );
 				// . populating the "Mining approach" combo-box
 				cbx.Attach( GetDlgItemHwnd(ID_CREATOR) );
-					if (cb.properties->IsRealDevice())
+					if (cb.properties->IsRealDevice() || app.IsInGodMode())
 						cbx.SetItemData(
 							cbx.AddString(_T("Repeated reading from drive")),
 							METHOD_READING_FROM_DRIVE
@@ -304,12 +304,11 @@ using namespace Charting;
 						nRevsToCalibration=d.headCalibration;
 					}
 					// . putting existing Track aside
-					std::unique_ptr<CInternalTrack> pitMined;
+					PInternalTrack pitMined;
 			{		const CTrackTempReset pit0( rit );
 					// . rescanning the Track
 					TSectorId foundSectors[(TSector)-1];
 					const TSector nFoundSectors=d.cb.ScanTrack( d.cyl, d.head, nullptr, foundSectors );
-					pitMined.reset(rit);
 					if (!rit)
 						continue;
 					// . displaying the Track
@@ -323,10 +322,11 @@ using namespace Charting;
 					}
 					if (i<searchedSectors.n) // some Sectors not healthy or missing?
 						continue;
+					pitMined=rit, rit=nullptr; // move
 			}		// . Track mined successfully
 					if (const TStdWinError err=d.cb.UnscanTrack( d.cyl, d.head )) // "forget" the existing Track
 						return d.PostMiningErrorMessage(err);
-					rit=pitMined.release();
+					rit=pitMined;
 					return d.PostMiningErrorMessage(ERROR_SUCCESS);
 				}
 				return d.PostMiningErrorMessage(ERROR_CANCELLED);

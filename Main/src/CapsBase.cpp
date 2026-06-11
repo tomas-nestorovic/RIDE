@@ -979,19 +979,15 @@ invalidTrack:
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - scanning what's been written
-		const CTrackTempReset pit0( internalTracks[cyl][head] ); // forcing rescan
+		const CTrackTempReset rit( internalTracks[cyl][head] ); // forcing rescan
 			ScanTrack( cyl, head );
-		std::unique_ptr<CInternalTrack> tmp( internalTracks[cyl][head] );
 		if (cancelled)
 			return ERROR_CANCELLED;
-		const PCInternalTrack pitRead=tmp.get();
-		if (!pitRead)
+		if (!rit)
 			return ERROR_GEN_FAILURE;
-		if (ppOutReadTrack) // caller wants to take over ownership?
-			ppOutReadTrack->reset( tmp.release() );
 		// - verification
 		const auto &&writtenBits=trwWritten.CreateBitSequence( Revolution::R0 );
-		const auto &&readBits=pitRead->CreateBitSequence( Revolution::R0 );
+		const auto &&readBits=rit->CreateBitSequence( Revolution::R0 );
 		const auto &&ses=writtenBits.GetShortestEditScript( // shortest edit script
 			readBits, CActionProgress(cancelled)
 		);
@@ -999,6 +995,8 @@ invalidTrack:
 			return ERROR_CANCELLED;
 		if (!ses)
 			return ERROR_FUNCTION_FAILED;
+		if (ppOutReadTrack) // caller wants to take ownership?
+			ppOutReadTrack->reset(rit), rit=nullptr; // move
 		if (!ses.length) // the unlikely case of absolutely no differences
 			return ERROR_SUCCESS;
 		const TLogTimeInterval significant( // TODO: better way than ignoring the first and last N% of the Revolution
