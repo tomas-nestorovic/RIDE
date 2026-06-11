@@ -1047,17 +1047,17 @@ invalidTrack:
 		CTrackReaderWriter trw( mp->nCells/2, floppyType );
 		const TLogTime doubleCellTime=2*mp->cellTime;
 		// - evaluating Track magnetic reliability
-		const std::unique_ptr<CInternalTrack> pit(
+		const CTrackTempReset test(
+			internalTracks[cyl][head],
 			CInternalTrack::CreateFrom( *this, std::move(trw), floppyType )
 		);
-		pit->modified=true; // to pass the save conditions
+		test->modified=true; // to pass the save conditions
 		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
 			// . saving the test Track
-	{		const CTrackTempReset pit0( internalTracks[cyl][head], pit.get() );
 			if (const TStdWinError err=SaveTrack( cyl, head, cancelled ))
 				return err;
-	}		// . reading the test Track back
-			const CTrackTempReset rit( internalTracks[cyl][head] ); // forcing a new scan
+			// . reading the test Track back
+			const CTrackTempReset rit( test ); // force a new scan
 			ScanTrack( cyl, head );
 			if (rit==nullptr)
 				return ERROR_FUNCTION_FAILED;
