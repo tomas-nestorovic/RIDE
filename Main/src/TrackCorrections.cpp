@@ -73,6 +73,9 @@ namespace Track
 
 	TStdWinError CReaderWriter::Apply(const TCorrections &c){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
+		// - do nothing if Corrections disabled
+		if (!c.use)
+			return ERROR_SUCCESS;
 		// - mustn't apply corrections twice
 		if (pLogTimesInfo->corrected)
 			return ERROR_SUCCESS;
