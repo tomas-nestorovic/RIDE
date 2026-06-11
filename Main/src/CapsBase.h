@@ -67,6 +67,8 @@
 		public:
 			CTrackTempReset(PInternalTrack &rit,PInternalTrack newTrack=nullptr);
 			~CTrackTempReset();
+
+			inline void operator=(PInternalTrack pit) const{ var=pit; }
 		};
 
 		class CPrecompensation sealed{
