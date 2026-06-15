@@ -521,7 +521,7 @@ namespace Sector
 	}
 
 	BYTE CImage::ShowModalTrackTimingAt(RCPhysicalAddress chs,BYTE nSectorsToSkip,Sector::L positionInSector,Revolution::TType rev){
-		// displays modal dialog showing low-level timing for specified position on the Track
+		// displays modal dialog showing low-level timing for specified position in the Sector
 		const CString msg=Utils::SimpleFormat( _T("Can't determine timing for sector with %s"), chs.sectorId.ToString() );
 		if (CTrackReader &&tr=ReadTrack( chs.cylinder, chs.head )){
 			TLogTime tDataStart;

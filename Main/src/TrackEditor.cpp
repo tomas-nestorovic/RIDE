@@ -326,7 +326,7 @@ using namespace Charting;
 		private:
 			void PaintCursorFeaturesInverted(bool show){
 				// paints CursorTime by inverting pixels; painting twice the same CursorTime shows nothing
-				if ((show^cursorFeaturesShown)!=0 && cursorFeatures!=0){
+				if ((show^cursorFeaturesShown) && cursorFeatures!=0){
 					CClientDC dc(this);
 					const auto &&g=timeline.CreateGraphics(dc);
 					::SetROP2( dc, R2_NOT );

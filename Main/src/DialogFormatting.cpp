@@ -113,14 +113,11 @@
 			DDV_MinMaxUInt( pDX, params.skew, 0, params.format.nSectors-1 );
 		DDX_Text( pDX,	ID_GAP		,params.gap3 );
 		if (pDX->m_bSaveAndValidate){
-			CComboBox cb;
-			cb.Attach( pDX->PrepareEditCtrl(ID_CLUSTER) );
-				const int sel=cb.GetCurSel();
-				if (sel<0)
-					pDX->Fail();
-				else
-					params.format.clusterSize=cb.GetItemData(sel);
-			cb.Detach();
+			pDX->PrepareEditCtrl(ID_CLUSTER);
+			if (GetDlgComboBoxSelectedIndex(ID_CLUSTER)<0)
+				pDX->Fail();
+			else
+				params.format.clusterSize=GetDlgComboBoxSelectedValue(ID_CLUSTER);
 		}else
 			SelectDlgComboBoxValue( ID_CLUSTER, params.format.clusterSize );
 		DDX_Text( pDX,	ID_FAT		,params.nAllocationTables );
