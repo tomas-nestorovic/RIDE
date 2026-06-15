@@ -293,7 +293,7 @@ namespace Sector
 					srw.GetCurrentPhysicalAddress(),
 					srw.GetCurrentSectorIndexOnTrack(),
 					srw.GetPositionInCurrentSector(),
-					Revolution::ANY_GOOD
+					srw.GetCurrentRevolution()
 				);
 				return true;
 		}

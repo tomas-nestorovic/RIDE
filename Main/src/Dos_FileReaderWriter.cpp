@@ -15,20 +15,22 @@
 				nullptr,
 				Sector::TSameLengthParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
 			)
+		, nSectorsToSkip(0) // Files are not known to occupy Sectors with duplicate IDs
 		, fatPath(dos,file) {
 		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
 	}
 
-	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,FOnWritten onWritten)
+	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,Sector::N nSectorsToSkip,FOnWritten onWritten)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
 		: Sector::CSameLengthReaderWriter(
 				dos->image,
-				dos->formatBoot.sectorLength,
+				Sector::GetLength(chs.sectorId.lengthCode),
 				NoPadding,
 				nDiscoveredRevolutions,
 				onWritten,
-				Sector::TSameLengthParams( 1, dos->formatBoot.sectorLength )
+				Sector::TSameLengthParams( 1, Sector::GetLength(chs.sectorId.lengthCode) )
 			)
+		, nSectorsToSkip(nSectorsToSkip)
 		, fatPath(dos,chs) {
 		badByteMask.flags=0, badByteMask.badEncoding=true; // ignore other "badness"
 	}
@@ -39,13 +41,25 @@
 
 
 
+	PSectorData CDos::CFileReaderWriter::GetSectorData(int i) const{
+		if (const CFatPath::PCItem p=fatPath.GetItem(i))
+			return image->GetSectorData( p->chs, nSectorsToSkip, revolution );
+		else
+			return nullptr;
+	}
+
+
+
+
+
+
 
 	void CDos::CFileReaderWriter::GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,Sector::N &outSectorIndex,Sector::PL pOutOffset) const{
 		// returns the PhysicalAddress currently seeked to
 		const auto &&d=div( pos, usableSectorLength );
-		if (const CDos::CFatPath::PCItem p=fatPath.GetItem(d.quot)){ // Sector exists
+		if (const CFatPath::PCItem p=fatPath.GetItem(d.quot)){ // Sector exists
 			outChs=p->chs;
-			outSectorIndex=0; // Files are not known to occupy Sectors with duplicate IDs
+			outSectorIndex=nSectorsToSkip;
 			if (pOutOffset)
 				*pOutOffset=d.rem-sector.padding.a; // start Padding provided as NEGATIVE!
 		}else

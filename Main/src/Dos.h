@@ -232,11 +232,14 @@
 		};
 
 		class CFileReaderWriter:public Sector::CSameLengthReaderWriter{
+			const Sector::N nSectorsToSkip;
 		public:
 			const CFatPath fatPath;
 
 			CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors=false); // ctor to read/edit an existing File on the Image
-			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,Sector::CReaderWriter::FOnWritten onWritten=nullptr); // ctor to read/edit particular Sector of the Image (e.g. Boot Sector)
+			CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,Sector::N nSectorsToSkip,Sector::CReaderWriter::FOnWritten onWritten=nullptr); // ctor to read/edit particular Sector of the Image (e.g. Boot Sector)
+
+			PSectorData GetSectorData(int i) const;
 
 			// IStream methods
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override;

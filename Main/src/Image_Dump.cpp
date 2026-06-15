@@ -403,44 +403,12 @@
 						class CErroneousSectorDialog sealed:public Utils::CRideDialog{
 							const TDumpParams &dp;
 							TParams &rp;
-							const PSectorData sectorData;
-							const WORD sectorDataLength;
+							ATL::CComPtr<CDos::CFileReaderWriter> srw;
 							TFdcStatus &rFdcStatus;
 							CEdit errorTextBox,sectorListTextBox;
 							std::unique_ptr<CSplitterWnd> splitter,upperSplitter;
 							HACCEL hAccel;
-
-							class CSectorHexaEditor sealed:public CHexaEditor{
-							public:
-								const TDumpParams &dp;
-								const TParams &p;
-
-								CSectorHexaEditor(const TDumpParams &dp,const TParams &p)
-									// ctor
-									// > base
-									: CHexaEditor((PVOID)&dp)
-									// > modification of ContextMenu
-									, dp(dp) , p(p) {
-									contextMenu.AppendSeparator();
-									contextMenu.AppendMenu(
-										MF_BYCOMMAND | MF_STRING | MF_GRAYED*!dp.source->ReadTrack(0,0),
-										ID_TIME, _T("Timing under cursor...")
-									);
-								}
-								bool ProcessCustomCommand(UINT cmd) override{
-									// custom command processing
-									switch (cmd){
-										case ID_TIME:
-											dp.source->ShowModalTrackTimingAt(
-												p.chs, 0,
-												instance->GetCaretPosition(),
-												(Revolution::TType)p.revolution
-											);
-											return true;
-									}
-									return __super::ProcessCustomCommand(cmd);
-								}
-							} hexaEditor;
+							Sector::CReaderWriter::CHexaEditor hexaEditor;
 
 							void PreInitDialog() override{
 								// dialog initialization
@@ -466,8 +434,10 @@
 										);
 										sectorListTextBox.SetFont( GetFont() );
 								splitter->SetRowInfo( 0, rcSplitter.Height()/3, 0 ); // Utils::LogicalUnitScaleFactor
-									if (const auto &&s=Yahel::Stream::FromBuffer( sectorData, sectorDataLength ))
-										hexaEditor.Reset( s, nullptr, sectorDataLength );
+									srw.Attach( new CDos::CFileReaderWriter( dp.dos, rp.chs, rp.s ) );
+									srw->SetCurrentRevolution( (Revolution::TType)rp.revolution );
+									if (srw->GetSectorData(0))
+										hexaEditor.Reset( srw, srw, srw->usableSectorLength );
 									hexaEditor.Create(
 										nullptr, nullptr,
 										AFX_WS_DEFAULT_VIEW&~WS_BORDER | WS_CLIPSIBLINGS,
@@ -737,7 +707,7 @@
 													switch (d.dataFieldRecoveryType){
 														case 2:
 															// replacing data with SubstituteByte
-															::memset( sectorData, d.dataFieldSubstituteFillerByte, sectorDataLength );
+															::memset( srw->GetSectorData(0), d.dataFieldSubstituteFillerByte, srw->usableSectorLength );
 															//fallthrough
 														case 1:
 															// recovering CRC
@@ -795,20 +765,18 @@
 						public:
 							int beepWhenShowed;
 
-							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,PSectorData sectorData,WORD sectorLength,TFdcStatus &rFdcStatus)
+							CErroneousSectorDialog(CWnd *pParentWnd,const TDumpParams &dp,TParams &_rParams,TFdcStatus &rFdcStatus)
 								// ctor
 								: Utils::CRideDialog( IDR_IMAGE_DUMP_ERROR, pParentWnd )
 								, beepWhenShowed(BeepWhenShowed)
 								, dp(dp) , rp(_rParams) , rFdcStatus(rFdcStatus)
-								, sectorData( rFdcStatus.DescribesMissingDam()?nullptr:sectorData )
-								, sectorDataLength( rFdcStatus.DescribesMissingDam()?0:sectorLength )
-								, hexaEditor( dp, _rParams ) {
+								, hexaEditor( (PVOID)&dp ) { // nullptr
 							}
 							~CErroneousSectorDialog(){
 								// dtor
 								::DestroyAcceleratorTable(hAccel);
 							}
-						} d(pAction,dp,p,bufferSectorData[p.s],bufferLength[p.s],p.fdcStatus);
+						} d(pAction,dp,p,p.fdcStatus);
 						// | showing the Dialog and processing its result
 				{		LOG_DIALOG_DISPLAY(_T("CErroneousSectorDialog"));
 						const auto result=LOG_DIALOG_RESULT(d.DoModal());

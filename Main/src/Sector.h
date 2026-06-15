@@ -197,10 +197,10 @@ namespace Sector
 
 	class CSameLengthReaderWriter abstract:public CReaderWriter,protected TSameLengthParams{
 	protected:
-		const L usableSectorLength;
-
 		CSameLengthReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthParams &slsp);
 	public:
+		const L usableSectorLength;
+
 		// Yahel::Stream::IAdvisor methods
 		Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
 		Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow) override;
