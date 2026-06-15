@@ -1022,7 +1022,7 @@ namespace Track
 		ASSERT( !writeTimes || writeTimes.GetTimesCount()>0 );
 		ASSERT( !writeTimes || clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
 		// - determining the number of LogicalTimes in the interval to clear
-		SetCurrentTime(clearTimes.tStart);
+		SetCurrentTime(clearTimes.tStart-1);
 		const auto iLogTimeToClearA=iNextTime;
 		SetCurrentTime(clearTimes.tEnd);
 		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
