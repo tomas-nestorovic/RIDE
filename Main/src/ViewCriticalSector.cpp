@@ -38,7 +38,7 @@
 		: tab(0,0,0,dos->image,this) , splitX(PROPGRID_WIDTH_DEFAULT)
 		, hexaEditor(*this) {
 		// - reset of HexaEditor's content
-		fSectorData.Attach( new CDos::CFileReaderWriter(dos,rChs,OnDataWritten) );
+		fSectorData.Attach( new CDos::CFileReaderWriter(dos,rChs,0,OnDataWritten) );
 		const TPhysicalAddress &chs=GetPhysicalAddress();
 		Sector::L sectorDataRealLength=Sector::GetLength( chs.sectorId.lengthCode ); // initializing just in case the Sector is not found
 		TRev healthyRev;
