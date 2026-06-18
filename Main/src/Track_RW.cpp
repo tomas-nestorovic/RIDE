@@ -720,9 +720,10 @@ namespace Track
 			auto &rbi=pbi[i];
 			auto &org=rbi.org;
 			ti.tEnd=peData.GetByteTime(i+1);
-			if (peData.bytes[i]==org.value) // Byte not changed
+			if (peData.bytes[i]==org.value){ // Byte NOT changed ?
 				tmp.AppendWord( ti, org.encoded ); // use however it is encoded (even wrongly, e.g. non-formatted area)
-			else{
+				MFM::g_prevDataBit=(org.encoded&1)!=0;
+			}else{
 				tmp.AppendWord( ti,
 					org.encoded = MFM::EncodeByte(
 						org.value = peData.bytes[i]
@@ -1042,6 +1043,9 @@ namespace Track
 			writeTimes.GetTimesCount()*sizeof(TLogTime)
 		);
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		#ifdef _DEBUG
+			VerifyChronology();
+		#endif
 		return true;
 	}
 
