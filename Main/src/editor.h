@@ -40,6 +40,7 @@
 		int ExitInstance() override;
 		bool GetProfileBool(LPCTSTR sectionName,LPCTSTR keyName,bool bDefault=false);
 		CDocument *OpenDocumentFile(LPCTSTR lpszFileName) override;
+		bool RecognizeAndInstantiateDos(PImage image) const;
 		void OnFileOpen(); // public wrapper
 		inline CRecentFileListEx *GetRecentFileList() const{ return (CRecentFileListEx *)m_pRecentFileList; }
 		HWND GetEnabledActiveWindow() const;

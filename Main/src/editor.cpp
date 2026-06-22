@@ -413,16 +413,32 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		//nop (added by calling CDocument::SetPathName below)
 		// - reporting about not properly implemented features of the Image
 		image->unsupportedFeaturesMessageBar.Show( image->ListUnsupportedFeatures() );
-		// - determining the DOS
+		// - determining and creating the DOS
+		if (!RecognizeAndInstantiateDos(image.get())){
+			if (CMainWindow::CTdiTemplate::pSingleInstance->GetDocument()){ // Image already registered with MFC?
+				image.release(); // leaving Image disposal upon TdiTemplate ...
+				CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__(); // ... here
+			}
+			return nullptr;
+		}
+		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
+		// - informing on what to do in case of DOS misrecognition
+		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Disk -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
+		// - returning the just open Image
+		return image.release();
+	}
+
+	bool CRideApp::RecognizeAndInstantiateDos(PImage image) const{
+		// - DOS recognition
 		CDos::PCProperties dosProps=nullptr;
 		TFormat formatBoot=TFormat::Unknown; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
 		if (!manuallyForceDos)
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			do{
 				::SetLastError(ERROR_SUCCESS); // assumption (no errors)
-				dosProps=CDos::CRecognition().Perform( image.get(), formatBoot );
+				dosProps=CDos::CRecognition().Perform( image, formatBoot );
 				if (!dosProps) // if recognition sequence cancelled ...
-					return nullptr; // ... no Image or disk is accessed
+					return false; // ... no Image or disk is accessed
 				if (!dosProps->IsKnown()){
 					static constexpr Utils::CSimpleCommandDialog::TCmdButtonInfo CmdButtons[]={
 						{ IDCONTINUE, _T("Continue without DOS") },
@@ -437,7 +453,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						).DoModal()
 					){
 						case IDCANCEL:
-							return nullptr;
+							return false;
 						case IDNO:
 							manuallyForceDos=(CDos::PCProperties)INVALID_HANDLE_VALUE;
 							break;
@@ -508,7 +524,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			if (manuallyForceDos!=(CDos::PCProperties)INVALID_HANDLE_VALUE) // DOS already pre-selected? (e.g. recent file)
 				d.dosProps=manuallyForceDos;
 			else if (d.DoModal()!=IDOK)
-				return nullptr;
+				return false;
 			formatBoot=( dosProps=manuallyForceDos=d.dosProps )->stdFormats->params.format;
 			formatBoot.nCylinders++;
 			Medium::TType mt;
@@ -520,20 +536,20 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					break;
 				default:
 					Utils::FatalError( _T("Can't recognize the medium"), err, _T("The disk can't be open.") );
-					return nullptr;
+					return false;
 			}
 			if (const TStdWinError err=image->SetMediumTypeAndGeometry( formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
 				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The disk can't be open.") );
-				return nullptr;
+				return false;
 			}
 			// . informing
 			if (dosProps->IsKnown()) // a damage can't occur in Unknown DOS
 				Utils::InformationWithCheckableShowNoMore( _T("The image will be opened using the default format of the selected DOS (see the \"") BOOT_SECTOR_TAB_LABEL _T("\" tab if available).\n\nRISK OF DATA CORRUPTION if the selected DOS and/or format is not suitable!"), INI_GENERAL, INI_MSG_OPEN_AS );
 		}
 		// - instantiating recognized/selected DOS
-		const PDos dos = image->dos = dosProps->fnInstantiate( image.get(), formatBoot );
+		const PDos dos = image->dos = dosProps->fnInstantiate( image, formatBoot );
 		if (!dos)
-			return nullptr;
+			return false;
 		image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
 		image->SetModifiedFlag(FALSE); // just to be sure
@@ -541,15 +557,9 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			TCHAR errMsg[100];
 			::wsprintf( errMsg, _T("Cannot use \"%s\" to access the medium"), dosProps->name );
 			Utils::FatalError(errMsg,err);
-			image.release(); // leaving Image disposal upon TdiTemplate ...
-			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__(); // ... here
-			return nullptr;
+			return false;
 		}
-		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
-		// - informing on what to do in case of DOS misrecognition
-		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Disk -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
-		// - returning the just open Image
-		return image.release();
+		return true;
 	}
 
 	afx_msg void CRideApp::OpenImage(){
