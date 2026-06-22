@@ -472,7 +472,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					lb.Detach();
 					return result;
 				}
-				void CDosSelectionDialog::DoDataExchange(CDataExchange *pDX){
+				void DoDataExchange(CDataExchange *pDX) override{
 					// exchange of data from and to controls
 					DDX_LBIndex( pDX, ID_DOS	,(int &)dosProps );
 					if (pDX->m_bSaveAndValidate){
@@ -482,7 +482,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 						lb.Detach();
 					}
 				}
-				BOOL OnCommand(WPARAM wParam,LPARAM lParam){
+				BOOL OnCommand(WPARAM wParam,LPARAM lParam) override{
 					// command processing
 					switch (wParam){
 						case MAKELONG(ID_DOS,LBN_SELCHANGE):
@@ -536,7 +536,6 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			return nullptr;
 		image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
-		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
 		image->SetModifiedFlag(FALSE); // just to be sure
 		if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
 			TCHAR errMsg[100];
@@ -546,6 +545,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 			CMainWindow::CTdiTemplate::pSingleInstance->__closeDocument__(); // ... here
 			return nullptr;
 		}
+		image->SetPathName( lpszFileName, TRUE ); // at this moment, Image became application's active document and the name of its underlying file is shown in MainWindow's caption
 		// - informing on what to do in case of DOS misrecognition
 		Utils::InformationWithCheckableShowNoMore( _T("If the DOS has been misrecognized, adjust the recognition sequence under \"Disk -> Recognition\"."), INI_GENERAL, INI_MISRECOGNITION );
 		// - returning the just open Image

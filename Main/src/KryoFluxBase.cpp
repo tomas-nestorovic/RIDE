@@ -98,7 +98,8 @@
 		if (rit!=nullptr){
 			if (rit->modified)
 				return ERROR_WRITE_FAULT; // cannot overwrite Track that has already been Modified
-			delete rit, rit=nullptr;
+			if (const TStdWinError err=UnscanTrack( cyl, head ))
+				return err;
 		}
 		// - creation of new content
 		if ( rit = CInternalTrack::CreateFrom(*this,CTrackReaderWriter(tr)) ){

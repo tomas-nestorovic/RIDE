@@ -555,7 +555,7 @@
 										return false;
 								}
 							}
-							BOOL PreTranslateMessage(PMSG pMsg){
+							BOOL PreTranslateMessage(PMSG pMsg) override{
 								// pre-processing the Message
 								if (::TranslateAccelerator( m_hWnd, hAccel, pMsg ))
 									return TRUE;
