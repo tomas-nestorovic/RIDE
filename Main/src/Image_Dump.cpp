@@ -362,11 +362,11 @@
 					p.exclusion.current|= p.exclusion.allUnknown && !dp.dos->IsStdSector(p.chs);
 					if (p.exclusion.current){
 						nSectors--, p.nSectorsExcluded++;
+						p.trackWriteable&=!bufferFdcStatus[p.s].DescribesMissingId(); // excluding non-existent Sector has no effect on writing the Track as a whole
 						::memmove( bufferId+p.s, bufferId+p.s+1, sizeof(*bufferId)*(nSectors-p.s) );
 						::memmove( bufferSectorData+p.s, bufferSectorData+p.s+1, sizeof(*bufferSectorData)*(nSectors-p.s) );
 						::memmove( bufferLength+p.s, bufferLength+p.s+1, sizeof(*bufferLength)*(nSectors-p.s) );
 						::memmove( bufferFdcStatus+p.s, bufferFdcStatus+p.s+1, sizeof(*bufferFdcStatus)*(nSectors-p.s) );
-						p.trackWriteable=false; // once modified, can't write the Track as a whole anymore
 						sPrev=~--p.s; // as below incremented
 					// : reporting SourceSector Data field automatic fix
 					}else if (p.modification.dataCrc|= p.modification.dataCrcEmptyOrBadAutofix && p.fdcStatus.DescribesDataFieldCrcError() && dp.dos->IsSectorStatusBadOrEmpty(p.chs) ){
@@ -785,6 +785,10 @@
 							case IDCANCEL:
 								err=ERROR_CANCELLED;
 								return LOG_ERROR(pAction->TerminateWithError(err));
+							case IDOK:
+								if (!p.fdcStatus.DescribesMissingId()) // want accept anything but missing Sector ?
+									break;
+								//fallthrough
 							case RESOLVE_EXCLUDE_ID:
 								p.exclusion.current=true;
 								continue;
