@@ -156,6 +156,7 @@ namespace Time
 
 			CBase(TMethod defaultMethod,const CSharedArray &logTimes,N nLogTimes,const CMetaData &metaData);
 
+			N GetNextTimeIndex(T t) const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
 			PCMetaDataItem IncrMetaDataIteratorAndApply();

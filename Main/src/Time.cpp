@@ -226,6 +226,18 @@ namespace Time
 			return ApplyCurrentTimeMetaData();
 		}
 
+		N CBase::GetNextTimeIndex(T t) const{
+			N L=0, R=nLogTimes;
+			do{
+				const N M=(L+R)/2;
+				if (logTimes[L]<=t && t<logTimes[M])
+					R=M;
+				else
+					L=M;
+			}while (R-L>1);
+			return R;
+		}
+
 		void CBase::SetCurrentTime(T logTime){
 			// seeks to the specified LogicalTime
 			if (!nLogTimes)
@@ -238,16 +250,8 @@ namespace Time
 			}else{
 				//TODO: logTimes.FindNextGreater( time, arrayLength=0 )
 				//TODO: logTimes.FindNextGreaterIndex( time, arrayLength=0 )
-				N L=0, R=nLogTimes;
-				do{
-					const N M=(L+R)/2;
-					if (logTimes[L]<=logTime && logTime<logTimes[M])
-						R=M;
-					else
-						L=M;
-				}while (R-L>1);
-				iNextTime=R;
-				currentTime= R<nLogTimes ? logTime : logTimes[L];
+				iNextTime=GetNextTimeIndex( logTime );
+				currentTime= iNextTime<nLogTimes ? logTime : logTimes[nLogTimes-1];
 			}
 			lastReadBits=0;
 			if (const PCMetaDataItem pmdi=FindMetaDataIteratorAndApply()){
