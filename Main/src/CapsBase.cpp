@@ -1338,6 +1338,7 @@ invalidTrack:
 					rcb.properties
 				);
 				EnableDlgItems( InitialSettingIds, initialEditing );
+EnableDlgItem(ID_TRACK,false);
 				EnableDlgItem( ID_READABLE, params.calibrationAfterError!=TParams::TCalibrationAfterError::NONE );
 				SetDlgItemSingleCharUsingFont( // a warning that No decoder selected (archivation)
 					ID_HIDDEN, L'\xf0ea', warningFont
@@ -1426,9 +1427,9 @@ invalidTrack:
 				params.calibrationStepDuringFormatting=tmp;
 				// . NormalizeReadTracks
 				tmp=params.corrections.use;
-				DDX_Check( pDX,	ID_TRACK,		tmp );
+				//DDX_Check( pDX,	ID_TRACK,		tmp );
 				params.corrections.use=tmp!=0;
-				EnableDlgItem( ID_TRACK, params.fluxDecoder!=TFluxDecoder::NONE );
+				//EnableDlgItem( ID_TRACK, params.fluxDecoder!=TFluxDecoder::NONE );
 				// . WrittenTracksVerification
 				DDX_Check( pDX,	ID_VERIFY_TRACK, params.verifyWrittenTracks&=isRealDevice );
 				DDX_CheckEnable( pDX, ID_VERIFY_SECTOR, params.verifyBadSectors&=isRealDevice, params.verifyWrittenTracks );
@@ -1456,8 +1457,8 @@ invalidTrack:
 							case MAKELONG(ID_ACCURACY,CBN_SELCHANGE):{
 								// FluxDecoder changed
 								const Utils::CVarTempReset<TFluxDecoder> fd0( rcb.params.fluxDecoder, (TFluxDecoder)GetDlgComboBoxSelectedValue(ID_ACCURACY) );
-								if (ShowDlgItem(  ID_HIDDEN,  !EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TFluxDecoder::NONE )  ))
-									CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
+								//if (ShowDlgItem(  ID_HIDDEN,  !EnableDlgItem( ID_TRACK, rcb.params.fluxDecoder!=TFluxDecoder::NONE )  ))
+								//	CheckDlgButton( ID_TRACK, BST_UNCHECKED ); // when archiving, any corrections must be turned off
 								SendMessage( WM_COMMAND, ID_RECOVER ); // refresh information on inserted Medium
 								break;
 							}
