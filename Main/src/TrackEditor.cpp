@@ -774,7 +774,7 @@ using namespace Charting;
 				return pAction->TerminateWithLastError();
 			pAction->IncrementProgress();
 			// - Step 2: offset all Bits, producing InspectionWindows beginnings
-			bits.OffsetAll( -tr.GetCurrentProfile().iwTimeDefault/2 );
+			bits.ConvertToInspectionWindows( tr.GetCurrentProfile() );
 			pAction->IncrementProgress();
 			// - Step 3: populating the list of BadBlocks, i.e. Bits that are reported as Bad
 			auto &badBlocks=rte.iwInfo.badBlocks;

@@ -812,6 +812,11 @@ namespace Track
 		return result;
 	}
 
+	void CBits::ConvertToInspectionWindows(const Time::Decoder::TLimits &limits) const{
+		// offset all Bits, converting 'TBit::time' to InspectionWindow beginnings
+		OffsetAll( -limits.iwTimeDefault/2 );
+	}
+
 
 
 

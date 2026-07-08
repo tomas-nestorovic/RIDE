@@ -12,6 +12,8 @@ namespace Track
 	class CBits:public Bit::CSequence{ // 'base' factors in Decoder reset upon Index pulse
 	public:
 		Bit::CSequence revs[Revolution::MAX];
+
+		void ConvertToInspectionWindows(const Time::Decoder::TLimits &limits) const;
 	};
 
 
