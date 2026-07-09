@@ -14,7 +14,7 @@ namespace Sector
 		static_cast<TPhysicalAddress &>(sector)=TPhysicalAddress::Invalid;
 		sector.indexOnTrack=0, sector.offset=0;
 		sector.padding=padding;
-		badByteMask.flags=-1;
+		badByteMask.flags=-1, badByteMask.value=0; // Value irrelevant
 	}
 
 
