@@ -748,9 +748,12 @@ namespace Track
 			crc=~crc;
 		ti.tEnd=currentTime;
 		tmp.AppendDWord( ti, MFM::EncodeWord(crc) );
-		// - write an extra "0" bit if the CRC ends with "1" (leaving this case uncovered often leads to magnetic problems)
-		if (MFM::g_prevDataBit) // CRC ends with "1" ...
-			ReadBit(); // ... so the gap must begin with "0" (this read bit will be reset)
+		// - write an extra Bit following the CRC (leaving this case uncovered often leads to magnetic problems)
+		if (!MFM::g_prevDataBit) // CRC ends with "0" ...
+			tmp.AppendTime(currentTime); // ... so the gap must begin with "1"
+		//else
+			//nop (see 'ReadBit' below)
+		ReadBit(); // this read Bit will be reset
 		// - dump the temporary storage to this Track
 		tmp.Offset(tIwSynced); // Timing thus far offset backwards by one InspectionWindow to comply with DataParseEvent (and Decoders), hence correcting it forwards
 		tiClear.tEnd=tIwSynced+currentTime+profile.iwTime/2;
