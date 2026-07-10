@@ -13,7 +13,7 @@
 
 	#define GW_DRIVES_MAX			2
 
-	#define GW_BUFFER_CAPACITY		2000000
+	#define GW_BUFFER_CAPACITY		3000000
 
 	struct TDCB:public DCB{
 		TDCB(){

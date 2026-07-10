@@ -1,7 +1,7 @@
 #ifndef KRYOFLUXBASE_H
 #define KRYOFLUXBASE_H
 
-	#define KF_BUFFER_CAPACITY		2000000
+	#define KF_BUFFER_CAPACITY		3000000
 
 	#define KF_STREAM_ID			MAKE_IMAGE_ID('K','r','y','o','F','l','u','x')
 
