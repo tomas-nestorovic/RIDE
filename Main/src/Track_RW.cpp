@@ -638,12 +638,12 @@ namespace Track
 		auto *const pbi=peData.GetByteInfos();
 		const Bit::CSequence bits( *this, nBytesToRead*MFM::CodedByteWidth );
 		WORD nDataBytes=0;
-		for( TLogTime dt=0; nDataBytes<nBytesToRead; )
+		for( TLogTime dt=0; nDataBytes<nBytesToRead; nDataBytes++ )
 			if (const auto &&d=bits.GetWord(nDataBytes)){
 				auto &rbi=pbi[nDataBytes];
 				rbi.dtStart=dt, dt=d.time-peData.tStart;
 				rbi.flags=d.flags;
-				peData.bytes[ nDataBytes++ ] = rbi.org.value = MFM::DecodeByte(
+				peData.bytes[nDataBytes] = rbi.org.value = MFM::DecodeByte(
 					rbi.org.encoded = d.value
 				);
 			}else{ // Track end encountered
@@ -731,7 +731,7 @@ namespace Track
 				);
 				auto &next=pbi[i+1].org;
 				if (org.encoded.w&1 && next.encoded.w>=0x8000) // transition mustn't consist of two 1's as they tend to magnetically join together
-					next.value=~next.value; // updated clock bits
+					next.value=~peData.bytes[i+1]; // update clock bits
 				rbi.MarkHealthy();
 			}
 		}
