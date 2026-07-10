@@ -65,7 +65,7 @@ namespace Codec
 					}
 				return result;
 			}
-			DWORD EncodeWord(WORD w){ // big-endian Word assumed
+			DWORD EncodeWord(WORD w){ // little-endian Word assumed
 				const WORD high=EncodeByte( HIBYTE(w) );
 				const WORD low =EncodeByte( LOBYTE(w) );
 				return	MAKELONG( low, high );
@@ -81,7 +81,7 @@ namespace Codec
 				WORD result=0;
 				for( BYTE n=16; n-->0; dw<<=1,dw<<=1 )
 					result=(result<<1)|((dw&0x40000000)!=0);
-				return result;
+				return result; // little-endian Word produced
 			}
 		}
 	}

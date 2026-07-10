@@ -43,10 +43,10 @@ namespace Codec
 			extern bool g_prevDataBit;
 
 			WORD EncodeByte(BYTE byte);
-			DWORD EncodeWord(WORD w); // big-endian Word assumed
+			DWORD EncodeWord(WORD w); // little-endian Word assumed
 
 			BYTE DecodeByte(WORD w);
-			WORD DecodeWord(DWORD dw);
+			WORD DecodeWord(DWORD dw); // little-endian Word produced
 		}
 	}
 
