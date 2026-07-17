@@ -2,7 +2,7 @@
 
 namespace Time
 {
-	typedef DWORD N; // index or count
+	typedef int N; // index or count
 
 	typedef TLogValue T,*P; // time in nanoseconds
 	typedef const T *PC;
