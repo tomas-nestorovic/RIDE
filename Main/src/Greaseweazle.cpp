@@ -614,13 +614,17 @@
 		return GetLastFluxOperationError();
 	}
 
+	LPCTSTR CGreaseweazleV4::FormatFirmwareInfo(PTCHAR buf) const{
+		::wsprintf( buf, _T(GW_DEVICE_NAME) _T(" %d.%d%c(Main)"), firmwareInfo.major, firmwareInfo.minor, firmwareInfo.isMainFirmware*' ' );
+		return buf;
+	}
+
 	bool CGreaseweazleV4::EditSettings(bool initialEditing){
 		// True <=> new settings have been accepted (and adopted by this Image), otherwise False
 		// - displaying the dialog and processing its result
 		TCHAR firmware[80];
-		::wsprintf( firmware, _T(GW_DEVICE_NAME) _T(" Firmware %d.%d%c(Main)"), firmwareInfo.major, firmwareInfo.minor, firmwareInfo.isMainFirmware*' ' );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		const bool result=params.EditInModalDialog( *this, firmware, initialEditing );
+		const bool result=params.EditInModalDialog( *this, FormatFirmwareInfo(firmware), initialEditing );
 		// - if this the InitialEditing, making sure the internal representation is empty
 		if (initialEditing)
 			DestroyAllTracks();
@@ -634,6 +638,8 @@
 		TDCB comPortParams;
 		::GetCommState( hDevice, &comPortParams );
 		rOut.AddBaudRate(comPortParams.BaudRate);
+		TCHAR firmware[80];
+		rOut.AddFirmware( FormatFirmwareInfo(firmware) );
 	}
 
 	TStdWinError CGreaseweazleV4::Reset(){

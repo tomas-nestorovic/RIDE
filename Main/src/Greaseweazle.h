@@ -94,6 +94,7 @@
 
 		TStdWinError Connect();
 		void Disconnect();
+		LPCTSTR FormatFirmwareInfo(PTCHAR buf) const;
 		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
 		TStdWinError ReadFull(PVOID buffer,DWORD nBytes) const;
 		DWORD Write(LPCVOID buffer,DWORD nBytes) const;

@@ -172,6 +172,10 @@ namespace Sector
 		AddLibrary( _T("revision"), major, minor );
 	}
 
+	void CImage::CSettings::AddFirmware(LPCTSTR value){
+		Add( _T("firmware"), value );
+	}
+
 	void CImage::CSettings::AddMediumIsForced(bool isForced){
 		Add( _T("user-forced medium"), isForced );
 	}

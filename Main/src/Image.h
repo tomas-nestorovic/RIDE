@@ -91,6 +91,7 @@
 			void Add(LPCTSTR name,LPCSTR value);
 			void AddLibrary(LPCTSTR name,int major,int minor=-1);
 			void AddRevision(int major,int minor=-1);
+			void AddFirmware(LPCTSTR value);
 			void AddMediumIsForced(bool isForced);
 			void AddMediumIsFlippy(bool isFlippy,bool userForced);
 			void AddDecaHexa(LPCTSTR name,int value);
