@@ -169,7 +169,7 @@ using namespace Yahel;
 			const CBackgroundAction trackWorker;
 			TScannerStatus workerStatus;
 			struct TRequestParams{
-				TTrack track;
+				Track::N track;
 				Revolution::TType revolution;
 			};
 			struct:public TRequestParams{
@@ -183,7 +183,7 @@ using namespace Yahel;
 				TPosition Update(const CSerializer &s){
 					// updates the Track info and returns the LogicalPosition at which this Track ends
 					// . retrieving the Sectors lengths via ScanTrack (though Track already scanned by the TrackWorker)
-					const TTrack track=this-s.trackHexaInfos;
+					const Track::N track=this-s.trackHexaInfos;
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=s.ScanTrack( track, nullptr, lengths );
 					// . updating the state - the results are stored in the NEXT structure
@@ -201,7 +201,7 @@ using namespace Yahel;
 			} trackHexaInfos[FDD_CYLINDERS_MAX*2+1];
 			WORD lastKnownHexaRowLength;
 
-			TSector ScanTrack(TTrack track,PSectorId ids,PWORD lengths) const{
+			TSector ScanTrack(Track::N track,PSectorId ids,PWORD lengths) const{
 				// a wrapper around CImage::ScanTrack
 				const TSector nSectors=image->ScanTrack( track>>1, track&1, nullptr, ids, lengths );
 				if (lengths)
@@ -222,7 +222,7 @@ using namespace Yahel;
 				::ZeroMemory( trackHexaInfos, sizeof(trackHexaInfos) );
 				// . repopulating ScannedTracks
 				EXCLUSIVELY_LOCK_SCANNED_TRACKS();
-				for( TTrack t=0; t<image->scannedTracks.n; t++ ){
+				for( Track::N t=0; t<image->scannedTracks.n; t++ ){
 					ScanTrack( t, nullptr, nullptr );
 					dataTotalLength=trackHexaInfos[t].Update(*this);
 				}
@@ -258,7 +258,7 @@ using namespace Yahel;
 				// returns the ScannedTrack that contains the specified LogicalPosition
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 				outChs=TPhysicalAddress::Invalid; // assumption
-				TTrack track;
+				Track::N track;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (logPos<0 || logPos>=scannedTracks.dataTotalLength)
 					return;
@@ -285,7 +285,7 @@ using namespace Yahel;
 			// CSectorReaderWriter methods
 			TPosition GetSectorStartPosition(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override{
 				// computes and returns the position of the first Byte of the Sector at the PhysicalAddress
-				const TTrack track=chs.GetTrackNumber(2);
+				const Track::N track=chs.GetTrackNumber(2);
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				if (track>=scannedTracks.n)
@@ -334,7 +334,7 @@ using namespace Yahel;
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
-					for( TTrack t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
+					for( Track::N t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
 				// . returning the result
 				if (logPos>=scannedTracks.dataTotalLength)
@@ -342,7 +342,7 @@ using namespace Yahel;
 				if (!dataTotalLength)
 					return 0;
 		}		const TPhysicalAddress &&chs=__super::GetPhysicalAddress(logPos); // guaranteed to always succeed
-				const TTrack track=chs.GetTrackNumber(2);
+				const Track::N track=chs.GetTrackNumber(2);
 				TPosition pos=trackHexaInfos[track+1].logicalPosition;
 				TRow nRows=trackHexaInfos[track+1].nRowsAtLogicalPosition;
 				WORD lengths[FDD_SECTORS_MAX];
@@ -359,12 +359,12 @@ using namespace Yahel;
 				if (row<0)
 					return 0;
 				const auto &scannedTracks=GetFloppyImage().scannedTracks;
-				TTrack track;
+				Track::N track;
 		{		EXCLUSIVELY_LOCK_SCANNED_TRACKS();
 				// . updating the ScannedTrack structure if necessary
 				if (nBytesInRow!=lastKnownHexaRowLength){
 					lastKnownHexaRowLength=nBytesInRow;
-					for( TTrack t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
+					for( Track::N t=0; t<scannedTracks.n; trackHexaInfos[t++].Update(*this) );
 				}
 				// . returning the result
 				if (row>=trackHexaInfos[scannedTracks.n].nRowsAtLogicalPosition)
@@ -397,7 +397,7 @@ using namespace Yahel;
 				GetPhysicalAddress( logPos, chs, iSector, nullptr );
 				if (!chs)
 					return;
-				const TTrack track=chs.GetTrackNumber(2);
+				const Track::N track=chs.GetTrackNumber(2);
 				if (pOutRecordStartLogPos || pOutRecordLength){
 					WORD lengths[FDD_SECTORS_MAX];
 					TSector nSectors=ScanTrack( track, nullptr, lengths );

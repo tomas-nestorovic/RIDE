@@ -400,12 +400,12 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
 		struct TStatistics sealed{
-			const TTrack nTracks;
+			const Track::N nTracks;
 			DWORD nSectorsInTotal;
 			DWORD nSectorsBad;
 			DWORD availableGoodCapacityInBytes;
 
-			TStatistics(TTrack nTracks)
+			TStatistics(Track::N nTracks)
 				: nTracks(nTracks)
 				, nSectorsInTotal(0) , nSectorsBad(0) , availableGoodCapacityInBytes(0) {
 			}
@@ -413,7 +413,7 @@
 		pAction->SetProgressTarget( statistics.nTracks );
 		TCylinder cyl=fp.rParams.cylinder0;
 		THead head= fp.head!=nullptr ? *fp.head : 0; // one particular or all Heads?
-		for( TTrack t=0; t<statistics.nTracks; pAction->UpdateProgress(++t) ){
+		for( Track::N t=0; t<statistics.nTracks; pAction->UpdateProgress(++t) ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
 			// . formatting Track
 			TFdcStatus bufferFdcStatus[(TSector)-1];

@@ -155,7 +155,7 @@
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;
-		TTrack GetTrackCount() const;
+		Track::N GetTrackCount() const;
 		virtual TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
 		virtual TStdWinError SeekHeadsHome() const;
 		virtual TSector ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec=nullptr,PSectorId bufferId=nullptr,PWORD bufferLength=nullptr,PLogTime startTimesNanoseconds=nullptr,PBYTE pAvgGap3=nullptr) const=0;

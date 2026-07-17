@@ -227,7 +227,7 @@
 			rts.scanNextTrack.Lock();
 			// . getting the TrackNumber to scan
 			tmp.cylinder=TPhysicalAddress::Invalid.cylinder, tmp.head=TPhysicalAddress::Invalid.head; // set below after everything else has been specified
-			TTrack trackNumber;
+			Track::N trackNumber;
 			TCylinder cyl; THead head;
 	{		EXCLUSIVELY_LOCK(rts.params);
 			const THead nHeads=rts.params.nHeads;
@@ -443,7 +443,7 @@
 		const int iScrollY=GetScrollPos(SB_VERT)/Utils::LogicalUnitScaleFactor;
 		CRect r;
 		GetClientRect(&r);
-		const TTrack nTracks=IMAGE->GetTrackCount();
+		const Track::N nTracks=IMAGE->GetTrackCount();
 		EXCLUSIVELY_LOCK(scanner.params);
 			scanner.params.a=std::max( 0, (iScrollY-TRACK0_Y)/TRACK_HEIGHT );
 			scanner.params.z=std::min( nTracks, std::max( 0, Utils::RoundDivUp(iScrollY+r.Height()/Utils::LogicalUnitScaleFactor-TRACK0_Y,TRACK_HEIGHT) ) );
@@ -545,7 +545,7 @@
 				rOutNanoseconds= ns<=longestTrackNanoseconds ? ns : -1;
 			}
 			// . determining the Sector on which the cursor hovers
-			const TTrack track=point.y/TRACK_HEIGHT;
+			const Track::N track=point.y/TRACK_HEIGHT;
 			const div_t d=div( track, scanner.params.nHeads );
 			rOutChs.cylinder=d.quot, rOutChs.head=d.rem;
 			if (scanner.params.skipUnscannedTracks && !IMAGE->IsTrackScanned(d.quot,d.rem))
@@ -872,7 +872,7 @@
 
 	struct TStatisticParams sealed{
 		const CDos *const dos;
-		TTrack nTracksFormatted;
+		Track::N nTracksFormatted;
 		struct{
 			UINT nTotally,nSystem,nBad,nOccupied,nReserved,nInaccessible,nUnknown,nFree;
 		} sectors;

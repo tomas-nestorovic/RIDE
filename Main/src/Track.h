@@ -177,7 +177,6 @@ namespace Track
 	extern const CReaderWriter Invalid;
 }
 
-typedef Track::N TTrack,*PTrack;
 typedef Track::TOrder TTrackScheme;
 typedef Track::CReader CTrackReader;
 typedef Track::CReaderWriter CTrackReaderWriter;

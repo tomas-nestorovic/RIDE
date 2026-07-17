@@ -242,7 +242,7 @@
 			TPhysicalAddress chs;
 			TSector s; // # of Sectors to skip
 			TSector nSectorsExcluded;
-			TTrack track;
+			Track::N track;
 			bool trackScanned;
 			bool trackWriteable; // Track can be written at once using CImage::WriteTrack
 			TRev revolution;

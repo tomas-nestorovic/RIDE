@@ -77,7 +77,7 @@ namespace Sector
 				sectorId==chs2.sectorId;
 	}
 
-	TTrack TPhysicalAddress::GetTrackNumber() const{
+	Track::N TPhysicalAddress::GetTrackNumber() const{
 		// determines and returns the Track number based on DOS's current Format
 		return GetTrackNumber( CImage::GetActive()->GetHeadCount() );
 	}
@@ -91,7 +91,7 @@ namespace Sector
 		return desc;
 	}
 
-	TTrack TPhysicalAddress::GetTrackNumber(THead nHeads) const{
+	Track::N TPhysicalAddress::GetTrackNumber(THead nHeads) const{
 		// determines and returns the Track number based on the specified NumberOfHeads
 		return GetTrackNumber( cylinder, head, nHeads );
 	}

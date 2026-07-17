@@ -26,9 +26,9 @@
 		// determines and returns the count of all Sectors on a single Cylinder
 		return (WORD)nHeads*nSectors;
 	}
-	TTrack TFormat::GetCountOfAllTracks() const{
+	Track::N TFormat::GetCountOfAllTracks() const{
 		// determines and returns the count of all Tracks
-		return (TTrack)nCylinders*nHeads;
+		return (Track::N)nCylinders*nHeads;
 	}
 
 
@@ -705,10 +705,10 @@ namespace Sector
 		return 0;
 	}
 
-	TTrack CImage::GetTrackCount() const{
+	Track::N CImage::GetTrackCount() const{
 		// returns the number of all Tracks in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		LOG_ACTION(_T("TTrack CImage::GetTrackCount"));
+		LOG_ACTION(_T("Track::N CImage::GetTrackCount"));
 		return GetCylinderCount()*GetHeadCount();
 	}
 

@@ -51,7 +51,7 @@
 			struct TParams sealed{
 				CCriticalSection locker;
 				THead nHeads; // 0 = terminate the Scanner
-				TTrack a,z,x; // first, last, and currect Track to scan; it holds: A <= X < Z
+				Track::N a,z,x; // first, last, and currect Track to scan; it holds: A <= X < Z
 				bool skipUnscannedTracks; // True <=> display only Tracks scanned thus far, otherwise scan all Tracks
 			} params;
 			CEvent scanNextTrack;

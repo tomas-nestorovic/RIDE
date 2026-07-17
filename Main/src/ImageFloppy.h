@@ -6,7 +6,7 @@
 			static const TScannerState Initial;
 
 			Sector::CReaderWriter::TScannerStatus scannerStatus;
-			TTrack n;
+			Track::N n;
 			bool allScanned;
 			Yahel::TPosition dataTotalLength;
 			TRev nDiscoveredRevolutions;

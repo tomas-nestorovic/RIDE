@@ -15,11 +15,11 @@
 		// thread to unformat specified Tracks
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TParams &ufp=*(TParams *)pAction->GetParams();
-		const TTrack nTracks=(ufp.cylZInclusive+1-ufp.cylA)*(ufp.specificHeadOnly!=nullptr?1:ufp.dos->formatBoot.nHeads);
+		const Track::N nTracks=(ufp.cylZInclusive+1-ufp.cylA)*(ufp.specificHeadOnly!=nullptr?1:ufp.dos->formatBoot.nHeads);
 		pAction->SetProgressTarget( nTracks );
 		TCylinder cyl=ufp.cylZInclusive; // unformatting "backwards"
 		THead head= ufp.specificHeadOnly!=nullptr ? *ufp.specificHeadOnly : 0; // one particular or all Heads?
-		for( TTrack t=0; t<nTracks; pAction->UpdateProgress(++t) ){
+		for( Track::N t=0; t<nTracks; pAction->UpdateProgress(++t) ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
 			// . unformatting
 			if (const TStdWinError err=ufp.dos->image->UnformatTrack(cyl,head))
