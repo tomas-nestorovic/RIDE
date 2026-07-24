@@ -804,8 +804,9 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return Track::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
-		const Memory::CSharedBytes tmpDataBuffer(KF_BUFFER_CAPACITY);
-		PBYTE p=tmpDataBuffer+WriteCreatorOob(tmpDataBuffer); // inject app signature
+		Memory::CSharedBytesGrowing tmpDataBuffer(KF_BUFFER_CAPACITY);
+		WriteCreatorOob(tmpDataBuffer); // inject app signature
+		PBYTE p=tmpDataBuffer.end();
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
 			return Track::Invalid;
@@ -825,8 +826,9 @@
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
 		if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
 			return Track::Invalid;
+		tmpDataBuffer.length=p-tmpDataBuffer;
 	}	// - making sure the read content is a KryoFlux Stream whose data actually make sense
-		if (CTrackReaderWriter &&trw=StreamToTrack( tmpDataBuffer, p-tmpDataBuffer )){
+		if (CTrackReaderWriter &&trw=StreamToTrack( tmpDataBuffer )){
 			// it's a KryoFlux Stream whose data make sense
 			if (head && params.flippyDisk)
 				trw.Reverse();

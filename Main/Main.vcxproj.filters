@@ -563,6 +563,9 @@
     <ClCompile Include="src\TrackCorrections.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
+    <ClCompile Include="src\Memory.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc">

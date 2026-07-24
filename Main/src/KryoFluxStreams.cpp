@@ -130,11 +130,10 @@
 				return e.m_cause;
 			Memory::CSharedBytes data=pit->GetRawDeviceData( KF_STREAM_ID );
 			if (!data) // Track has been really modified and original KF Stream disposed ...
-				data.length=TrackToStream( // ... must reconstruct it from current state of the Track
+				data=TrackToStream( // ... must reconstruct it from current state of the Track
 					head && params.flippyDisk
 						? CTrackReaderWriter(*pit,false).Reverse()
-						: *pit,
-					data.Realloc(KF_BUFFER_CAPACITY)
+						: *pit
 				);
 			if (GetCurrentDiskFreeSpace()<data.length)
 				return ERROR_DISK_FULL;
@@ -163,7 +162,7 @@
 		}
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		PInternalTrack &rit=internalTracks[cyl][head];
-		if (CTrackReaderWriter &&trw=StreamToTrack( data, data.length )){
+		if (CTrackReaderWriter &&trw=StreamToTrack( data )){
 			// it's a KryoFlux Stream whose data make sense
 			if (head && params.flippyDisk)
 				trw.Reverse();

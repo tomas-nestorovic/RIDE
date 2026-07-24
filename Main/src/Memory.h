@@ -100,6 +100,19 @@ namespace Memory
 
 
 
+	class CSharedBytesGrowing:public CSharedBytes{
+	public:
+		CSharedBytesGrowing(N nBytesDefault);
+
+		PBYTE ReserveAnother(N nBytes);
+		N AppendRepeated(BYTE value,N count);
+		N AppendFormatted(LPCSTR format,...);
+		N Append(LPCVOID bytes,N nBytes);
+	};
+
+
+
+
 	// a workaround to template argument deduction on pre-2017 compilers
 	template<typename T,typename TIndex>
 	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length){

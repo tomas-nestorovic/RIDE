@@ -2849,12 +2849,3 @@ void DDX_Check(CDataExchange *pDX,int nIDC,bool &value){
 		DDX_Check( pDX, nIDC, tmp );
 	value=tmp!=BST_UNCHECKED;
 }
-
-
-
-
-
-namespace Memory
-{
-	const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
-}

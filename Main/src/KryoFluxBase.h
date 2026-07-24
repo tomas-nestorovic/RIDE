@@ -7,7 +7,7 @@
 
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
-		static int WriteCreatorOob(PBYTE streamBuffer);
+		static void WriteCreatorOob(Memory::CSharedBytesGrowing &buffer);
 
 		struct TParamsEtc{
 			// persistent (saved and loaded)
@@ -23,8 +23,8 @@
 
 		CKryoFluxBase(PCProperties properties,char realDriveLetter,LPCTSTR firmware);
 
-		CTrackReaderWriter StreamToTrack(LPBYTE inStreamBytes,DWORD nStreamBytes) const;
-		int TrackToStream(CTrackReader tr,LPBYTE outBuffer) const;
+		CTrackReaderWriter StreamToTrack(const Memory::CSharedBytes &bytes) const;
+		Memory::CSharedBytes TrackToStream(CTrackReader tr) const;
 	public:
 		static DWORD TimeToStdSampleCounter(TLogTime t);
 

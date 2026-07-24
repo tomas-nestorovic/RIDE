@@ -272,6 +272,7 @@
     <ClCompile Include="src\CapsBase_Mining.cpp" />
     <ClCompile Include="src\HFE.cpp" />
     <ClCompile Include="src\Medium.cpp" />
+    <ClCompile Include="src\Memory.cpp" />
     <ClCompile Include="src\Sector.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\TrackCorrections.cpp" />
