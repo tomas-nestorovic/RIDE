@@ -76,8 +76,9 @@ namespace Memory
 			CFile f;
 			if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
 				return e.m_cause;
-			const auto fLength=f.GetLength();
-			if (f.Read( Realloc(fLength), fLength )!=fLength)
+			N nItems=f.GetLength()/sizeof(T);
+			const auto fLength=nItems*sizeof(T);
+			if (f.Read( Realloc(nItems), fLength )!=fLength)
 				return ::GetLastError();
 			return ERROR_SUCCESS;
 		}
