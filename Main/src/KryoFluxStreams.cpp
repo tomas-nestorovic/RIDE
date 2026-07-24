@@ -76,10 +76,8 @@
 		)
 			return FALSE;
 		// - initial Stream file must exist (but other Tracks don't)
-		CFileException e;
-		CFile f;
-		if (!f.Open( lpszPathName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
-			::SetLastError( e.m_cause );
+		if (const TStdWinError err=Memory::CSharedBytes().Read(lpszPathName)){
+			::SetLastError( err );
 			return FALSE;
 		}
 		// - recognizing the name pattern
@@ -158,24 +156,20 @@
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
 			return Track::Invalid;
-		CFileException e;
-		CFile f;
-		if (!f.Open( GetStreamFileName(cyl,head), CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e )){
-			::SetLastError(e.m_cause);
+		Memory::CSharedBytes data;
+		if (const TStdWinError err=data.Read( GetStreamFileName(cyl,head) )){
+			::SetLastError(err);
 			return Track::Invalid;
 		}
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		PInternalTrack &rit=internalTracks[cyl][head];
-		const auto fLength=f.GetLength();
-		if (const auto &&data=Memory::CSharedBytes(fLength))
-			if (f.Read( data, fLength )==fLength)
-				if (CTrackReaderWriter &&trw=StreamToTrack( data, f.GetLength() )){
-					// it's a KryoFlux Stream whose data make sense
-					if (head && params.flippyDisk)
-						trw.Reverse();
-					rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
-					return *rit;
-				}
+		if (CTrackReaderWriter &&trw=StreamToTrack( data, data.length )){
+			// it's a KryoFlux Stream whose data make sense
+			if (head && params.flippyDisk)
+				trw.Reverse();
+			rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
+			return *rit;
+		}
 		return Track::Invalid;
 	}
 

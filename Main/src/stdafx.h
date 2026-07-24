@@ -87,6 +87,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 	#define constexpr const
 #endif
 
+typedef long TStdWinError; // Windows standard i/o error
+
 typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
 typedef const TCylinder *PCCylinder;
 typedef BYTE THead,*PHead,TSide,*PSide;

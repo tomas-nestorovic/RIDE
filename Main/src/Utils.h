@@ -3,8 +3,6 @@
 
 #define MSG_HELP_CANCEL	_T("Don't need any help now.")
 
-typedef long TStdWinError; // Windows standard i/o error
-
 namespace Utils{
 
 	template<typename T>

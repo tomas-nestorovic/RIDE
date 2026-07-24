@@ -56,7 +56,6 @@ namespace Memory
 		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
 		inline void reset(){ Empty(), length=0; }
-
 		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
 
 		T *Realloc(TIndex newLength){
@@ -68,6 +67,19 @@ namespace Memory
 				reset();
 				return nullptr;
 			}
+		}
+
+		TStdWinError Read(LPCTSTR filename){
+			if (!filename || !*filename) // an empty string may succeed as filename on Win10!
+				return ERROR_FILE_NOT_FOUND;
+			CFileException e;
+			CFile f;
+			if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
+				return e.m_cause;
+			const auto fLength=f.GetLength();
+			if (f.Read( Realloc(fLength), fLength )!=fLength)
+				return ::GetLastError();
+			return ERROR_SUCCESS;
 		}
 
 		template<typename V,class Predicate>

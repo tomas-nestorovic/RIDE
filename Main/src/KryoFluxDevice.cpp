@@ -248,37 +248,27 @@
 		if (::lstrcmpA( GetProductName(), KF_DEVICE_NAME_ANSI )){
 			// . assuming failure
 			::lstrcpy( device.firmwareVersion, _T("Not loaded") );
-			// . opening the firmware file for reading
-			if (paramsEtc.firmwareFileName.IsEmpty()) // catching an empty string as it may succeed as filename on Win10!
-				return ERROR_FILE_NOT_FOUND;
-			CFileException e;
-			CFile f;
-			if (!f.Open( paramsEtc.firmwareFileName, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-				return e.m_cause;
-			// . firmware file must fit into the internal data buffer
-			const auto fLength=f.GetLength();
-			if (fLength>KF_BUFFER_CAPACITY)
-				return ERROR_INSUFFICIENT_BUFFER;
 			// . setting interactive then non-interactive mode to check for boot responses
 			if (const TStdWinError err=SamBaCommand( "T#\r", ">" ))
 				return err;
 			if (const TStdWinError err=SamBaCommand( "N#\r", "\n\r" ))
 				return err;
 			// . uploading the firmware
+			Memory::CSharedBytes fw;
+			if (const TStdWinError err=fw.Read( paramsEtc.firmwareFileName ))
+				return err;
 			char cmd[32];
-			::wsprintfA( cmd, "S%08lx,%08lx#\r", KF_FIRMWARE_LOAD_ADDR, fLength );
+			::wsprintfA( cmd, "S%08lx,%08lx#\r", KF_FIRMWARE_LOAD_ADDR, fw.length );
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			if (f.Read( dataBuffer, fLength )!=fLength)
-				return ::GetLastError();
-			if (const TStdWinError err=WriteFull( dataBuffer, fLength ))
+			if (const TStdWinError err=WriteFull( fw, fw.length ))
 				return err;
 			// . verifying the upload
 			*cmd='R';
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			const Memory::CSharedBytes p(fLength);
-			if (ReadFull(p,fLength)!=ERROR_SUCCESS || ::memcmp(dataBuffer,p,fLength)!=0) // uploaded wrongly?
+			const Memory::CSharedBytes p(fw.length);
+			if (ReadFull(p,p.length)!=ERROR_SUCCESS || ::memcmp(fw,p,p.length)!=0) // uploaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
 			::wsprintfA( cmd, "G%08lx#\r", KF_FIRMWARE_EXEC_ADDR );
