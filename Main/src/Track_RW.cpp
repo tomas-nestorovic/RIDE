@@ -46,10 +46,11 @@ namespace Track
 	CReader::CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
 		: CReaderBuffers(
-			CDecoder( method, nLogTimesMax, 0, pLti->metaData ),
+			CDecoder( method, nLogTimesMax, pLti->metaData ),
 			pLti
 		)
 		, iNextIndexPulse(0) , nIndexPulses(0) {
+		logTimes.length=0;
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(codec); // init values associated with the specified Codec
 	}
@@ -112,9 +113,7 @@ namespace Track
 		if (index<nIndexPulses)
 			return indexPulses[index];
 		ASSERT(FALSE); // the case of ending here requires an attention!
-		return	nLogTimes
-				? logTimes[nLogTimes-1]
-				: 0;
+		return GetLastTime();
 	}
 
 	TLogTime CReader::GetAvgIndexDistance() const{
@@ -850,7 +849,7 @@ namespace Track
 		: CReader( tr ) {
 		if (!shareTimes){
 			CReaderWriter tmp( GetBufferCapacity(), profile.method, pLogTimesInfo->resetDecoderOnIndex );
-			tmp.AppendExternalTimes( logTimes, nLogTimes );
+			tmp.AppendExternalTimes( logTimes, logTimes.length );
 			*static_cast<TLogTimesInfoData *>(tmp.pLogTimesInfo)=*pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
 		}
@@ -877,24 +876,24 @@ namespace Track
 	
 	void CReaderWriter::AppendTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
-		ASSERT( nLogTimes<GetBufferCapacity() );
+		ASSERT( logTimes.length<GetBufferCapacity() );
 		ASSERT( logTime>=0 );
-		logTimes[nLogTimes++]=logTime;
+		logTimes[logTimes.length++]=logTime;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CReaderWriter::AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
-		::memcpy( this->logTimes+this->nLogTimes, logTimes, nLogTimes*sizeof(TLogTime) );
-		this->nLogTimes+=nLogTimes;
+		::memcpy( this->logTimes+this->logTimes.length, logTimes, nLogTimes*sizeof(TLogTime) );
+		this->logTimes.length+=nLogTimes;
 	}
 
 	void CReaderWriter::AppendTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
-		ASSERT( this->nLogTimes+nLogTimes<=GetBufferCapacity() );
-		if (this->logTimes+this->nLogTimes==logTimes)
+		ASSERT( this->logTimes.length+nLogTimes<=GetBufferCapacity() );
+		if (this->logTimes+this->logTimes.length==logTimes)
 			// caller wrote directly into the buffer (e.g. creation of initial content); faster than calling N-times AddTime
-			this->nLogTimes+=nLogTimes;
+			this->logTimes.length+=nLogTimes;
 		else{
 			// caller used its own buffer to store new LogicalTimes
 			AppendExternalTimes( logTimes, nLogTimes );
@@ -940,8 +939,8 @@ namespace Track
 
 	void CReaderWriter::TrimToTimesCount(Time::N nKeptLogTimes){
 		// discards some tail LogicalTimes, keeping only specified amount of them
-		ASSERT( nKeptLogTimes<=nLogTimes ); // can only shrink
-		nLogTimes=nKeptLogTimes;
+		ASSERT( nKeptLogTimes<=logTimes.length ); // can only shrink
+		logTimes.length=nKeptLogTimes;
 		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
@@ -1035,15 +1034,15 @@ namespace Track
 		SetCurrentTime(clearTimes.tEnd);
 		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
 		// - replacing the LogicalTimes
-		const Time::N nNewLogTimes=nLogTimes+writeTimes.GetTimesCount()-nLogTimesToClear;
+		const Time::N nNewLogTimes=logTimes.length+writeTimes.GetTimesCount()-nLogTimesToClear;
 		if (nNewLogTimes>GetBufferCapacity())
 			return false;
 		::memmove(
 			logTimes+iLogTimeToClearA+writeTimes.GetTimesCount(),
 			logTimes+iNextTime,
-			(nLogTimes-iNextTime)*sizeof(TLogTime)
+			(logTimes.length-iNextTime)*sizeof(TLogTime)
 		);
-		nLogTimes=nNewLogTimes;
+		logTimes.length=nNewLogTimes;
 		::memcpy(
 			logTimes+iLogTimeToClearA,
 			writeTimes.GetBuffer(),
@@ -1090,10 +1089,10 @@ namespace Track
 		for( TRev i=0; i<GetIndexCount(); i++ )
 			indexPulses[i]=tTotal-indexPulses[i];
 		// - reversing Times
-		for( Time::N i=0; i<nLogTimes/2; i++ )
-			std::swap( logTimes[i], logTimes[nLogTimes-1-i] );
-		for( Time::N i=0; i<nLogTimes; i++ )
-			logTimes[i]=tTotal-logTimes[i];
+		for( Time::N i=0; i<logTimes.length/2; i++ )
+			std::swap( logTimes[i], logTimes[logTimes.length-1-i] );
+		for each( Time::T &t in logTimes )
+			t=tTotal-t;
 		// - reversing MetaData
 		Time::CMetaData metaData;
 		for each( auto mdi in GetMetaData() ){
@@ -1109,7 +1108,8 @@ namespace Track
 
 	CReaderWriter &CReaderWriter::Offset(TLogTime dt){
 		// offsets timing in this Track
-		for( auto i=nLogTimes; i>0; logTimes[--i]+=dt );
+		for each( Time::T &t in logTimes )
+			t+=dt;
 		return *this;
 	}
 }

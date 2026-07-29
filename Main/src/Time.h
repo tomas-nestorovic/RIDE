@@ -148,13 +148,12 @@ namespace Time
 		protected:
 			TProfile profile;
 			CSharedArray logTimes; // buffer and its capacity; absolute Times expected, no deltas!
-			N nLogTimes; // used portion of the buffer
 			N iNextTime;
 			T currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			Bit::TPattern lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CBase(TMethod defaultMethod,const CSharedArray &logTimes,N nLogTimes,const CMetaData &metaData);
+			CBase(TMethod defaultMethod,const CSharedArray &logTimes,const CMetaData &metaData);
 
 			N GetNextTimeIndex(T t) const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
@@ -175,8 +174,8 @@ namespace Time
 				return true;
 			}
 
-			inline N GetTimesCount() const{ return nLogTimes; }
-			inline operator bool() const{ return iNextTime<nLogTimes; } // still some LogicalTimes to read ?
+			inline N GetTimesCount() const{ return logTimes.length; }
+			inline operator bool() const{ return iNextTime<logTimes.length; } // still some LogicalTimes to read ?
 			inline T GetCurrentTime() const{ return currentTime; }
 			inline const TProfile &GetCurrentProfile() const{ return profile; }
 			inline const CMetaData::const_iterator &GetCurrentTimeMetaDataIterator() const{ return itCurrMetaData; }

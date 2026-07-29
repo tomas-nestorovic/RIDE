@@ -153,10 +153,10 @@ return ERROR_SUCCESS; // temporarily suspended
 		}
 		// - copying Modified LogicalTimes to the Track
 		const TLogTime dtLast=GetLastIndexTime()-tLastIndexOrg;
-		for( auto i=iNextTime; i<nLogTimes; logTimes[i++]+=dtLast );
-		::memmove( logTimes+iTime, logTimes+iNextTime, (nLogTimes-iNextTime)*sizeof(TLogTime) ); // Times after last Index
+		for( auto i=iNextTime; i<logTimes.length; logTimes[i++]+=dtLast );
+		::memmove( logTimes+iTime, logTimes+iNextTime, (logTimes.length-iNextTime)*sizeof(TLogTime) ); // Times after last Index
 		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
-		nLogTimes+=iTime-iNextTime;
+		logTimes.length+=iTime-iNextTime;
 		SetCurrentTime(0); // setting valid state
 		// - successfully normalized
 		#ifdef _DEBUG

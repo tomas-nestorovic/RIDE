@@ -81,7 +81,7 @@ namespace Track
 
 		inline TRev GetIndexCount() const{ return nIndexPulses; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
-		inline Time::N GetBufferCapacity() const{ return logTimes.length-LogTimesCountExtra; }
+		inline Time::N GetBufferCapacity() const{ return logTimes.GetCapacity()-LogTimesCountExtra; }
 		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }
 
 		inline

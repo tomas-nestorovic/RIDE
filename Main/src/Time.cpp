@@ -174,10 +174,10 @@ namespace Time
 
 
 
-		CBase::CBase(TMethod defaultMethod,const CSharedArray &logTimes,N nLogTimes,const CMetaData &metaData)
+		CBase::CBase(TMethod defaultMethod,const CSharedArray &logTimes,const CMetaData &metaData)
 			// ctor
 			: defaultMethod(defaultMethod) , profile(defaultMethod)
-			, logTimes(logTimes) , nLogTimes(nLogTimes)
+			, logTimes(logTimes)
 			, iNextTime(0) , currentTime(0) , lastReadBits(0)
 			, pMetaData(&metaData) , itCurrMetaData(metaData.cbegin()) {
 		}
@@ -227,7 +227,7 @@ namespace Time
 		}
 
 		N CBase::GetNextTimeIndex(T t) const{
-			N L=0, R=nLogTimes;
+			N L=0, R=logTimes.length;
 			do{
 				const N M=(L+R)/2;
 				if (logTimes[L]<=t && t<logTimes[M])
@@ -240,7 +240,7 @@ namespace Time
 
 		void CBase::SetCurrentTime(T logTime){
 			// seeks to the specified LogicalTime
-			if (!nLogTimes)
+			if (!logTimes)
 				return;
 			if (IsInvalid(logTime))
 				logTime=0;
@@ -251,7 +251,7 @@ namespace Time
 				//TODO: logTimes.FindNextGreater( time, arrayLength=0 )
 				//TODO: logTimes.FindNextGreaterIndex( time, arrayLength=0 )
 				iNextTime=GetNextTimeIndex( logTime );
-				currentTime= iNextTime<nLogTimes ? logTime : logTimes[nLogTimes-1];
+				currentTime= iNextTime<logTimes.length ? logTime : GetLastTime();
 			}
 			lastReadBits=0;
 			if (const PCMetaDataItem pmdi=FindMetaDataIteratorAndApply()){
@@ -274,17 +274,17 @@ namespace Time
 			// truncates CurrentTime to the nearest lower LogicalTime, and returns it
 			if (!iNextTime)
 				currentTime=0;
-			else if (iNextTime<nLogTimes)
+			else if (iNextTime<logTimes.length)
 				currentTime=logTimes[iNextTime-1];
 			else
-				currentTime=logTimes[nLogTimes-1];
+				currentTime=GetLastTime();
 			FindMetaDataIteratorAndApply();
 			return currentTime;
 		}
 
 		T CBase::GetLastTime() const{
 			// returns the last recorded Time
-			return	nLogTimes>0 ? logTimes[nLogTimes-1] : 0;
+			return	logTimes ? logTimes.Last() : 0;
 		}
 
 		T CBase::ReadTime(){
@@ -414,7 +414,7 @@ namespace Time
 					if (const T dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
 						currentTime+=dt;
 						if (dt>0)
-							while (iNextTime<nLogTimes && logTimes[iNextTime]<=currentTime)
+							while (iNextTime<logTimes.length && logTimes[iNextTime]<=currentTime)
 								iNextTime++;
 						else
 							while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
@@ -456,28 +456,31 @@ namespace Time
 		void CBase::SaveCsv(LPCTSTR filename) const{
 			CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 			static_assert( sizeof(N)<=sizeof(int), "" );
-			for( N i=0; i<nLogTimes; i++ )
-				Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i] );		
+			for each( const T &t in logTimes )
+				Utils::WriteToFileFormatted( f, _T("%d\n"), t );
 		}
 
 		void CBase::SaveDeltaCsv(LPCTSTR filename) const{
 			CFile f( filename, CFile::modeWrite|CFile::modeCreate );
 			T tPrev=0;
 			static_assert( sizeof(N)<=sizeof(int), "" );
-			for( N i=0; i<nLogTimes; tPrev=logTimes[i++] )
-				Utils::WriteToFileFormatted( f, _T("%d\n"), logTimes[i]-tPrev );		
+			for each( const T &t in logTimes ){
+				Utils::WriteToFileFormatted( f, _T("%d\n"), t-tPrev );
+				tPrev=t;
+			}
 		}
 
 	#ifdef _DEBUG
 		void CBase::VerifyChronology() const{
 			T tPrev=Invalid;
-			for( N i=0; i<nLogTimes; i++ )
-				if (logTimes[i]<0)
+			for each( const T &t in logTimes ){
+				if (t<0)
 					Utils::Information("negative");
-				else if (logTimes[i]<=tPrev)
+				else if (t<=tPrev)
 					Utils::Information("tachyon");
 				else
-					tPrev=logTimes[i];
+					tPrev=t;
+			}
 		}
 	#endif
 

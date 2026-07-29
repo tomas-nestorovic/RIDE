@@ -56,6 +56,7 @@ namespace Memory
 		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
 		inline void reset(){ Empty(), length=0; }
+		inline TIndex GetCapacity() const{ return GetLength()/sizeof(T); }
 		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
 
 		T *Realloc(TIndex newLength){
