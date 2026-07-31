@@ -134,7 +134,7 @@ namespace Track
 		if (const auto &r=pLogTimesInfo->rawDeviceData)
 			if (r.id==dataId)
 				return r;
-		return Memory::CSharedBytes::GetEmpty();
+		return static_cast<const Memory::CSharedBytes &>(Memory::CSharedBytes::GetEmpty());
 	}
 
 	void CReader::SetCodec(Codec::TType codec){

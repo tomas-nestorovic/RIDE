@@ -254,9 +254,9 @@
 			if (const TStdWinError err=SamBaCommand( "N#\r", "\n\r" ))
 				return err;
 			// . uploading the firmware
-			Memory::CSharedBytes fw;
-			if (const TStdWinError err=fw.Read( paramsEtc.firmwareFileName ))
-				return err;
+			const Memory::CSharedBytes fw( paramsEtc.firmwareFileName );
+			if (!fw)
+				return ::GetLastError();
 			char cmd[32];
 			::wsprintfA( cmd, "S%08lx,%08lx#\r", KF_FIRMWARE_LOAD_ADDR, fw.length );
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
@@ -804,7 +804,7 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return Track::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
-		Memory::CSharedBytesGrowing tmpDataBuffer(KF_BUFFER_CAPACITY);
+		Memory::CSharedBytes tmpDataBuffer(KF_BUFFER_CAPACITY,true);
 		WriteCreatorOob(tmpDataBuffer); // inject app signature
 		PBYTE p=tmpDataBuffer.end();
 	{	EXCLUSIVELY_LOCK_DEVICE();

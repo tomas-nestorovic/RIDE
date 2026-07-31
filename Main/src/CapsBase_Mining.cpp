@@ -28,7 +28,7 @@ using namespace Charting;
 			const CString trackName;
 			const Utils::CRidePen minedTimingPen;
 			const Utils::CRidePen minedIndexPen;
-			Memory::CSharedPodArray<TLogPoint,TIndex> minedTrackDeltaTiming;
+			Memory::CSharedPodArray<TLogPoint,TIndex,2048> minedTrackDeltaTiming;
 			TLogPoint minedTrackIndices[Revolution::MAX+1];
 			struct TGraphics sealed{
 				CChartView::PCGraphics list[2];
@@ -161,9 +161,8 @@ using namespace Charting;
 				// . timing
 				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (Time::N)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
 				const PCLogTime trackTiming=trw.GetBuffer();
-				if (minedTrackDeltaTiming.length<trw.GetTimesCount())
-					minedTrackDeltaTiming.Realloc( trw.GetTimesCount()+1000 ); // avoid excessive reallocations by allowing some reserve
-				PLogPoint pxy=minedTrackDeltaTiming;
+				minedTrackDeltaTiming.length=0;
+				PLogPoint pxy=minedTrackDeltaTiming.ReserveAnother( trw.GetTimesCount() );
 				for( Time::N i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
 					pxy->x=trackTiming[i];
 					pxy->y=trackTiming[i]-trackTiming[i-1];

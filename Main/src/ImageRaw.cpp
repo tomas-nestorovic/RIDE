@@ -41,8 +41,11 @@ using namespace Yahel;
 	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		// - redimensioning the Image
-		bufferOfCylinders.Realloc(nCyl);
-		//if (!bufferOfCylinders.Realloc(nCyl)) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
+		bufferOfCylinders.length=nCylinders;
+		if (nCyl<=nCylinders)
+			return ERROR_SUCCESS;
+		bufferOfCylinders.ReserveAnother( nCyl-nCylinders );
+		//if (!bufferOfCylinders.ReserveAnother(...)) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
 			//return ERROR_NOT_ENOUGH_MEMORY;
 		// - initializing added Cylinders with the FillerByte
 		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
@@ -334,14 +337,14 @@ trackNotFound:
 					default:
 						ASSERT(FALSE);
 				}
-				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders);
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			__freeBufferOfCylinders__();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
-				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders,0);
+				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders);
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}

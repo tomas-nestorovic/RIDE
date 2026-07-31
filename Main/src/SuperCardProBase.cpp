@@ -206,29 +206,29 @@
 			f.Seek( fBasePos+ri.iFluxDataBegin, CFile::begin );
 			switch (header.nFluxCellBits){
 				case 8:
-					if (const auto &&fluxes=Memory::CSharedBytes(ri.nFluxes))
-						if (f.Read( fluxes, ri.nFluxes*sizeof(BYTE) )==ri.nFluxes*sizeof(BYTE)){
-							TLogTime t=result.GetLastIndexTime();
-							for( DWORD i=0; i<ri.nFluxes; i++ )
-								if (const auto &sampleCount=fluxes[i])
-									result.AppendTime( t+=sampleCount*sampleClockTime );
-								else // sample counter overrun (e.g. "unformatted area" copy-protection)
-									t+=256*sampleClockTime;
-							break;
+					if (const auto &&fluxes=Memory::CSharedBytes( ri.nFluxes, f )){
+						TLogTime t=result.GetLastIndexTime();
+						for each( const auto &sampleCount in fluxes ){
+							if (sampleCount)
+								result.AppendTime( t+=sampleCount*sampleClockTime );
+							else // sample counter overrun (e.g. "unformatted area" copy-protection)
+								t+=256*sampleClockTime;
 						}
+						break;
+					}
 					return Track::Invalid;
 				case 0:
 				case 16:
-					if (const auto &&fluxes=Memory::MakeSharedPodArray<Utils::CBigEndianWord>(ri.nFluxes))
-						if (f.Read( fluxes, ri.nFluxes*sizeof(WORD) )==ri.nFluxes*sizeof(WORD)){
-							TLogTime t=result.GetLastIndexTime();
-							for( DWORD i=0; i<ri.nFluxes; i++ )
-								if (const auto &sampleCount=fluxes[i])
-									result.AppendTime( t+=sampleCount*sampleClockTime );
-								else // sample counter overrun (e.g. "unformatted area" copy-protection)
-									t+=65536*sampleClockTime;
-							break;
+					if (const auto &&fluxes=Memory::CSharedPodArray<Utils::CBigEndianWord>( ri.nFluxes, f )){
+						TLogTime t=result.GetLastIndexTime();
+						for each( const auto &sampleCount in fluxes ){
+							if (sampleCount)
+								result.AppendTime( t+=sampleCount*sampleClockTime );
+							else // sample counter overrun (e.g. "unformatted area" copy-protection)
+								t+=65536*sampleClockTime;
 						}
+						break;
+					}
 					return Track::Invalid;
 				default:
 					ASSERT(FALSE);

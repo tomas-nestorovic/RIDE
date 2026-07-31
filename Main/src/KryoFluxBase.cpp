@@ -425,7 +425,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		return result;
 	}
 
-	static void WriteIndexBlock(Memory::CSharedBytesGrowing &buffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
+	static void WriteIndexBlock(Memory::CSharedBytes &buffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
 		const struct{
 			BYTE header,type;
 			WORD size;
@@ -441,7 +441,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 
 	Memory::CSharedBytes CKryoFluxBase::TrackToStream(CTrackReader tr) const{
 		// converts specified Track representation into Stream data and returns the length of the Stream
-		Memory::CSharedBytesGrowing buffer(KF_BUFFER_CAPACITY);
+		Memory::CSharedBytes buffer(KF_BUFFER_CAPACITY,true);
 		// - writing app signature
 		WriteCreatorOob(buffer);
 		// - writing hardware information
@@ -505,7 +505,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		return buffer;
 	}
 
-	void CKryoFluxBase::WriteCreatorOob(Memory::CSharedBytesGrowing &buffer){
+	void CKryoFluxBase::WriteCreatorOob(Memory::CSharedBytes &buffer){
 		// writes "creator" out-of-stream-buffer block into the Buffer
 		#define APP_SIGNATURE "creator=" APP_ABBREVIATION " " APP_VERSION ", " GITHUB_REPOSITORY
 		buffer.AppendFormatted( "\xd\x4%c%c" APP_SIGNATURE, sizeof(APP_SIGNATURE), 0 );

@@ -194,7 +194,7 @@
 			this->max=N+M+1;
 			pEmptyScriptItem=pOutScriptItemBuffer;
 			nEmptyScriptItems=nScriptItemsBufferCapacity;
-			const auto &&fv=Memory::MakeSharedPodArray<int>(2*max+2), &&rv=Memory::MakeSharedPodArray<int>(2*max+2);
+			const Memory::CSharedPodArray<int> fv(2*max+2), rv(2*max+2);
 			this->fv=fv+max, this->rv=rv+max;
 			( pap=&ap )->SetProgressTarget(N);
 			return	GetShortestEditScript( A, N, B, M ) // Script composed?

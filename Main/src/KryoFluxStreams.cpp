@@ -76,10 +76,8 @@
 		)
 			return FALSE;
 		// - initial Stream file must exist (but other Tracks don't)
-		if (const TStdWinError err=Memory::CSharedBytes().Read(lpszPathName)){
-			::SetLastError( err );
+		if (!Memory::CSharedBytes(lpszPathName))
 			return FALSE;
-		}
 		// - recognizing the name pattern
 		if (!SetNameBase(lpszPathName))
 			return FALSE;
@@ -155,11 +153,9 @@
 		// - loading the underlying file that contains the specified Track
 		if (!*nameBase) // NameBase not set, e.g. when creating a new Image
 			return Track::Invalid;
-		Memory::CSharedBytes data;
-		if (const TStdWinError err=data.Read( GetStreamFileName(cyl,head) )){
-			::SetLastError(err);
+		const Memory::CSharedBytes data( GetStreamFileName(cyl,head) );
+		if (!data)
 			return Track::Invalid;
-		}
 		// - making sure the loaded content is a KryoFlux Stream whose data actually make sense
 		PInternalTrack &rit=internalTracks[cyl][head];
 		if (CTrackReaderWriter &&trw=StreamToTrack( data )){

@@ -25,7 +25,7 @@
 
 	CDos::CFatPath::CFatPath(DWORD nItemsMax)
 		// ctor for Dummy object which has no Buffer and just counts the Items (allocation units)
-		: buffer(0)
+		: buffer((DWORD)0)
 		, nItems(0) , pLastItem(nullptr) , error(TError::OK) {
 		buffer.length=nItemsMax;
 	}

@@ -10,10 +10,11 @@ namespace Bit
 	CSequence::CSequence(CTrackReader &tr,N nBitsFromCurrTime,BYTE oneOkPercent)
 		// ctor
 		// - initialization
-		: nBits(0) {
+		: bitBuffer( 1+nBitsFromCurrTime+2 ) // "1+" = for convenience one hidden Bit before the Sequence, "+2" = auxiliary terminal Bits
+		, pBits( bitBuffer+1 ) // skip that one hidden Bit
+		, nBits(0) {
 		// - create and populate the BitBuffer
-		bitBuffer.Realloc( 1+nBitsFromCurrTime+2 )->time=tr.GetCurrentTime(); // "1+" = one hidden Bit before Sequence (with negative Time), "+2" = auxiliary terminal Bits
-		pBits=bitBuffer+1; // skip that one hidden Bit
+		bitBuffer->time=tr.GetCurrentTime(); // that one hidden Bit
 		TBit *p=pBits;
 		for( TLogTime tOne; nBits<nBitsFromCurrTime; nBits++ ){
 			p->flags=0;

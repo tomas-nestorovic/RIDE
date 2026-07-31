@@ -25,7 +25,7 @@ namespace Memory
 
 
 
-	template<typename T,typename TIndex=int>
+	template<typename T,typename TIndex=int,TIndex growExtra=0>
 	class CSharedPodArray:public CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
 	public:
 		typedef TIndex N;
@@ -36,52 +36,62 @@ namespace Memory
 			);
 		}
 
-		TIndex length;
+		N length;
 
-		CSharedPodArray(TIndex length=0,TCHAR initByte=0)
-			: CSharedPodPtr( initByte, sizeof(T)*length )
+		CSharedPodArray(N length=0,bool initEmpty=false)
+			: CSharedPodPtr( _T('\0'), sizeof(T)*length )
 			, length(length) {
-			static_assert( std::is_integral<TIndex>().value, "'TIndex' must be integral" );
+			static_assert( std::is_integral<N>().value, "'TIndex' must be integral" );
+			if (initEmpty)
+				length=0;
 		}
-		CSharedPodArray(TIndex length,const T *pCopyInitData)
+		CSharedPodArray(N length,const T *pCopyInitData)
 			: CSharedPodPtr( *pCopyInitData, sizeof(T)*length )
 			, length(length) {
-			static_assert( std::is_integral<TIndex>().value, "'TIndex' must be integral" );
+			static_assert( std::is_integral<N>().value, "'TIndex' must be integral" );
+		}
+		CSharedPodArray(N length,CFile &f)
+			: CSharedPodPtr( _T('\0'), sizeof(T)*length )
+			, length( f.Read(*this,sizeof(T)*length)==sizeof(T)*length ? length : 0 ) {
+		}
+		CSharedPodArray(LPCTSTR filename)
+			: CSharedPodPtr( _T('\0') )
+			, length(0) {
+			if (!filename || !*filename) // an empty string may succeed as filename on Win10!
+				return;
+			CFile f;
+			if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary ))
+				return; // call '::GetLastError'
+			*this=CSharedPodArray( f.GetLength()/sizeof(T), f );
 		}
 
 		inline operator bool() const{ return length>0; }
 		inline operator T *() const{ return (T *)operator LPCTSTR(); }
 		inline operator LPCVOID() const{ return operator LPCTSTR(); }
-		inline T *operator+(TIndex i) const{ return begin()+i; }
-		inline T &operator[](TIndex i) const{ return begin()[i]; }
+		inline T *operator+(N i) const{ return begin()+i; }
+		inline T &operator[](N i) const{ return begin()[i]; }
 
 		inline void reset(){ Empty(), length=0; }
-		inline TIndex GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
+		inline N GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
 		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
 
-		T *Realloc(TIndex newLength){
-			if (newLength){
-				const CSharedPodArray tmp(newLength);
-				::memcpy( tmp.begin(), begin(), sizeof(T)*std::min(length,newLength) );
+		T *ReserveAnother(N nItems){
+			nItems+=length; // now min capacity required
+			const N lengthOrg=length;
+			if (nItems<=GetCapacity()){ // already allocated sufficient space ?
+				length=nItems;
+				return begin()+lengthOrg;
+			}else if (nItems){
+				static_assert( growExtra>=0, "" );
+				CSharedPodArray tmp(nItems+growExtra); // avoid excessive reallocations by allocating a little bit more than required
+				if (growExtra>0)
+					tmp.length=nItems;
+				::memcpy( tmp.begin(), begin(), sizeof(T)*length );
 				return (*this=tmp);
 			}else{ // the special case for which the above would fail
 				reset();
 				return nullptr;
 			}
-		}
-
-		TStdWinError Read(LPCTSTR filename){
-			if (!filename || !*filename) // an empty string may succeed as filename on Win10!
-				return ERROR_FILE_NOT_FOUND;
-			CFileException e;
-			CFile f;
-			if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
-				return e.m_cause;
-			N nItems=GetCapacity();
-			const auto fLength=nItems*sizeof(T);
-			if (f.Read( Realloc(nItems), fLength )!=fLength)
-				return ::GetLastError();
-			return ERROR_SUCCESS;
 		}
 
 		template<typename V,class Predicate>
@@ -94,18 +104,20 @@ namespace Memory
 		inline T *end() const{ return begin()+length; }
 	};
 
-	typedef CSharedPodArray<BYTE> CSharedBytes;
-
 	extern const CSharedPodArray<SYSTEMTIME,ULONGLONG> UniversalEmptySharedPodArray;
 
 
 
 
-	class CSharedBytesGrowing:public CSharedBytes{
+	class CSharedBytes:public CSharedPodArray<BYTE,int,32768>{
 	public:
-		CSharedBytesGrowing(N nBytesDefault);
+		inline CSharedBytes(N length=0,bool initEmpty=false)
+			: CSharedPodArray( length, initEmpty ) {
+		}
+		inline CSharedBytes(LPCTSTR filename)
+			: CSharedPodArray(filename) {
+		}
 
-		PBYTE ReserveAnother(N nBytes);
 		N AppendRepeated(BYTE value,N count);
 		N AppendFormatted(LPCSTR format,...);
 		N Append(LPCVOID bytes,N nBytes);
@@ -118,10 +130,6 @@ namespace Memory
 	template<typename T,typename TIndex>
 	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length){
 		return CSharedPodArray<T,typename std::tr1::decay<TIndex>::type>( length );
-	}
-	template<typename T,typename TIndex>
-	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length,int initByte){
-		return CSharedPodArray<T,typename std::tr1::decay<TIndex>::type>( length, initByte );
 	}
 	template<typename T,typename TIndex>
 	inline static CSharedPodArray<T,typename std::tr1::decay<TIndex>::type> MakeSharedPodArray(TIndex length,const T *pCopyInitData){
