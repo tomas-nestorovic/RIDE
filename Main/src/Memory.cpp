@@ -14,7 +14,7 @@ namespace Memory
 	PBYTE CSharedBytesGrowing::ReserveAnother(N nBytes){
 		nBytes+=length; // now min capacity required
 		const N lengthOrg=length;
-		if (GetLength()*sizeof(TCHAR)<nBytes) // would overflow ?
+		if (GetCapacity()<nBytes) // would overflow ?
 			return Realloc(nBytes)+lengthOrg;
 		else{
 			length=nBytes;

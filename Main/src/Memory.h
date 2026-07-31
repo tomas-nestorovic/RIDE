@@ -56,7 +56,7 @@ namespace Memory
 		inline T &operator[](TIndex i) const{ return begin()[i]; }
 
 		inline void reset(){ Empty(), length=0; }
-		inline TIndex GetCapacity() const{ return GetLength()/sizeof(T); }
+		inline TIndex GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
 		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
 
 		T *Realloc(TIndex newLength){
@@ -77,7 +77,7 @@ namespace Memory
 			CFile f;
 			if (!f.Open( filename, CFile::modeRead|CFile::shareDenyWrite|CFile::typeBinary, &e ))
 				return e.m_cause;
-			N nItems=f.GetLength()/sizeof(T);
+			N nItems=GetCapacity();
 			const auto fLength=nItems*sizeof(T);
 			if (f.Read( Realloc(nItems), fLength )!=fLength)
 				return ::GetLastError();
