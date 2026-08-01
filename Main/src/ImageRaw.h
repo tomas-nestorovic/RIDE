@@ -7,7 +7,7 @@
 		THead nHeads;
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
-		PSectorData __getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const;
+		PSectorData GetBufferedSectorData(TCylinder cyl,THead head,PCSectorId sectorId) const;
 		TStdWinError SaveTrackToCurrentPositionInFile(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
@@ -15,10 +15,10 @@
 		DWORD sizeWithoutGeometry;
 		CFile f;
 
-		TStdWinError __setMediumTypeAndGeometry__(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber);
+		TStdWinError SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
-		void __freeCylinder__(TCylinder cyl);
-		void __freeBufferOfCylinders__();
+		void FreeCylinder(TCylinder cyl);
+		void FreeAllCylinders();
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;

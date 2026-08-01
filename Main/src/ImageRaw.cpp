@@ -30,7 +30,7 @@ using namespace Yahel;
 
 	CImageRaw::~CImageRaw(){
 		// dtor
-		__freeBufferOfCylinders__();
+		FreeAllCylinders();
 	}
 
 
@@ -59,18 +59,18 @@ using namespace Yahel;
 		return ERROR_SUCCESS;
 	}
 
-	void CImageRaw::__freeCylinder__(TCylinder cyl){
+	void CImageRaw::FreeCylinder(TCylinder cyl){
 		// disposes (unformats) the specified Cylinder (if previously formatted)
 		if (bufferOfCylinders)
 			if (const PVOID p=bufferOfCylinders[cyl]) // Cylinder formatted
 				::free(p), bufferOfCylinders[cyl]=nullptr;
 	}
 
-	void CImageRaw::__freeBufferOfCylinders__(){
+	void CImageRaw::FreeAllCylinders(){
 		// disposes (unformats) all Cylinders
 		if (bufferOfCylinders){
 			while (nCylinders)
-				__freeCylinder__( --nCylinders );
+				FreeCylinder( --nCylinders );
 			bufferOfCylinders.reset();
 		}
 	}
@@ -84,7 +84,7 @@ using namespace Yahel;
 				id.sector>=firstSectorNumber && id.sector-firstSectorNumber<nSectors && id.lengthCode==sectorLengthCode;
 	}
 
-	PSectorData CImageRaw::__getBufferedSectorData__(TCylinder cyl,THead head,PCSectorId sectorId) const{
+	PSectorData CImageRaw::GetBufferedSectorData(TCylinder cyl,THead head,PCSectorId sectorId) const{
 		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
 		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[cyl])
 			return (PSectorData)cylinderData+(head*nSectors+sectorId->sector-firstSectorNumber)*sectorLength;
@@ -117,7 +117,7 @@ using namespace Yahel;
 			if (GetCurrentDiskFreeSpace()<sectorLength)
 				return ERROR_DISK_FULL;
 			chs.sectorId.sector=firstSectorNumber+s;
-			const PCSectorData bufferedData=__getBufferedSectorData__(chs.cylinder,chs.head,&chs.sectorId);
+			const PCSectorData bufferedData=GetBufferedSectorData(chs.cylinder,chs.head,&chs.sectorId);
 			if (!pfOtherThanCurrentFile){
 				// saving to Image's underlying file, currently open
 				if (bufferedData)
@@ -234,7 +234,7 @@ using namespace Yahel;
 				const TSectorId sectorId=*bufferId;
 				if (IsKnownSector( cyl, head, sectorId )){
 					// Sector with the given ID found in the Track
-					if (const PSectorData bufferedData=__getBufferedSectorData__(cyl,head,&sectorId)){
+					if (const PSectorData bufferedData=GetBufferedSectorData(cyl,head,&sectorId)){
 						// Sector's Data successfully retrieved from the buffer
 						*outBufferData++=bufferedData;
 						*outBufferLengths++=sectorLength, *outFdcStatuses++=TFdcStatus::WithoutError; // any Data are of the same length and without error
@@ -300,7 +300,7 @@ trackNotFound:
 			return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CImageRaw::__setMediumTypeAndGeometry__(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber){
+	TStdWinError CImageRaw::SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - if geometry already set manually by the user, we are successfully done
 		if (explicitSides)
@@ -315,7 +315,7 @@ trackNotFound:
 			// MediumType and its Format are already known
 			nHeads=format.nHeads, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
-				__freeBufferOfCylinders__();
+				FreeAllCylinders();
 				const int nSectorsInTotal=fileSize/sectorLength;
 				switch (trackAccessScheme){
 					case TTrackScheme::BY_CYLINDERS:{
@@ -341,7 +341,7 @@ trackNotFound:
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
-			__freeBufferOfCylinders__();
+			FreeAllCylinders();
 			if (fileSize){
 				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders);
@@ -366,7 +366,7 @@ trackNotFound:
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		*/
 		// - setting up Medium's Type and geometry
-		return __setMediumTypeAndGeometry__(format,sideMap,firstSectorNumber);
+		return SetGeometry(format,sideMap,firstSectorNumber);
 	}
 
 	static constexpr TCHAR Custom[]=_T("Custom");
@@ -689,7 +689,7 @@ trackNotFound:
 		if (f.m_hFile!=CFile::hFileNull)
 			f.Close();
 		// - emptying the BufferOfCylinders
-		__freeBufferOfCylinders__();
+		FreeAllCylinders();
 		// - resetting the geometry
 		nCylinders=0, nHeads=0, nSectors=0;
 		return ERROR_SUCCESS;
@@ -788,7 +788,7 @@ trackNotFound:
 					head==0 // ignore this command for any but zeroth Head (some copy-protected disks have hidden Cylinder with data only under Head 0 - finding nothing under Head 1 would destroy the whole Cylinder that Head 0 created in the RawImage, e.g. during dump)
 				){
 					// . redimensioning the Image
-					__freeCylinder__(cyl);
+					FreeCylinder(cyl);
 					// . adjusting the NumberOfCylinders
 					nCylinders--;
 					m_bModified=TRUE;
