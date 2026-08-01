@@ -68,6 +68,7 @@ namespace Memory
 		inline operator bool() const{ return length>0; }
 		inline operator T *() const{ return (T *)operator LPCTSTR(); }
 		inline operator LPCVOID() const{ return operator LPCTSTR(); }
+		inline bool operator()(N i) const{ ASSERT(i>=0); return i<length; }
 		inline T *operator+(N i) const{ return begin()+i; }
 		inline T &operator[](N i) const{ return begin()[i]; }
 
@@ -92,6 +93,14 @@ namespace Memory
 				reset();
 				return nullptr;
 			}
+		}
+
+		T *AppendZeroed(N nItems){
+			return (T *)::ZeroMemory( ReserveAnother(nItems), sizeof(T)*nItems );
+		}
+
+		void Append(const T &item){
+			*ReserveAnother(1)=item;
 		}
 
 		template<typename V,class Predicate>

@@ -23,7 +23,6 @@ using namespace Yahel;
 		// ctor
 		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
-		, nCylinders(0) // = not initialized - see SetMediumTypeAndGeometry
 		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
@@ -40,38 +39,30 @@ using namespace Yahel;
 
 	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
-		// - redimensioning the Image
-		bufferOfCylinders.length=nCylinders;
-		if (nCyl<=nCylinders)
-			return ERROR_SUCCESS;
-		bufferOfCylinders.ReserveAnother( nCyl-nCylinders );
-		//if (!bufferOfCylinders.ReserveAnother(...)) // commented out as MFC CString doesn't check memory allocation failures, hence we would have already crashed anyway
-			//return ERROR_NOT_ENOUGH_MEMORY;
-		// - initializing added Cylinders with the FillerByte
-		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; nCylinders<nCyl; )
+		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; cylinders.length<nCyl; )
 			if (cancelled)
 				return ERROR_CANCELLED;
-			else if (const PVOID tmp=bufferOfCylinders[nCylinders]=::malloc(nBytesOfCylinder)){
-				::memset( tmp, fillerByte, nBytesOfCylinder );
-				nCylinders++;
-			}else
+			else if (const PVOID tmp=::malloc(nBytesOfCylinder))
+				cylinders.Append(
+					(Sector::PData)::memset( tmp, fillerByte, nBytesOfCylinder ) // init with the FillerByte
+				);
+			else
 				return ERROR_NOT_ENOUGH_MEMORY;
 		return ERROR_SUCCESS;
 	}
 
-	void CImageRaw::FreeCylinder(TCylinder cyl){
+	void CImageRaw::FreeCylinder(TCylinder i){
 		// disposes (unformats) the specified Cylinder (if previously formatted)
-		if (bufferOfCylinders)
-			if (const PVOID p=bufferOfCylinders[cyl]) // Cylinder formatted
-				::free(p), bufferOfCylinders[cyl]=nullptr;
+		if (cylinders(i))
+			if (auto &r=cylinders[i]) // Cylinder formatted ?
+				::free(r), r=nullptr;
 	}
 
 	void CImageRaw::FreeAllCylinders(){
 		// disposes (unformats) all Cylinders
-		if (bufferOfCylinders){
-			while (nCylinders)
-				FreeCylinder( --nCylinders );
-			bufferOfCylinders.reset();
+		while (cylinders){
+			FreeCylinder( cylinders.length-1 ); // keep the count to pass index check ...
+			cylinders.length--; // ... and drop it only here
 		}
 	}
 
@@ -86,8 +77,8 @@ using namespace Yahel;
 
 	PSectorData CImageRaw::GetBufferedSectorData(TCylinder cyl,THead head,PCSectorId sectorId) const{
 		// finds and returns buffered data of given Sector (or Null if not yet buffered; note that returning Null does NOT imply that the Sector doesn't exist in corresponding Track!)
-		if (const PSectorData cylinderData=(PSectorData)bufferOfCylinders[cyl])
-			return (PSectorData)cylinderData+(head*nSectors+sectorId->sector-firstSectorNumber)*sectorLength;
+		if (const auto cylinderData=cylinders[cyl])
+			return cylinderData+(head*nSectors+sectorId->sector-firstSectorNumber)*sectorLength;
 		return nullptr;
 	}
 
@@ -102,7 +93,7 @@ using namespace Yahel;
 				canBeModified=false;
 		// - currently without geometry (DOS must call SetMediumTypeAndGeometry)
 		if ( sizeWithoutGeometry=f.GetLength() )
-			nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(sizeWithoutGeometry,(DWORD)USHRT_MAX) );
+			cylinders.Append(nullptr), nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(sizeWithoutGeometry,(DWORD)USHRT_MAX) );
 		// - confirming initial settings
 		if (!EditSettings(true)){ // dialog cancelled?
 			::SetLastError( ERROR_CANCELLED );
@@ -148,12 +139,12 @@ using namespace Yahel;
 				return err;
 		if (f.m_hFile!=CFile::hFileNull) // handle doesn't exist when creating new Image
 			f.SeekToBegin();
-		ap.SetProgressTarget( nCylinders*nHeads );
+		ap.SetProgressTarget( cylinders.length*nHeads );
 		TPhysicalAddress chs;
 			chs.sectorId.lengthCode=sectorLengthCode;
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_CYLINDERS:
-				for( chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++ )
+				for( chs.cylinder=0; chs.cylinder<cylinders.length; chs.cylinder++ )
 					for( chs.sectorId.cylinder=chs.cylinder,chs.head=0; chs.head<nHeads; chs.head++,ap.IncrementProgress() ){
 						chs.sectorId.side=sideMap[chs.head];
 						if (const TStdWinError err=SaveTrackToCurrentPositionInFile( savingToCurrentFile?nullptr:&fTmp, chs ))
@@ -162,7 +153,7 @@ using namespace Yahel;
 				break;
 			case TTrackScheme::BY_HEADS:
 				for( chs.head=0; chs.head<nHeads; chs.head++ )
-					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<nCylinders; chs.cylinder++,ap.IncrementProgress() ){
+					for( chs.sectorId.side=sideMap[chs.head],chs.cylinder=0; chs.cylinder<cylinders.length; chs.cylinder++,ap.IncrementProgress() ){
 						chs.sectorId.cylinder=chs.cylinder;
 						if (const TStdWinError err=SaveTrackToCurrentPositionInFile( savingToCurrentFile?nullptr:&fTmp, chs ))
 							return err;
@@ -183,19 +174,19 @@ using namespace Yahel;
 	TCylinder CImageRaw::GetCylinderCount() const{
 		// determines and returns the actual number of Cylinders in the Image
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return nCylinders;
+		return cylinders.length;
 	}
 
 	THead CImageRaw::GetHeadCount() const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return nCylinders>0 || explicitSides ? nHeads : 0;
+		return cylinders || explicitSides ? nHeads : 0;
 	}
 
 	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
 		// returns the number of Sectors found in given Track, and eventually populates the Buffer with their IDs (if Buffer!=Null); returns 0 if Track not formatted or not found
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl<nCylinders && head<nHeads){
+		if (cyl<cylinders.length && head<nHeads){
 			for( TSector n=0; n<nSectors; n++ ){
 				if (bufferId){
 					bufferId->cylinder=cyl, bufferId->side=sideMap[head], bufferId->sector=firstSectorNumber+n, bufferId->lengthCode=sectorLengthCode;
@@ -218,7 +209,7 @@ using namespace Yahel;
 	bool CImageRaw::IsTrackScanned(TCylinder cyl,THead head) const{
 		// True <=> Track exists and has already been scanned, otherwise False
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return	cyl<nCylinders && head<nHeads;
+		return	cyl<cylinders.length && head<nHeads;
 	}
 
 	void CImageRaw::GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts,TRev *outRevs){
@@ -229,7 +220,7 @@ using namespace Yahel;
 		::ZeroMemory( outByteInfos, nSectors*sizeof(*outByteInfos) );
 		::ZeroMemory( outRevs, nSectors*sizeof(*outRevs) );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl<nCylinders && head<nHeads)
+		if (cyl<cylinders.length && head<nHeads)
 			while (nSectors>0){
 				const TSectorId sectorId=*bufferId;
 				if (IsKnownSector( cyl, head, sectorId )){
@@ -241,7 +232,7 @@ using namespace Yahel;
 					}else{
 						// Sector not yet buffered - buffering the Cylinder that contains the requested Sector
 						const DWORD nBytesOfTrack=this->nSectors*sectorLength, nBytesOfCylinder=nHeads*nBytesOfTrack;
-						if (const PVOID p=bufferOfCylinders[cyl]=::malloc(nBytesOfCylinder)){
+						if (const auto p=cylinders[cyl]=(Sector::PData)::malloc(nBytesOfCylinder)){
 							DWORD nBytesRead;
 							switch (trackAccessScheme){
 								case TTrackScheme::BY_CYLINDERS:
@@ -251,8 +242,8 @@ using namespace Yahel;
 								case TTrackScheme::BY_HEADS:
 									nBytesRead=0;
 									for( THead head=0; head<nHeads; head++ ){
-										f.Seek( (head*nCylinders+cyl)*nBytesOfTrack, CFile::begin );
-										nBytesRead+=f.Read((PBYTE)p+head*nBytesOfTrack,nBytesOfTrack);
+										f.Seek( (head*cylinders.length+cyl)*nBytesOfTrack, CFile::begin );
+										nBytesRead+=f.Read(p+head*nBytesOfTrack,nBytesOfTrack);
 									}
 									break;
 								default:
@@ -283,7 +274,7 @@ trackNotFound:
 		// True <=> specified Sector's data variation (Revolution) has been buffered, otherwise False
 		ASSERT( rev<Revolution::MAX );
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		if (cyl<nCylinders && head<nHeads)
+		if (cyl<cylinders.length && head<nHeads)
 			if (IsKnownSector( cyl, head, id ))
 				return TDataStatus::READY_HEALTHY;
 		return TDataStatus::NOT_READY;
@@ -316,35 +307,30 @@ trackNotFound:
 			nHeads=format.nHeads, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				FreeAllCylinders();
-				const int nSectorsInTotal=fileSize/sectorLength;
+				const auto nSectorsInTotal=fileSize/sectorLength;
 				switch (trackAccessScheme){
 					case TTrackScheme::BY_CYLINDERS:{
-						const int nSectorsOnCylinder=nHeads*nSectors; // NumberOfHeads constant ...
-						const div_t d=div( nSectorsInTotal, nSectorsOnCylinder ); // ... and NumberOfCylinders computed
-						if (!d.rem)
-							// Image contains correct number of Sectors on the last Cylinder
-							nCylinders=d.quot;
-						else
-							// Image contains low number of Sectors on the last Cylinder - extending to correct number
-							nCylinders=1+d.quot; // "1" = the last incomplete Cylinder
+						const decltype(nSectorsInTotal) nSectorsOnCylinder=nHeads*nSectors; // NumberOfHeads constant ...
+						cylinders.AppendZeroed(
+							Utils::RoundDivUp( nSectorsInTotal, nSectorsOnCylinder ) // ... and NumberOfCylinders computed
+						);
 						break;
 					}
 					case TTrackScheme::BY_HEADS:{
-						const int nSectorsOnSide=( nCylinders=format.nCylinders )*nSectors; // NumberOfCylinders constant ...
-						nHeads=div( nSectorsInTotal+nSectorsOnSide-1, nSectorsOnSide ).quot; // ... and NumberOfHeads computed
+						const decltype(nSectorsInTotal) nSectorsOnSide=format.nCylinders*nSectors;
+						cylinders.AppendZeroed( format.nCylinders ); // NumberOfCylinders constant ...
+						nHeads=Utils::RoundDivUp( nSectorsInTotal, nSectorsOnSide ); // ... and NumberOfHeads computed
 						break;
 					}
 					default:
 						ASSERT(FALSE);
 				}
-				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders);
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
 			FreeAllCylinders();
 			if (fileSize){
-				nCylinders=1, nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
-				bufferOfCylinders=Memory::MakeSharedPodArray<PVOID,TCylinder>(nCylinders);
+				cylinders.Append(nullptr), nHeads=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 			}//else
 				//nop (see ctor, or specifically OnOpenDocument)
 		}
@@ -447,7 +433,8 @@ trackNotFound:
 						SetDlgItemText( ID_INFORMATION, _T("N/A") );
 					else{
 						TCylinder nCylindersBuffered=0;
-						for( PVOID *pCyl=rawImage.bufferOfCylinders+nCylinders; pCyl>rawImage.bufferOfCylinders; nCylindersBuffered+=*--pCyl!=nullptr );
+						for each( const auto data in rawImage.cylinders )
+							nCylindersBuffered+=data!=nullptr;
 						SetDlgItemFormattedText( ID_INFORMATION, _T("%d cylinders (%s)"), nCylindersBuffered,
 							Utils::BytesToHigherUnits( nCylindersBuffered*nHeads*nSectors*rawImage.sectorLength )
 						);
@@ -629,7 +616,7 @@ trackNotFound:
 				, rawImage(rawImage)
 				, manualRecognition( rawImage.explicitSides )
 				, autoCylinders( rawImage.trackAccessScheme==TTrackScheme::BY_CYLINDERS )
-				, nCylinders( rawImage.nCylinders )
+				, nCylinders( rawImage.cylinders.length )
 				, nHeads( rawImage.nHeads )
 				, nSectors( rawImage.nSectors ) , firstSectorNumber( rawImage.firstSectorNumber )
 				, sectorLengthCode( rawImage.sectorLengthCode ) {
@@ -675,7 +662,7 @@ trackNotFound:
 		__super::EnumSettings(rOut);
 		rOut.Add( _T("sequence of cylinders"), trackAccessScheme==TTrackScheme::BY_CYLINDERS );
 		rOut.Add( _T("auto geometry"), !explicitSides );
-		rOut.AddCylinderCount(nCylinders);
+		rOut.AddCylinderCount(cylinders.length);
 		rOut.AddHeadCount(nHeads);
 		rOut.AddSides( sideMap, nHeads );
 		rOut.Add( _T("first sector"), firstSectorNumber );
@@ -691,7 +678,7 @@ trackNotFound:
 		// - emptying the BufferOfCylinders
 		FreeAllCylinders();
 		// - resetting the geometry
-		nCylinders=0, nHeads=0, nSectors=0;
+		nHeads=0, nSectors=0;
 		return ERROR_SUCCESS;
 	}
 
@@ -708,7 +695,7 @@ trackNotFound:
 		if (!_nSectors)
 			return UnformatTrack(cyl,head);
 		// - typically if no DOS has been recognized, the geometry may not be trusted
-		if (!nCylinders){
+		if (!cylinders){
 			nSectors=_nSectors; // adopting current parameters as the geometry for the remainder of this Image
 			sectorLength=*bufferLength, sectorLengthCode=bufferId->lengthCode;
 		}
@@ -731,7 +718,7 @@ trackNotFound:
 			involvedSectors[pId->sector]=TRUE;
 		}
 		const PCBYTE pFirstSectorNumber=(PCBYTE)::memchr(involvedSectors,TRUE,sizeof(involvedSectors));
-		if (!nCylinders) firstSectorNumber=pFirstSectorNumber-involvedSectors;
+		if (!cylinders) firstSectorNumber=pFirstSectorNumber-involvedSectors;
 		if (::memchr(pFirstSectorNumber,FALSE,nSectors)) // if missing some Sector -> error
 			return Utils::ErrorByOs( ERROR_VHD_INVALID_SIZE, ERROR_NOT_SUPPORTED );
 		if (::memchr(pFirstSectorNumber+nSectors,TRUE,sizeof(involvedSectors)-firstSectorNumber-nSectors)) // if some Sector redundand -> error
@@ -740,12 +727,12 @@ trackNotFound:
 			return Utils::ErrorByOs( ERROR_VHD_INVALID_SIZE, ERROR_NOT_SUPPORTED );
 		// - formatting
 		const DWORD nBytesOfTrack=nSectors*sectorLength;
-		if (nCylinders<=cyl)
+		if (cylinders.length<=cyl)
 			// redimensioning the Image
 			switch (trackAccessScheme){
 				case TTrackScheme::BY_HEADS:
 					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
-						for( TCylinder c=0; c<nCylinders; ){
+						for( TCylinder c=0; c<cylinders.length; ){
 							if (cancelled)
 								return ERROR_CANCELLED;
 							const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
@@ -765,7 +752,7 @@ trackNotFound:
 			const TPhysicalAddress chs={ cyl, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
 			GetHealthySectorData(chs);
 			// . reinitializing given Track to FillerByte
-			::memset( (PBYTE)bufferOfCylinders[cyl]+head*nBytesOfTrack, fillerByte, nBytesOfTrack );
+			::memset( cylinders[cyl]+head*nBytesOfTrack, fillerByte, nBytesOfTrack );
 		}
 		m_bModified=TRUE;
 		return ERROR_SUCCESS;
@@ -777,20 +764,20 @@ trackNotFound:
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_HEADS:
 				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
-					for( TCylinder c=0; c<nCylinders; ){
+					for( TCylinder c=0; c<cylinders.length; ){
 						const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
 						GetHealthySectorData(chs);
 					}
 				//fallthrough
 			case TTrackScheme::BY_CYLINDERS:
-				if (cyl==nCylinders-1 // unformatting the last Cylinder in the Image
+				if (cyl==cylinders.length-1 // unformatting the last Cylinder in the Image
 					&&
 					head==0 // ignore this command for any but zeroth Head (some copy-protected disks have hidden Cylinder with data only under Head 0 - finding nothing under Head 1 would destroy the whole Cylinder that Head 0 created in the RawImage, e.g. during dump)
 				){
 					// . redimensioning the Image
 					FreeCylinder(cyl);
 					// . adjusting the NumberOfCylinders
-					nCylinders--;
+					cylinders.length--;
 					m_bModified=TRUE;
 				}
 				break;
@@ -810,7 +797,7 @@ trackNotFound:
 		public:
 			CSerializer(CImageRaw *image)
 				// ctor
-				: Sector::CSameLengthReaderWriter( image, image->nCylinders*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
+				: Sector::CSameLengthReaderWriter( image, image->cylinders.length*image->nHeads*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
 			}
 
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{

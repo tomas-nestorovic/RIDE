@@ -2,8 +2,7 @@
 #define IMAGERAW_H
 	
 	class CImageRaw:public CImage,private Sector::TSameLengthParams{
-		TCylinder nCylinders;
-		Memory::CSharedPodArray<PVOID,TCylinder> bufferOfCylinders;
+		Memory::CSharedPodArray<Sector::PData,TCylinder,64> cylinders;
 		THead nHeads;
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
@@ -17,7 +16,7 @@
 
 		TStdWinError SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
-		void FreeCylinder(TCylinder cyl);
+		void FreeCylinder(TCylinder i);
 		void FreeAllCylinders();
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
