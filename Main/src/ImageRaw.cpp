@@ -37,6 +37,19 @@ using namespace Yahel;
 
 
 
+	TStdWinError CImageRaw::BufferAllCylinders(const volatile bool &cancelled){
+		// buffers each Cylinder; returns Windows standard i/o error
+		TPhysicalAddress chs={ 0, 0, {0,sideMap[0],firstSectorNumber,sectorLengthCode} };
+		while (chs.cylinder<cylinders.length){
+			if (cancelled)
+				return ERROR_CANCELLED;
+			chs.sectorId.cylinder=chs.cylinder;
+			if (!GetHealthySectorData(chs)) // one Sector suffices to buffer the whole Cylinder
+				return ERROR_READ_FAULT;
+		}
+		return ERROR_SUCCESS;
+	}
+
 	TStdWinError CImageRaw::ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled){
 		// formats new Cylinders to meet the minimum number requested; returns Windows standard i/o error
 		for( const DWORD nBytesOfCylinder=nHeads*nSectors*sectorLength; cylinders.length<nCyl; )
@@ -341,6 +354,7 @@ trackNotFound:
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if geometry already set manually by the user, we are successfully done
+		/*
 		if (explicitSides)
 			return ERROR_SUCCESS;
 		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
@@ -732,12 +746,8 @@ trackNotFound:
 			switch (trackAccessScheme){
 				case TTrackScheme::BY_HEADS:
 					if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
-						for( TCylinder c=0; c<cylinders.length; ){
-							if (cancelled)
-								return ERROR_CANCELLED;
-							const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
-							GetHealthySectorData(chs);
-						}
+						if (const TStdWinError err=BufferAllCylinders(cancelled))
+							return err;
 					//fallthrough
 				case TTrackScheme::BY_CYLINDERS:
 					if (const TStdWinError err=ExtendToNumberOfCylinders( 1+cyl, fillerByte, cancelled ))
@@ -764,10 +774,8 @@ trackNotFound:
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_HEADS:
 				if (nHeads>1) // if Image structured by Sides (and there are multiple Sides), all Cylinders must be buffered as the whole Image will have to be restructured when saving
-					for( TCylinder c=0; c<cylinders.length; ){
-						const TPhysicalAddress chs={ c++, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
-						GetHealthySectorData(chs);
-					}
+					if (const TStdWinError err=BufferAllCylinders(false))
+						return err;
 				//fallthrough
 			case TTrackScheme::BY_CYLINDERS:
 				if (cyl==cylinders.length-1 // unformatting the last Cylinder in the Image

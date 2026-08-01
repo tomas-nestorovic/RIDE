@@ -15,6 +15,7 @@
 		CFile f;
 
 		TStdWinError SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber);
+		TStdWinError BufferAllCylinders(const volatile bool &cancelled);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
 		void FreeCylinder(TCylinder i);
 		void FreeAllCylinders();
