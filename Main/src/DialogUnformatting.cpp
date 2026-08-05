@@ -114,11 +114,10 @@
 
 	void CUnformatDialog::DoDataExchange(CDataExchange *pDX){
 		// exchange of data from and to controls
-		const Medium::PCProperties p=Medium::GetProperties(DOS->formatBoot.mediumType);
 		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.cylZInclusive );
-			DDV_MinMaxUInt( pDX, params.cylZInclusive, p->cylinderRange.iMin, IMAGE->GetCylinderCount()-1 );
+			DDV_MinMaxUInt( pDX, params.cylZInclusive, 1, IMAGE->GetCylinderCount()-1 );
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylA );
-			DDV_MinMaxUInt( pDX, params.cylA, p->cylinderRange.iMin, params.cylZInclusive );
+			DDV_MinMaxUInt( pDX, params.cylA, 1, params.cylZInclusive );
 		DDX_Check( pDX, ID_BOOT		, updateBoot );
 		DDX_Check( pDX, ID_FAT		, removeTracksFromFat );
 		if (pDX->m_bSaveAndValidate){

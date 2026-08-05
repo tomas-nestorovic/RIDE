@@ -93,12 +93,12 @@
 		const CImage::PCProperties propImage=dos->image->properties;
 		const Medium::PCProperties propMedium=Medium::GetProperties( (Medium::TType)GetDlgComboBoxSelectedValue(ID_MEDIUM) );
 		DDX_Text( pDX,	ID_CYLINDER_N,(RCylinder)params.format.nCylinders );
-			DDV_MinMaxUInt( pDX, params.format.nCylinders, propMedium->cylinderRange.iMin, propMedium->cylinderRange.iMax );
+			DDV_MinMaxUInt( pDX, params.format.nCylinders, 1, propMedium->nCylindersMax );
 		DDX_Text( pDX,	ID_CYLINDER	,(RCylinder)params.cylinder0 );
 			DDV_MinMaxUInt( pDX, params.cylinder0, 0, params.format.nCylinders );
 		DDX_Text( pDX,	ID_HEAD	,params.format.nHeads );
-			const THead nHeadsMax =	params.cylinder0 ? std::min((int)dos->formatBoot.nHeads,propMedium->headRange.iMax) : propMedium->headRange.iMax;
-			DDV_MinMaxUInt( pDX, params.format.nHeads, propMedium->headRange.iMin, nHeadsMax );
+			const THead nHeadsMax =	params.cylinder0 ? std::min(dos->formatBoot.nHeads,propMedium->nHeadsMax) : propMedium->nHeadsMax;
+			DDV_MinMaxUInt( pDX, params.format.nHeads, 1, nHeadsMax );
 		DDX_Text( pDX,	ID_SECTOR	,params.format.nSectors );
 			DDV_MinMaxUInt( pDX, params.format.nSectors, propDos->nSectorsOnTrackMin, propDos->nSectorsOnTrackMax );
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );

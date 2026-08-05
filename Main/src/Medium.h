@@ -23,7 +23,8 @@ namespace Medium
 		static const TProperties FLOPPY_DD_525;
 
 		LPCTSTR description;
-		PropGrid::Integer::TUpDownLimits cylinderRange, headRange; // supported range of Cylinders/Heads (min and max)
+		TCylinder nCylindersMax; // max. # of Cylinders
+		THead nHeadsMax; // max. # of Heads
 		TRev rps; // Revolutions per second
 		TLogTime revolutionTime; // single revolution time [nanoseconds]
 		TLogTime cellTime; // single recorded data cell time [nanoseconds]

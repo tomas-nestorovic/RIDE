@@ -26,8 +26,8 @@ namespace Medium
 
 	const TProperties TProperties::FLOPPY_HD_350={
 		_T("3.5\" HD floppy"), // description
-		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
-		{ 1, 2 },	// supported range of Heads (min and max)
+		FDD_CYLINDERS_MAX, // max. # of Cylinders
+		2, // max. # of Heads
 		5, // Revolutions per second
 		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
 		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = 1 second / 500kb = 2 탎 -> 1 탎 for MFM encoding
@@ -36,8 +36,8 @@ namespace Medium
 
 	const TProperties TProperties::FLOPPY_HD_525={
 		_T("5.25\" HD floppy, 360 RPM drive"), // description
-		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
-		{ 1, 2 },	// supported range of Heads (min and max)
+		FDD_CYLINDERS_MAX, // max. # of Cylinders
+		2, // max. # of Heads
 		6, // Revolutions per second
 		TIME_SECOND(1)/6, // single revolution time [nanoseconds]
 		TIME_MICRO(1), // single recorded data cell time [nanoseconds] = same as 3.5" HD floppies
@@ -46,8 +46,8 @@ namespace Medium
 
 	const TProperties TProperties::FLOPPY_DD={
 		_T("3.x\"/5.25\" 2DD floppy, 300 RPM drive"), // description
-		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
-		{ 1, 2 },	// supported range of Heads (min and max)
+		FDD_CYLINDERS_MAX, // max. # of Cylinders
+		2, // max. # of Heads
 		5, // Revolutions per second
 		TIME_SECOND(1)/5, // single revolution time [nanoseconds]
 		TIME_MICRO(2), // single recorded data cell time [nanoseconds] = 1 second / 250kb = 4 탎 -> 2 탎 for MFM encoding
@@ -56,8 +56,8 @@ namespace Medium
 
 	const TProperties TProperties::FLOPPY_DD_525={
 		_T("5.25\" 2DD floppy, 360 RPM drive"), // description
-		{ 1, FDD_CYLINDERS_MAX }, // supported range of Cylinders (min and max)
-		{ 1, 2 },	// supported range of Heads (min and max)
+		FDD_CYLINDERS_MAX, // max. # of Cylinders
+		2, // max. # of Heads
 		6, // Revolutions per second
 		TIME_MICRO(166600), // single revolution time [nanoseconds], rounded TIME_SECOND(1)/6
 		TIME_MICRO(2)*5/6, // single recorded data cell time [nanoseconds] = 1 second / 300kb = 3.333 탎 -> 1.666 탎 for MFM encoding
@@ -78,8 +78,8 @@ namespace Medium
 			case HDD_RAW:{
 				static constexpr TProperties P={
 					_T("Hard disk (without MBR support)"), // description
-					{ 1, HDD_CYLINDERS_MAX },// supported range of Cylinders (min and max)
-					{ 1, HDD_HEADS_MAX },	// supported range of Heads (min and max)
+					HDD_CYLINDERS_MAX, // max. # of Cylinders
+					HDD_HEADS_MAX, // max. # of Heads
 					0, // N/A - single revolution time [nanoseconds]
 					0, // N/A - single recorded data cell time [nanoseconds]
 					0 // N/A - RevolutionTime/CellTime

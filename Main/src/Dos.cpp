@@ -166,7 +166,7 @@
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
 		TSectorId bufferId[(TSector)-1];
 		if (formatBoot.mediumType!=Medium::UNKNOWN) // Unknown Medium if creating a new Image
-			for( TCylinder cylMin=Medium::GetProperties(formatBoot.mediumType)->cylinderRange.iMax; cylMin--; )
+			for( TCylinder cylMin=Medium::GetProperties(formatBoot.mediumType)->nCylindersMax; cylMin--; )
 				for( THead head=formatBoot.nHeads; head--; )
 					if (ERROR_EMPTY!=IsTrackEmpty( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
 						return cylMin;

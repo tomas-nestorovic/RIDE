@@ -168,8 +168,8 @@
 			const HANDLE hGeometry= cbp.geometryCategory ? PropGrid::AddCategory(propGrid.m_hWnd,nullptr,_T("Geometry")) : 0;
 			if (hGeometry){
 				if (cbp.chs){
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->cylinderRange.iMax, _T("Cylinders") );
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->headRange.iMax, _T("Heads") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->nCylindersMax, _T("Cylinders") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->nHeadsMax, _T("Heads") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, DOS->properties->nSectorsOnTrackMax, _T("Sectors/track") );
 				}
 				if (cbp.sectorLength)

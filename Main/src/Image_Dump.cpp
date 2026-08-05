@@ -1019,13 +1019,13 @@ terminateWithError:		return LOG_ERROR(pAction->TerminateWithError(err));
 				DDX_Check( pDX, ID_BEEP, dumpParams.beepOnError );
 				DDX_Text( pDX,	ID_CYLINDER,	(RCylinder)dumpParams.cylinderA );
 					if (mp)
-						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->cylinderRange.iMax-1 );
+						DDV_MinMaxUInt( pDX,dumpParams.cylinderA, 0, mp->nCylindersMax-1 );
 				DDX_Text( pDX,	ID_CYLINDER_N,	(RCylinder)dumpParams.cylinderZ );
 					if (mp)
-						DDV_MinMaxUInt( pDX,dumpParams.cylinderZ, dumpParams.cylinderA, mp->cylinderRange.iMax-1 );
+						DDV_MinMaxUInt( pDX,dumpParams.cylinderZ, dumpParams.cylinderA, mp->nCylindersMax-1 );
 				DDX_Text( pDX,	ID_HEAD,		dumpParams.nHeads );
 					if (mp)
-						DDV_MinMaxUInt( pDX,dumpParams.nHeads, 1, mp->headRange.iMax );
+						DDV_MinMaxUInt( pDX,dumpParams.nHeads, 1, mp->nHeadsMax );
 				DDX_Text( pDX,	ID_GAP,			dumpParams.gap3.value );
 				DDX_Text( pDX,	ID_NUMBER,		dumpParams.fillerByte );
 				DDX_Check(pDX,	ID_PRIORITY,	realtimeThreadPriority );
@@ -1323,9 +1323,9 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			} deducedSides(dos->image);
 			TSector nSectors=dos->image->ScanTrack(0,0);
 			const TFormat targetGeometry={ d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 };
-			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides ...
+			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
 									? dos->image->GetSideMap() // ... adopt them
-									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder ...
+									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...
 									? deducedSides.map // ... adopt them
 									: dos->sideMap; // otherwise adopt Sides defined by the DOS
 			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
