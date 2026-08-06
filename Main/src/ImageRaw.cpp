@@ -639,7 +639,7 @@ trackNotFound:
 				else if (initialEditing){ // automatic geometry - need to initialize the defaults
 					nCylinders=1;
 					nHeads=1, *sideNumbers=0;
-					firstSectorNumber=1, nSectors=9, sectorLengthCode=TFormat::LENGTHCODE_512;
+					firstSectorNumber=1, nSectors=9, sectorLengthCode=Sector::LC_512;
 				}
 			}
 
@@ -651,7 +651,7 @@ trackNotFound:
 					fmt.nCylinders=nCylinders;
 					fmt.nHeads=nHeads;
 					fmt.nSectors=nSectors;
-					fmt.sectorLengthCode=(TFormat::TLengthCode)sectorLengthCode;
+					fmt.sectorLengthCode=sectorLengthCode;
 					fmt.sectorLength=Sector::GetLength(sectorLengthCode);
 				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );
 			}

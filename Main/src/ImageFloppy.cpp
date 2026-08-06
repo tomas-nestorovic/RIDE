@@ -1,19 +1,6 @@
 #include "stdafx.h"
 using namespace Yahel;
 
-	bool CFloppyImage::IsValidSectorLengthCode(Sector::LC lengthCode){
-		// True <=> SectorLengthCode complies with Simon Owen's recommendation (interval 0..7), otherwise False
-		return (lengthCode&0xf8)==0;
-	}
-
-
-
-
-
-
-
-
-
 	typedef Sector::CReaderWriter::TScannerStatus TScannerStatus;
 
 	const CFloppyImage::TScannerState CFloppyImage::TScannerState::Initial={
@@ -53,7 +40,7 @@ using namespace Yahel;
 
 	Sector::L CFloppyImage::GetUsableSectorLength(Sector::LC sectorLengthCode) const{
 		// determines and returns usable portion of a Sector based on supplied LenghtCode and actual FloppyType
-		if (!IsValidSectorLengthCode(sectorLengthCode))
+		if (!Sector::IsValidLengthCode(sectorLengthCode))
 			return 0; // e.g. only copy-protection marks
 		const Sector::L officialLength=Sector::GetLength(sectorLengthCode);
 		if ((floppyType&Medium::FLOPPY_DD_ANY)!=0 || floppyType==Medium::UNKNOWN) // Unknown = if FloppyType not set (e.g. if DOS Unknown), the floppy is by default considered as a one with the lowest capacity
@@ -62,18 +49,18 @@ using namespace Yahel;
 			return officialLength;
 	}
 
-	TFormat::TLengthCode CFloppyImage::GetMaximumSectorLengthCode() const{
+	Sector::LC CFloppyImage::GetMaximumSectorLengthCode() const{
 		// returns the maximum LengthCode given the actual FloppyType
 		switch (floppyType){
 			case Medium::FLOPPY_DD:
 			case Medium::FLOPPY_DD_525:
-				return TFormat::LENGTHCODE_4096;
+				return Sector::LC_4096;
 			case Medium::FLOPPY_HD_525:
 			case Medium::FLOPPY_HD_350:
-				return TFormat::LENGTHCODE_8192;
+				return Sector::LC_8192;
 			default:
 				ASSERT(FALSE);
-				return TFormat::LENGTHCODE_128;
+				return Sector::LC_128;
 		}
 	}
 

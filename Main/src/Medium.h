@@ -49,17 +49,7 @@ namespace Medium
 		TCylinder nCylinders;
 		THead nHeads;
 		TSector nSectors;
-		enum TLengthCode:Sector::LC{
-			LENGTHCODE_128	=0,
-			LENGTHCODE_256	=1,
-			LENGTHCODE_512	=2,
-			LENGTHCODE_1024	=3,
-			LENGTHCODE_2048	=4,
-			LENGTHCODE_4096	=5,
-			LENGTHCODE_8192	=6,
-			LENGTHCODE_16384=7,
-			LAST
-		} sectorLengthCode;
+		Sector::LC sectorLengthCode;
 		Sector::L sectorLength;
 		WORD clusterSize; // in Sectors
 

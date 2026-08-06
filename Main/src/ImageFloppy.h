@@ -17,15 +17,13 @@
 
 			TScannedTracks();
 		} scannedTracks;
-	public:
-		static bool IsValidSectorLengthCode(Sector::LC lengthCode);
 	protected:
 		Medium::TType floppyType; // DD/HD
 
 		CFloppyImage(PCProperties properties,bool hasEditableSettings);
 	public:
 		Sector::L GetUsableSectorLength(Sector::LC sectorLengthCode) const;
-		TFormat::TLengthCode GetMaximumSectorLengthCode() const;
+		Sector::LC GetMaximumSectorLengthCode() const;
 		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
 		TStdWinError UnscanTrack(TCylinder cyl,THead head) override;
 		Sector::CReaderWriter::CComPtr CreateDiskSerializer(CHexaEditor *pParentHexaEditor) override sealed;

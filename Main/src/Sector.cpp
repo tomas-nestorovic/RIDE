@@ -114,5 +114,9 @@ namespace Sector
 		return lengthCode;
 	}
 
+	bool IsValidLengthCode(Sector::LC lengthCode){
+		// True <=> SectorLengthCode complies with Simon Owen's recommendation (interval 0..7), otherwise False
+		return (lengthCode&0xf8)==0;
+	}
 
 }

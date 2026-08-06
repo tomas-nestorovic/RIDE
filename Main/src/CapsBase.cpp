@@ -346,7 +346,7 @@
 		if (currRev.idEndTime<=0)
 			// Sector's ID Field not found in specified Revolution
 			currRev.fdcStatus.ExtendWith( TFdcStatus::SectorNotFound );
-		else if (!IsValidSectorLengthCode(ris.id.lengthCode))
+		else if (!Sector::IsValidLengthCode(ris.id.lengthCode))
 			// e.g. invalid for copy-protection marks (Sector with LengthCode 167 has no data)
 			currRev.fdcStatus.ExtendWith( TFdcStatus::NoDataField );
 		else if (!currRev.peData){ // data not yet buffered

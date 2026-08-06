@@ -388,7 +388,7 @@
 		const PBackgroundActionCancelable pAction=(PBackgroundActionCancelable)pCancelableAction;
 		const TFmtParams &fp=*(TFmtParams *)pAction->GetParams();
 		const Utils::CVarTempReset<TSector> nSectors0( fp.dos->formatBoot.nSectors, fp.rParams.format.nSectors );
-		const Utils::CVarTempReset<TFormat::TLengthCode> lengthCode0( fp.dos->formatBoot.sectorLengthCode, fp.rParams.format.sectorLengthCode );
+		const Utils::CVarTempReset<Sector::LC> lengthCode0( fp.dos->formatBoot.sectorLengthCode, fp.rParams.format.sectorLengthCode );
 		const TStdWinError err=FormatTracksEx_thread( pCancelableAction );
 		if (err!=ERROR_SUCCESS)
 			::SetLastError(err);

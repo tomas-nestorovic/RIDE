@@ -8,6 +8,18 @@ namespace Sector
 	typedef WORD L,*PL; // length
 	typedef BYTE LC; // length code
 
+	enum:LC{
+		LC_128	=0,
+		LC_256	=1,
+		LC_512	=2,
+		LC_1024	=3,
+		LC_2048	=4,
+		LC_4096	=5,
+		LC_8192	=6,
+		LC_16384=7,
+		LC_LAST
+	};
+
 	#pragma pack(1)
 	typedef struct TId sealed{
 		static const TId Invalid;
@@ -215,6 +227,7 @@ namespace Sector
 
 	L GetLength(LC lengthCode);
 	LC GetLengthCode(L length);
+	bool IsValidLengthCode(Sector::LC lengthCode);
 
 }
 

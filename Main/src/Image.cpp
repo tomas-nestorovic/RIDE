@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	const TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, TFormat::LENGTHCODE_128,-1, 1 };
+	const TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, Sector::LC_128,-1, 1 };
 
 	bool TFormat::operator==(const TFormat &fmt2) const{
 		// True <=> Formats{1,2} are equal, otherwise False
@@ -324,7 +324,7 @@ namespace Sector
 			cb.ResetContent();
 			const WORD mediaSupportedByImage= imageProperties ? imageProperties->supportedMedia : 0;
 			BYTE result=0;
-			for( WORD commonMedia=dosSupportedMedia&mediaSupportedByImage,type=1,n=8*sizeof(commonMedia); n--; type<<=1 )
+			for( WORD commonMedia=dosSupportedMedia&mediaSupportedByImage,type=1,n=CHAR_BIT*sizeof(commonMedia); n--; type<<=1 )
 				if (commonMedia&type){
 					cb.SetItemDataPtr( cb.AddString(Medium::GetDescription((Medium::TType)type)), (PVOID)type );
 					result++;
@@ -365,7 +365,7 @@ namespace Sector
 		cb.Attach(hComboBox);
 			cb.ResetContent();
 			TCHAR desc[8];
-			for( Sector::LC lengthCode=0; lengthCode<TFormat::TLengthCode::LAST; lengthCode++ )
+			for( Sector::LC lengthCode=0; lengthCode<Sector::LC_LAST; lengthCode++ )
 				cb.SetItemData( cb.AddString(_itot(Sector::GetLength(lengthCode),desc,10)), lengthCode );
 			cb.EnableWindow();
 			cb.SetCurSel(0);
