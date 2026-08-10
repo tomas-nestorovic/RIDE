@@ -66,3 +66,24 @@ namespace Medium
 
 typedef Medium::TFormat TFormat,*PFormat;
 typedef const Medium::TFormat *PCFormat,&RCFormat;
+
+#define MakeFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+	{ medium, codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize }
+
+#define MakeFormat(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+	MakeFormatEx( Medium::##medium, Codec::##codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+
+#define MakeFdMfmFormat(medium,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+	MakeFormat( FLOPPY_##medium, MFM, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+
+#define MakeFdMfmFormat256(medium,nCyls,nHeads,nSectors)\
+	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_256, 256, 1 )
+
+#define MakeFdMfmFormat512C(medium,nCyls,nHeads,nSectors,clusterSize)\
+	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_512, 512, clusterSize )
+
+#define MakeFdMfmFormat512(medium,nCyls,nHeads,nSectors)\
+	MakeFdMfmFormat512C( medium, nCyls, nHeads, nSectors, 1 )
+
+#define MakeFdMfmFormat1024(medium,nCyls,nHeads,nSectors)\
+	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_1024, 1024, 1 )

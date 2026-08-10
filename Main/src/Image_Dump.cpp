@@ -1322,7 +1322,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 				}
 			} deducedSides(dos->image);
 			TSector nSectors=dos->image->ScanTrack(0,0);
-			const TFormat targetGeometry={ d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 };
+			const TFormat targetGeometry=MakeFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 );
 			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
 									? dos->image->GetSideMap() // ... adopt them
 									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...

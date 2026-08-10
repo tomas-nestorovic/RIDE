@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-	const TFormat TFormat::Unknown={ Medium::UNKNOWN, Codec::ANY, -1,-1,-1, Sector::LC_128,-1, 1 };
+	const TFormat TFormat::Unknown=MakeFormat( UNKNOWN, ANY, -1,-1,-1, Sector::LC_128,-1, 1 );
 
 	bool TFormat::operator==(const TFormat &fmt2) const{
 		// True <=> Formats{1,2} are equal, otherwise False

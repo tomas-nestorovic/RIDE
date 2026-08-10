@@ -4,7 +4,7 @@
 	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - determining the Type of Medium (type of floppy)
-		TFormat fmt={ Medium::FLOPPY_DD_525, Codec::MFM, 1,1,BSDOS_SECTOR_NUMBER_TEMP, BSDOS_SECTOR_LENGTH_STD_CODE,BSDOS_SECTOR_LENGTH_STD, 1 };
+		TFormat fmt=MakeFdMfmFormat1024( DD_525, 1,1,BSDOS_SECTOR_NUMBER_TEMP );
 		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
@@ -67,10 +67,10 @@
 	#define DD_525_CAPTION	_T("5.25\" DS DD")
 
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
-		{ DD_525_CAPTION,	 0, {Medium::FLOPPY_DD_525,Codec::MFM,39,2,5,Sector::LC_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ DD_525_CAPTION,	 0, {Medium::FLOPPY_DD,Codec::MFM,39,2,5,Sector::LC_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS DD"), 0, {Medium::FLOPPY_DD,Codec::MFM,79,2,5,Sector::LC_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
-		{ _T("3.5\" DS HD"), 0, {Medium::FLOPPY_HD_350,Codec::MFM,79,2,11,Sector::LC_1024,BSDOS_SECTOR_LENGTH_STD,1}, 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
+		{ DD_525_CAPTION,	 0, MakeFdMfmFormat1024(DD_525,39,2,5), 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ DD_525_CAPTION,	 0, MakeFdMfmFormat1024(DD,39,2,5), 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS DD"), 0, MakeFdMfmFormat1024(DD,79,2,5), 1, 0, BSDOS_SECTOR_GAP3, 2, 32 },
+		{ _T("3.5\" DS HD"), 0, MakeFdMfmFormat1024(HD_350,79,2,11), 1, 0, BSDOS_SECTOR_GAP3, 2, 32 }
 	};
 
 	const CDos::TProperties CBSDOS308::Properties={

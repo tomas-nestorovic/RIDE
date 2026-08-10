@@ -5,7 +5,7 @@
 		return new CGDOS(image,formatBoot);
 	}
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("DS 80x10"), 0, {Medium::FLOPPY_DD,Codec::MFM,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT,GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD,1}, 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
+		{ _T("DS 80x10"), 0, MakeFdMfmFormat512(DD,GDOS_CYLINDERS_COUNT-1,2,GDOS_TRACK_SECTORS_COUNT), 1, 0, FDD_350_SECTOR_GAP3, 1, GDOS_DIR_FILES_COUNT_MAX }
 	};
 
 	TStdWinError CGDOS::__recognizeDisk__(PImage image,TFormat &outFormatBoot){

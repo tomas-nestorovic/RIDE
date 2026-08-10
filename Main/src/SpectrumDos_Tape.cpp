@@ -5,11 +5,10 @@
 
 	#define FILE_LENGTH_MAX	0xff80
 
-	static constexpr TFormat TapeFormat={
-		Medium::FLOPPY_DD_525, // no need to create a new Medium Type for a Tape
-		Codec::ANY, // no need to create a new Codec Type for a Tape
+	static constexpr TFormat TapeFormat=MakeFdMfmFormat( // no need to create a new Codec Type for a Tape
+		DD_525, // no need to create a new Medium Type for a Tape
 		1, 1, 1, Sector::LC_128,FILE_LENGTH_MAX, 1 // Tape Blocks are not divided into Sectors (thus here set a single "Sector" with maximum length)
-	};
+	);
 
 	CSpectrumDos::CTape *CSpectrumDos::CTape::pSingleInstance;
 

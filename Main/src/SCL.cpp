@@ -117,11 +117,11 @@
 				for( auto pos=recognition.GetFirstRecognizedDosPosition(); pos; ){
 					const CDos::PCProperties p=recognition.GetNextRecognizedDos(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						const TFormat fmt={
-							Medium::FLOPPY_DD, Codec::MFM, 80,
+						const TFormat fmt=MakeFdMfmFormat256(
+							DD, 80,
 							explicitSides ? GetHeadCount() : format.nHeads,
-							TRDOS503_TRACK_SECTORS_COUNT, TRDOS503_SECTOR_LENGTH_STD_CODE,TRDOS503_SECTOR_LENGTH_STD, 1
-						};
+							TRDOS503_TRACK_SECTORS_COUNT
+						);
 						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,fmt) );
 						break;
 					}
