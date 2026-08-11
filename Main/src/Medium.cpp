@@ -2,6 +2,26 @@
 
 namespace Medium
 {
+	bool TFormat::operator==(const TFormat &f) const{
+		return	supportedMedia&f.supportedMedia
+				&&
+				supportedCodecs&f.supportedCodecs
+				&&
+				nCylinders==f.nCylinders
+				&&
+				nHeads==f.nHeads
+				&&
+				nSectors==f.nSectors
+				&&
+				sectorLength==f.sectorLength
+				&&
+				clusterSize==f.clusterSize;
+	}
+
+
+
+
+
 	bool TProperties::IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const{
 		return revolutionTime/10*9<tRevolutionQueried && tRevolutionQueried<revolutionTime/10*11; // 10% tolerance (don't set more for indices on 300 RPM drive appear only 16% slower than on 360 RPM drive!)
 	}

@@ -53,12 +53,8 @@ namespace Medium
 		Sector::L sectorLength;
 		TSector clusterSize; // in Sectors
 
-		inline bool operator==(const TFormat &f) const{
-			static_assert( __alignof(TFormat)==1, "see 'memcmp' below" );
-			return !::memcmp( this, &f, sizeof(*this) );
-		}
-
 		inline operator bool() const{ return !operator==(Unknown); }
+		bool operator==(const TFormat &f) const;
 		inline Track::N GetTrackCount(TCylinder cyl,THead head) const{ return cyl*nHeads+head; }
 		inline DWORD GetSectorCount(TCylinder cyl,THead head) const{ return GetTrackCount(cyl,head)*nSectors; }
 		DWORD GetCountOfAllSectors() const;
