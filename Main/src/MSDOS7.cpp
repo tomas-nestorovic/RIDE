@@ -47,7 +47,7 @@
 
 	CMSDOS7::TLogSector32 CMSDOS7::__fyzlog__(RCPhysicalAddress chs) const{
 		// converts PhysicalAddress to LogicalSector number and returns it
-		return (chs.cylinder*formatBoot.nHeads+chs.head)*formatBoot.nSectors+chs.sectorId.sector-1; // "-1" = Sectors numbered from 1
+		return formatBoot.GetSectorCount(chs.cylinder,chs.head)+chs.sectorId.sector-1; // "-1" = Sectors numbered from 1
 	}
 	TPhysicalAddress CMSDOS7::__logfyz__(TLogSector32 ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it

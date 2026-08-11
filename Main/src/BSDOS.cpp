@@ -27,7 +27,7 @@
 
 	CBSDOS308::TLogSector CBSDOS308::__fyzlog__(RCPhysicalAddress chs) const{
 		// converts PhysicalAddress to LogicalSector number and returns it
-		return (chs.cylinder*formatBoot.nHeads+chs.head)*formatBoot.nSectors+chs.sectorId.sector-BSDOS_SECTOR_NUMBER_FIRST;
+		return formatBoot.GetSectorCount(chs.cylinder,chs.head)+chs.sectorId.sector-BSDOS_SECTOR_NUMBER_FIRST;
 	}
 	TPhysicalAddress CBSDOS308::__logfyz__(TLogSector ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it

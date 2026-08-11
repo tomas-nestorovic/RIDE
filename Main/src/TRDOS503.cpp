@@ -258,10 +258,10 @@
 			pRgn->start=lastRegionStart;
 			pRgn++->status=TSectorStatus::UNAVAILABLE;
 		}
-		pRgn->status=TSectorStatus::EMPTY, pRgn->start.sector=0, pRgn->start.track=formatBoot.nCylinders*formatBoot.nHeads; // terminator
+		pRgn->status=TSectorStatus::EMPTY, pRgn->start.sector=0, pRgn->start.track=formatBoot.GetCountOfAllTracks(); // terminator
 		pRgn++;
 		// - determining the Statuses of Sectors
-		for( const BYTE track=cyl*formatBoot.nHeads+head; nSectors--; bufferId++ ){
+		for( const BYTE track=formatBoot.GetTrackCount(cyl,head); nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
 			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || sector<TRDOS503_SECTOR_FIRST_NUMBER || formatBoot.nSectors<sector || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
 				*buffer++=TSectorStatus::UNKNOWN; // Sector ID out of official Format - Sector thus Unknown

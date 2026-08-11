@@ -86,7 +86,7 @@
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
 		bool result=true; // assumption (statuses of all Sectors successfully retrieved)
 		if (const PBootSector bootSector=boot.GetSectorData())
-			for( const TLogSector logSectorBase=(formatBoot.nHeads*cyl+head)*formatBoot.nSectors-BSDOS_SECTOR_NUMBER_FIRST; nSectors--; bufferId++ ){
+			for( const TLogSector logSectorBase=formatBoot.GetSectorCount(cyl,head)-BSDOS_SECTOR_NUMBER_FIRST; nSectors--; bufferId++ ){
 				const TSector secNum=bufferId->sector;
 				if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || secNum>formatBoot.nSectors || !secNum || bufferId->lengthCode!=BSDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 					// Sector number out of official Format

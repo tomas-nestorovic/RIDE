@@ -2,22 +2,6 @@
 
 	const TFormat TFormat::Unknown=MakeFormat( UNKNOWN, ANY, -1,-1,-1, Sector::LC_128,-1, 1 );
 
-	bool TFormat::operator==(const TFormat &fmt2) const{
-		// True <=> Formats{1,2} are equal, otherwise False
-		return	supportedMedia&fmt2.supportedMedia
-				&&
-				supportedCodecs&fmt2.supportedCodecs
-				&&
-				nCylinders==fmt2.nCylinders
-				&&
-				nHeads==fmt2.nHeads
-				&&
-				nSectors==fmt2.nSectors
-				&&
-				sectorLength==fmt2.sectorLength
-				&&
-				clusterSize==fmt2.clusterSize;
-	}
 	DWORD TFormat::GetCountOfAllSectors() const{
 		// determines and returns the count of all Sectors
 		return (DWORD)nCylinders*nHeads*nSectors;

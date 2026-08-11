@@ -54,7 +54,7 @@
 
 	CMDOS2::TLogSector CMDOS2::__fyzlog__(RCPhysicalAddress chs) const{
 		// converts PhysicalAddress to LogicalSector number and returns it
-		return (chs.cylinder*formatBoot.nHeads+chs.head)*formatBoot.nSectors+chs.sectorId.sector-1; // "-1" = Sectors numbered from 1
+		return formatBoot.GetSectorCount(chs.cylinder,chs.head)+chs.sectorId.sector-1; // "-1" = Sectors numbered from 1
 	}
 	TPhysicalAddress CMDOS2::__logfyz__(TLogSector ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it
@@ -115,7 +115,7 @@
 	bool CMDOS2::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{
 		// True <=> Statuses of all Sectors in the Track successfully retrieved and populated the Buffer, otherwise False
 		bool result=true; // assumption (statuses of all Sectors successfully retrieved)
-		for( const TLogSector logSectorBase=(cyl*formatBoot.nHeads+head)*formatBoot.nSectors-1; nSectors--; bufferId++ ){ // "-1" = Sectors numbered from 1
+		for( const TLogSector logSectorBase=formatBoot.GetSectorCount(cyl,head)-1; nSectors--; bufferId++ ){ // "-1" = Sectors numbered from 1
 			const TSector id=bufferId->sector;
 			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || id>formatBoot.nSectors || !id || bufferId->lengthCode!=2) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				// Sector number out of official Format
