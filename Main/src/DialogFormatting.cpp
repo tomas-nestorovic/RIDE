@@ -70,9 +70,11 @@
 			dos->image->properties
 		);
 		// - populating dedicated ComboBox with Media supported by both DOS and Image
-		if (params.format.mediumType==Medium::UNKNOWN)
+		if (params.format.mediumType==Medium::UNKNOWN){
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), propDos->supportedMedia, dos->image->properties );
-		else
+			if (dos->formatBoot.mediumType!=Medium::UNKNOWN)
+				SelectDlgComboBoxValue( ID_MEDIUM, dos->formatBoot.mediumType ); // pre-select Medium currently worked with
+		}else
 			CImage::PopulateComboBoxWithCompatibleMedia( GetDlgItemHwnd(ID_MEDIUM), params.format.mediumType, dos->image->properties );
 		__onMediumOrEncodingChanged__();
 		// - adjusting interactivity
@@ -237,7 +239,7 @@
 			for( BYTE n=nAdditionalFormats; n--; paf++ )
 				if (paf->params.format.supportedMedia & selectedMediumType
 					&&
-					psf->params.format.supportedCodecs & selectedCodecType
+					paf->params.format.supportedCodecs & selectedCodecType
 				){
 					cb.SetItemDataPtr( cb.AddString(paf->name), (PVOID)paf );
 					if (params.format.mediumType==Medium::UNKNOWN) params=paf->params; // initializing Parameters using the first Format that's suitable for selected {Medium,Codec} combination
