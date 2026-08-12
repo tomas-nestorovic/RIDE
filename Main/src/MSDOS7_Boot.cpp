@@ -20,7 +20,7 @@
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,-1} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		TFormat fmt=MakeFdMfmFormat512( DD_525, 1,1,MSDOS7_SECTOR_BKBOOT );
+		Medium::TFormatDef fmt=DefFdMfmFormat512( DD_525, 1,1,MSDOS7_SECTOR_BKBOOT );
 		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
@@ -98,7 +98,7 @@
 			outFormat.nCylinders=__getCountOfAllSectors__()/nSectorsOnCylinder;
 		else
 			outFormat.nCylinders=0;
-		outFormat.nHeads=nHeads;
+		outFormat.sides.length=nHeads;
 		outFormat.nSectors=nSectorsOnTrack;
 		outFormat.sectorLength=sectorSize;
 		outFormat.clusterSize=nSectorsInCluster;
@@ -149,7 +149,7 @@
 				ASSERT(FALSE);
 		}
 		nSectorsOnTrack=formatBoot.nSectors;
-		nHeads=formatBoot.nHeads;
+		nHeads=formatBoot.sides.length;
 		//nSectorsHidden=0; // see ZeroMemory above
 		AA55mark=0xaa55;
 		// - determining the Type of FAT
@@ -236,7 +236,7 @@
 
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		TFormat fmt=MakeFormat( UNKNOWN, MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 );
+		Medium::TFormatDef fmt=DefFormat( UNKNOWN, MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 );
 		// - finding Boot Sector
 		bool bootSectorRecognized;
 		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized,&fmt.mediumType);
@@ -273,15 +273,15 @@
 	#define DMF_2048			_T("DMF 2048 (beware under WinNT!)")
 
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("Standard 3.5\", 1440 kB"), 0, MakeFdMfmFormat512(HD_350,79,2,18), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ DMF_1024, 0, MakeFdMfmFormat512C(HD_350,79,2,21,2), 2, 0, 6, 2, 16 },
-		{ DMF_2048, 0, MakeFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,4), 2, 0, 6, 2, 16 },
-		{ BOOSTED_CAPACITY, 0, MakeFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,2), 2, 20, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, MakeFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,16), 2, 20, 5, 1, 16 },
-		{ _T("Standard 3.5\", 720 kB"), 0, MakeFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, MakeFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,2), 2, 9, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, MakeFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,16), 2, 9, 5, 1, 16 },
-		{ _T("Hard disk 50 MB (without MBR)"), 0, MakeFormat(HDD_RAW,MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
+		{ _T("Standard 3.5\", 1440 kB"), 0, DefFdMfmFormat512(HD_350,79,2,18), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ DMF_1024, 0, DefFdMfmFormat512C(HD_350,79,2,21,2), 2, 0, 6, 2, 16 },
+		{ DMF_2048, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,4), 2, 0, 6, 2, 16 },
+		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,2), 2, 20, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,16), 2, 20, 5, 1, 16 },
+		{ _T("Standard 3.5\", 720 kB"), 0, DefFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
+		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,2), 2, 9, 5, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,16), 2, 9, 5, 1, 16 },
+		{ _T("Hard disk 50 MB (without MBR)"), 0, DefFormat(HDD_RAW,MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name
@@ -566,7 +566,7 @@
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector bootSector=boot.GetSectorData()){
 			bootSector->nSectorsInTotal16=formatBoot.GetCountOfAllSectors();
-			bootSector->nHeads=formatBoot.nHeads;
+			bootSector->nHeads=formatBoot.sides.length;
 			bootSector->nSectorsOnTrack=formatBoot.nSectors;
 			bootSector->nSectorsInCluster=formatBoot.clusterSize;
 			bootSector->sectorSize=formatBoot.sectorLength;

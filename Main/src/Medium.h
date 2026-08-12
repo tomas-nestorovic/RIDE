@@ -35,9 +35,7 @@ namespace Medium
 		inline Time::Decoder::TLimits CreateTimeDecoderLimits(BYTE iwTimeTolerancePercent=4) const{ return Time::Decoder::TLimits(cellTime,iwTimeTolerancePercent); }
 	} *PCProperties;
 
-	struct TFormat sealed{
-		static const TFormat Unknown;
-
+	struct TFormatDef sealed{ // "definition"
 		union{
 			TType supportedMedia;
 			TType mediumType;
@@ -53,13 +51,28 @@ namespace Medium
 		Sector::L sectorLength;
 		TSector clusterSize; // in Sectors
 
-		inline operator bool() const{ return !operator==(Unknown); }
-		bool operator==(const TFormat &f) const;
-		inline Track::N GetTrackCount(TCylinder cyl,THead head) const{ return cyl*nHeads+head; }
+		bool operator==(const TFormatDef &f) const;
+	};
+
+	struct TFormat:public Sector::TSameLengthParams{
+		TType mediumType;
+		Codec::TType codecType;
+		TCylinder nCylinders;
+		Side::CMap sides;
+		TSector clusterSize;
+
+		TFormat(); // initialize to Unknown
+		TFormat(const TFormatDef &f);
+
+		inline operator bool() const{ return mediumType!=UNKNOWN; }
+		inline void Invalidate(){ mediumType=UNKNOWN; }
+		inline Track::N GetTrackCount(TCylinder cyl,THead head) const{ return cyl*sides.length+head; }
 		inline DWORD GetSectorCount(TCylinder cyl,THead head) const{ return GetTrackCount(cyl,head)*nSectors; }
-		DWORD GetCountOfAllSectors() const;
-		WORD GetCountOfSectorsPerCylinder() const;
-		Track::N GetCountOfAllTracks() const;
+		inline Track::N GetCountOfAllTracks() const{ return (Track::N)nCylinders*sides.length; }
+		inline WORD GetCountOfSectorsPerCylinder() const{ return (WORD)sides.length*nSectors; }
+		inline DWORD GetCountOfAllSectors() const{ return (DWORD)nCylinders*GetCountOfSectorsPerCylinder(); }
+
+		TFormatDef GetDef() const;
 	};
 
 	LPCTSTR GetDescription(TType mediumType);
@@ -69,23 +82,23 @@ namespace Medium
 typedef Medium::TFormat TFormat,*PFormat;
 typedef const Medium::TFormat *PCFormat,&RCFormat;
 
-#define MakeFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+#define DefFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
 	{ medium, codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize }
 
-#define MakeFormat(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
-	MakeFormatEx( Medium::##medium, Codec::##codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+#define DefFormat(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+	DefFormatEx( Medium::##medium, Codec::##codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
 
-#define MakeFdMfmFormat(medium,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
-	MakeFormat( FLOPPY_##medium, MFM, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+#define DefFdMfmFormat(medium,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
+	DefFormat( FLOPPY_##medium, MFM, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
 
-#define MakeFdMfmFormat256(medium,nCyls,nHeads,nSectors)\
-	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_256, 256, 1 )
+#define DefFdMfmFormat256(medium,nCyls,nHeads,nSectors)\
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_256, 256, 1 )
 
-#define MakeFdMfmFormat512C(medium,nCyls,nHeads,nSectors,clusterSize)\
-	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_512, 512, clusterSize )
+#define DefFdMfmFormat512C(medium,nCyls,nHeads,nSectors,clusterSize)\
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_512, 512, clusterSize )
 
-#define MakeFdMfmFormat512(medium,nCyls,nHeads,nSectors)\
-	MakeFdMfmFormat512C( medium, nCyls, nHeads, nSectors, 1 )
+#define DefFdMfmFormat512(medium,nCyls,nHeads,nSectors)\
+	DefFdMfmFormat512C( medium, nCyls, nHeads, nSectors, 1 )
 
-#define MakeFdMfmFormat1024(medium,nCyls,nHeads,nSectors)\
-	MakeFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_1024, 1024, 1 )
+#define DefFdMfmFormat1024(medium,nCyls,nHeads,nSectors)\
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_1024, 1024, 1 )

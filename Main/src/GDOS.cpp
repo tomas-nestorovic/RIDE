@@ -122,7 +122,7 @@
 		TPhysicalAddress chs={ cyl, head };
 		while (nSectors--){
 			const TSector id=( chs.sectorId=*bufferId++ ).sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || chs.sectorId.cylinder!=cyl || chs.sectorId.side!=sideMap[head] || id>GDOS_TRACK_SECTORS_COUNT || !id || chs.sectorId.lengthCode!=GDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || chs.sectorId.cylinder!=cyl || chs.sectorId.side!=sideMap[head] || id>GDOS_TRACK_SECTORS_COUNT || !id || chs.sectorId.lengthCode!=GDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				*buffer++=TSectorStatus::UNKNOWN; // Sector ID out of official Format - Sector thus Unknown
 			else if (cyl<GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT && !head)
 				*buffer++=TSectorStatus::SYSTEM;
@@ -205,7 +205,7 @@
 		if (!de->firstSector.__isValid__())
 			return true;
 		// - extracting the FatPath
-		const TSectorInfo *psi=&de->firstSector, lastValidSector(formatBoot.nCylinders,formatBoot.nHeads,Properties.firstSectorNumber);
+		const TSectorInfo *psi=&de->firstSector, lastValidSector(formatBoot.nCylinders,formatBoot.sides.length,Properties.firstSectorNumber);
 		do{
 			// . determining Sector's PhysicalAddress
 			item.chs=psi->__getChs__();

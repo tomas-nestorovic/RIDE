@@ -53,7 +53,7 @@
 			// . composition of the new Format
 			TFormat fmt=dos->formatBoot;
 			if (criticalValueId==CRITICAL_VALUE_SIDES_COUNT)
-				fmt.nHeads=(THead)newValue;
+				fmt.sides.length=(THead)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_SECTORS_COUNT)
 				fmt.nSectors=(TSector)newValue;
 			else if (criticalValueId==CRITICAL_VALUE_SECTOR_SIZE)
@@ -169,7 +169,7 @@
 			if (hGeometry){
 				if (cbp.chs){
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nCylinders, nullptr, __updateFatAfterChangingCylinderCount__, props->nCylindersMax, _T("Cylinders") );
-					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nHeads, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->nHeadsMax, _T("Heads") );
+					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.sides.length, CRITICAL_VALUE_SIDES_COUNT, __confirmCriticalValueInBoot__, props->nHeadsMax, _T("Heads") );
 					__pg_showPositiveInteger__( propGrid.m_hWnd, hGeometry, &DOS->formatBoot.nSectors, CRITICAL_VALUE_SECTORS_COUNT, __confirmCriticalValueInBoot__, DOS->properties->nSectorsOnTrackMax, _T("Sectors/track") );
 				}
 				if (cbp.sectorLength)

@@ -51,7 +51,7 @@
 	}
 	TPhysicalAddress CMSDOS7::__logfyz__(TLogSector32 ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it
-		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.nHeads );
+		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.sides.length );
 		const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.rem+1, formatBoot.sectorLengthCode } }; // "+1" = Sectors numbered from 1
 		return chs;
 	}
@@ -145,7 +145,7 @@
 		BYTE b;
 		for( const TLogSector32 logSectorBase=__fyzlog__(chsBase),logSectorDataA=__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST,b),logSectorDataZ=__cluster2logSector__(MSDOS7_DATA_CLUSTER_FIRST+__getCountOfClusters__(),b); nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || sector>formatBoot.nSectors || !sector || bufferId->lengthCode!=formatBoot.sectorLengthCode) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || sector>formatBoot.nSectors || !sector || bufferId->lengthCode!=formatBoot.sectorLengthCode) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				// Sector number out of official Format
 				*buffer++=TSectorStatus::UNKNOWN;
 			else{

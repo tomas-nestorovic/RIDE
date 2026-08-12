@@ -20,6 +20,10 @@ namespace Sector
 		LC_LAST
 	};
 
+	L GetLength(LC lengthCode);
+	LC GetLengthCode(L length);
+	bool IsValidLengthCode(Sector::LC lengthCode);
+
 	#pragma pack(1)
 	typedef struct TId sealed{
 		static const TId Invalid;
@@ -203,7 +207,8 @@ namespace Sector
 			: nSectors(0) {
 		}
 		inline TSameLengthParams(N nSectors,L sectorLength)
-			: nSectors(nSectors) , sectorLength(sectorLength) {
+			: nSectors(nSectors) , firstSectorNumber(1)
+			, sectorLength(sectorLength) , sectorLengthCode(GetLengthCode(sectorLength)) {
 		}
 	};
 
@@ -222,12 +227,6 @@ namespace Sector
 		Yahel::TPosition GetSectorStartPosition(const TPhysicalAddress &chs,N nSectorsToSkip) const override;
 		void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,N &outSectorIndex,PL pOutOffset) const override;
 	};
-
-
-
-	L GetLength(LC lengthCode);
-	LC GetLengthCode(L length);
-	bool IsValidLengthCode(Sector::LC lengthCode);
 
 }
 

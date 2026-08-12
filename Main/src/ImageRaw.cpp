@@ -317,7 +317,7 @@ trackNotFound:
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=format.nHeads, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
+			nHeads=format.sides.length, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
@@ -460,10 +460,10 @@ trackNotFound:
 							const CDos::TProperties &p=*CDos::Known.GetNext(pos);
 							for( TCHAR i=0,desc[80]; i<p.nStdFormats; i++ ){
 								const TFormat &f=p.stdFormats[i].params.format;
-								if (f.nHeads>1)
-									::wsprintf( desc, _T("Cyls %d, Sides 0-%d, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.nHeads-1, f.nSectors, f.sectorLength );
+								if (f.sides.length>1)
+									::wsprintf( desc, _T("Cyls %d, Heads 0-%d, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.sides.length-1, f.nSectors, f.sectorLength );
 								else
-									::wsprintf( desc, _T("Cyls %d, Side 0, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.nSectors, f.sectorLength );
+									::wsprintf( desc, _T("Cyls %d, Head 0, Sectors 1-%d (%d Bytes)"), f.nCylinders+1, f.nSectors, f.sectorLength );
 								if (cb.FindString( -1, desc )<0) // avoid duplicities in the combo-box
 									cb.SetItemDataPtr( cb.AddString(desc), (PVOID)&f );
 							}
@@ -495,7 +495,7 @@ trackNotFound:
 										// . adopting selected geometry (if any)
 										if (const PCFormat pf=(PCFormat)GetDlgComboBoxSelectedValue(ID_FORMAT)){
 											nCylinders=pf->nCylinders+1;
-											for( nHeads=0; nHeads<pf->nHeads; nHeads++ )
+											for( nHeads=0; nHeads<pf->sides.length; nHeads++ )
 												sideNumbers[nHeads]=nHeads;
 											firstSectorNumber=1;
 											nSectors=pf->nSectors;
@@ -595,7 +595,7 @@ trackNotFound:
 											if (const PCFormat pf=(PCFormat)cb.GetItemDataPtr(i))
 												if (( nTmpCyls==pf->nCylinders+1 || !cylindersSignificant )
 													&&
-													nHeads==pf->nHeads && sideMin==0 && sideMax==nHeads-1
+													nHeads==pf->sides.length && sideMin==0 && sideMax==nHeads-1
 													&&
 													tmpFirstSectorNumber==1 && nTmpSectors==pf->nSectors
 													&&
@@ -646,13 +646,12 @@ trackNotFound:
 			TStdWinError TrySetMediumTypeAndGeometry() const{
 				// tries to apply current geometry; returns Windows standard i/o error
 				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_HEADS : TTrackScheme::BY_CYLINDERS;
-				TFormat fmt=TFormat::Unknown; // the Image format ...
-					fmt.mediumType=Medium::ANY; // ... is no longer Unknown, but the Medium can be Any of supported
-					fmt.nCylinders=nCylinders;
-					fmt.nHeads=nHeads;
-					fmt.nSectors=nSectors;
-					fmt.sectorLengthCode=sectorLengthCode;
-					fmt.sectorLength=Sector::GetLength(sectorLengthCode);
+				const Medium::TFormatDef fmt=DefFormat(
+					UNKNOWN, ANY, // the Image Format is no longer Unknown, but the Medium can be Any of supported
+					nCylinders, nHeads, nSectors,
+					sectorLengthCode, Sector::GetLength(sectorLengthCode),
+					1
+				);
 				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );
 			}
 		} d( *this, initialEditing );

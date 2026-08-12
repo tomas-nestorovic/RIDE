@@ -416,7 +416,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return err;
 		// - changes in geometry allowed only if Image is empty
 		if (!diskInfo.nCylinders)
-			diskInfo.nHeads=format.nHeads;
+			diskInfo.nHeads=format.sides.length;
 		return ERROR_SUCCESS;
 	}
 

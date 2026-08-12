@@ -211,7 +211,7 @@
 				CImage::CSettings srcSettings, trgSettings, dosSettings;
 				source->EnumSettings(srcSettings), target->EnumSettings(trgSettings);
 				TCHAR strFormat[80];
-				::wsprintf( strFormat, _T("%i &times; %i &times; %i &times; %i"), dos->formatBoot.nCylinders, dos->formatBoot.nHeads, dos->formatBoot.nSectors, dos->formatBoot.sectorLength );
+				::wsprintf( strFormat, _T("%i &times; %i &times; %i &times; %i"), dos->formatBoot.nCylinders, dos->formatBoot.sides.length, dos->formatBoot.nSectors, dos->formatBoot.sectorLength );
 				dosSettings.SetAt( _T("recognized format"), dos->IsKnown()?strFormat:_T("None") );
 				Utils::WriteToFileFormatted( fHtml, _T("<h3>Notes</h3><ol><li><p>%s</p></li><li><p>%s</p></li><li><p>%s</p></li><li><p>%s</p></li></ol>"), GITHUB_REPOSITORY, SettingsToHtml(dosSettings), SettingsToHtml(srcSettings), SettingsToHtml(trgSettings) );
 			Utils::WriteToFile(fHtml,_T("</body></html>"));
@@ -1322,7 +1322,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 				}
 			} deducedSides(dos->image);
 			TSector nSectors=dos->image->ScanTrack(0,0);
-			const TFormat targetGeometry=MakeFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 );
+			const Medium::TFormatDef targetGeometry=DefFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLengthCode, dos->formatBoot.sectorLength, 1 );
 			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
 									? dos->image->GetSideMap() // ... adopt them
 									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...

@@ -8,7 +8,7 @@
 
 	TStdWinError CMDOS2::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		TFormat fmt=MakeFdMfmFormat512( DD_525, 1,1,10 );
+		Medium::TFormatDef fmt=DefFdMfmFormat512( DD_525, 1,1,10 );
 		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
 			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
@@ -21,7 +21,7 @@
 					&&
 					( outFormatBoot.nCylinders=boot->current.nCylinders )
 					*
-					( outFormatBoot.nHeads=1+(boot->current.diskFlags.doubleSided) )
+					( outFormatBoot.sides.length=1+(boot->current.diskFlags.doubleSided) )
 					*
 					( outFormatBoot.nSectors=boot->current.nSectors )
 					>= // testing minimal number of Sectors
@@ -39,9 +39,9 @@
 		return new CMDOS2(image,formatBoot);
 	}
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
-		{ _T("3.5\" DS 80x9"), 0, MakeFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
-		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, MakeFdMfmFormat512(DD,39,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
-		{ _T("5.25\" DS 40x9, 360 RPM"), 0, MakeFdMfmFormat512(DD_525,39,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 } // Gap3 is fine to be the same as with 3.5" media (plus the Format easier human-recognizable in the "Format cyls" dialog)
+		{ _T("3.5\" DS 80x9"), 0, DefFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
+		{ _T("3.5\" DS 40x9 (beware under MDOS1!)"), 0, DefFdMfmFormat512(DD,39,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 },
+		{ _T("5.25\" DS 40x9, 360 RPM"), 0, DefFdMfmFormat512(DD_525,39,2,9), 1, 0, FDD_350_SECTOR_GAP3, 1, 128 } // Gap3 is fine to be the same as with 3.5" media (plus the Format easier human-recognizable in the "Format cyls" dialog)
 	};
 	const CDos::TProperties CMDOS2::Properties={
 		_T("MDOS 2.0"), // name
@@ -249,7 +249,7 @@
 		// flushes internal Format information to the actual Boot Sector's data
 		if (const PBootSector boot=(PBootSector)image->GetHealthySectorData(TBootSector::CHS)){
 			boot->current.nCylinders=formatBoot.nCylinders;
-			boot->current.diskFlags.doubleSided=formatBoot.nHeads==2;
+			boot->current.diskFlags.doubleSided=formatBoot.sides.length==2;
 			boot->current.nSectors=formatBoot.nSectors;
 			image->MarkSectorAsDirty(TBootSector::CHS);
 		}

@@ -273,6 +273,9 @@
     <ClInclude Include="src\Memory.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\Side.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\editor.cpp">
@@ -565,6 +568,9 @@
     </ClCompile>
     <ClCompile Include="src\Memory.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Side.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@
 
 namespace Medium
 {
-	bool TFormat::operator==(const TFormat &f) const{
+	bool TFormatDef::operator==(const TFormatDef &f) const{
 		return	supportedMedia&f.supportedMedia
 				&&
 				supportedCodecs&f.supportedCodecs
@@ -16,6 +16,38 @@ namespace Medium
 				sectorLength==f.sectorLength
 				&&
 				clusterSize==f.clusterSize;
+	}
+
+
+
+
+
+	TFormat::TFormat()
+		// ctor (initialize to Unknown)
+		: mediumType(UNKNOWN)
+		, codecType(Codec::ANY)
+		, nCylinders(0)
+		, sides(Side::CountMax)
+		, clusterSize(0) {
+		sides.length=0;
+	}
+
+	TFormat::TFormat(const TFormatDef &f)
+		// ctor
+		: Sector::TSameLengthParams( f.nSectors, f.sectorLength )
+		, mediumType(f.mediumType)
+		, codecType(f.codecType)
+		, nCylinders(f.nCylinders)
+		, sides(Side::CountMax)
+		, clusterSize(f.clusterSize) {
+		sides.length=f.nHeads;
+	}
+
+	TFormatDef TFormat::GetDef() const{
+		const TFormatDef tmp=DefFormatEx(
+			mediumType, codecType, nCylinders, sides.length, nSectors, sectorLengthCode, sectorLength, clusterSize
+		);
+		return tmp;
 	}
 
 

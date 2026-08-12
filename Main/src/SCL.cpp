@@ -117,9 +117,9 @@
 				for( auto pos=recognition.GetFirstRecognizedDosPosition(); pos; ){
 					const CDos::PCProperties p=recognition.GetNextRecognizedDos(pos);
 					if (!::memcmp(p->name,TRDOS_NAME_BASE,sizeof(TRDOS_NAME_BASE)-1)){
-						const TFormat fmt=MakeFdMfmFormat256(
+						const Medium::TFormatDef fmt=DefFdMfmFormat256(
 							DD, 80,
-							explicitSides ? GetHeadCount() : format.nHeads,
+							explicitSides ? GetHeadCount() : format.sides.length,
 							TRDOS503_TRACK_SECTORS_COUNT
 						);
 						pTrdos.reset( (CTRDOS503 *)p->fnInstantiate(this,fmt) );

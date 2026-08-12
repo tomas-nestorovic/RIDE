@@ -88,7 +88,7 @@
 		if (const PBootSector bootSector=boot.GetSectorData())
 			for( const TLogSector logSectorBase=formatBoot.GetSectorCount(cyl,head)-BSDOS_SECTOR_NUMBER_FIRST; nSectors--; bufferId++ ){
 				const TSector secNum=bufferId->sector;
-				if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || secNum>formatBoot.nSectors || !secNum || bufferId->lengthCode!=BSDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+				if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || secNum>formatBoot.nSectors || !secNum || bufferId->lengthCode!=BSDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 					// Sector number out of official Format
 					*buffer++=TSectorStatus::UNKNOWN;
 				else{

@@ -167,7 +167,7 @@
 		TSectorId bufferId[(TSector)-1];
 		if (formatBoot.mediumType!=Medium::UNKNOWN) // Unknown Medium if creating a new Image
 			for( TCylinder cylMin=Medium::GetProperties(formatBoot.mediumType)->nCylindersMax; cylMin--; )
-				for( THead head=formatBoot.nHeads; head--; )
+				for( THead head=formatBoot.sides.length; head--; )
 					if (ERROR_EMPTY!=IsTrackEmpty( cylMin, head, GetListOfStdSectors(cylMin,head,bufferId), bufferId ))
 						return cylMin;
 		return 0;
@@ -235,7 +235,7 @@
 		// - checking if range of Cylinders empty
 		for( TCylinder cyl=ecp.cylA; cyl<=ecp.cylZInclusive; pAction->UpdateProgress(++cyl-ecp.cylA) ){
 			if (pAction->Cancelled) return ERROR_CANCELLED;
-			for( THead head=0; head<ecp.dos->formatBoot.nHeads; head++ ){
+			for( THead head=0; head<ecp.dos->formatBoot.sides.length; head++ ){
 				const TStdWinError err=ecp.dos->IsStdTrackEmpty( cyl, head );
 				if (err!=ERROR_EMPTY)
 					return pAction->TerminateWithError(err);
@@ -303,7 +303,7 @@
 				TSectorId ids[(TSector)-1];
 				TPhysicalAddress chs;
 				for( chs.cylinder=d.params.cylinder0; chs.cylinder<=d.params.format.nCylinders; chs.cylinder++ )
-					for( chs.head=0; chs.head<d.dos->formatBoot.nHeads; chs.head++ )
+					for( chs.head=0; chs.head<d.dos->formatBoot.sides.length; chs.head++ )
 						for( TSector n=d.dos->GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
 							chs.sectorId=ids[--n];
 							d.dos->ModifyStdSectorStatus(
@@ -500,7 +500,7 @@
 		TPhysicalAddress chs;
 		ap.SetProgressTarget( cylZInclusive+1-cylA );
 		for( chs.cylinder=cylA; chs.cylinder<=cylZInclusive; ap.UpdateProgress(++chs.cylinder-cylA) )
-			for( chs.head=0; chs.head<formatBoot.nHeads; chs.head++ )
+			for( chs.head=0; chs.head<formatBoot.sides.length; chs.head++ )
 				for( TSector n=GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
 					chs.sectorId=ids[--n];
 					result&=ModifyStdSectorStatus( chs, TSectorStatus::EMPTY );
@@ -515,7 +515,7 @@
 		TPhysicalAddress chs;
 		ap.SetProgressTarget( cylZInclusive+1-cylA );
 		for( chs.cylinder=cylA; chs.cylinder<=cylZInclusive; ap.UpdateProgress(++chs.cylinder-cylA) )
-			for( chs.head=0; chs.head<formatBoot.nHeads; chs.head++ )
+			for( chs.head=0; chs.head<formatBoot.sides.length; chs.head++ )
 				for( TSector n=GetListOfStdSectors(chs.cylinder,chs.head,ids); n>0; ){
 					chs.sectorId=ids[--n];
 					result&=ModifyStdSectorStatus( chs, unformatFatStatus );
@@ -547,7 +547,7 @@
 		const PImage image=fesp.dos->image;
 		pAction->SetProgressTarget( image->GetCylinderCount() );
 		for( TCylinder cyl=0,const nCylinders=image->GetCylinderCount(); cyl<nCylinders; cyl++ )
-			for( THead head=fesp.dos->formatBoot.nHeads; head--; ){
+			for( THead head=fesp.dos->formatBoot.sides.length; head--; ){
 				if (pAction->Cancelled) return ERROR_CANCELLED;
 				// : determining standard Empty Sectors
 				TSectorId bufferId[(TSector)-1],*pId=bufferId,*pEmptyId=bufferId;
@@ -779,7 +779,7 @@
 		DWORD result=0; rError=ERROR_SUCCESS; // assumption (no empty space, no error)
 		const WORD nDataBytesInSector=formatBoot.sectorLength-properties->dataBeginOffsetInSector-properties->dataEndOffsetInSector;
 		for( TCylinder cyl=GetFirstCylinderWithEmptySector(); cyl<formatBoot.nCylinders; cyl++ )
-			for( THead head=0; head<formatBoot.nHeads; head++ ){
+			for( THead head=0; head<formatBoot.sides.length; head++ ){
 				TSectorId bufferId[(TSector)-1];
 				TSector n=GetListOfStdSectors(cyl,head,bufferId);
 				TSectorStatus statuses[(TSector)-1],*ps=statuses;
@@ -1030,7 +1030,7 @@
 		switch (trackAccessScheme){
 			case TTrackScheme::BY_CYLINDERS:
 				// all Heads will be considered when searching for free Sectors in the "per-Cylinder" basis
-				headZ=formatBoot.nHeads-1;
+				headZ=formatBoot.sides.length-1;
 				break;
 			case TTrackScheme::BY_HEADS:
 				// only one Head at a time will be used when searching for free Sectors in the "per-Side" basis, then going to the next Head, etc.
@@ -1043,7 +1043,7 @@
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		CFatPath::TItem item;
 		//item.value=TSectorStatus::OCCUPIED; // commented out as all Sectors in the FatPath are Occupied except for the last Sector
-		for( THead headA=0; headZ<formatBoot.nHeads; headA++,headZ++ )
+		for( THead headA=0; headZ<formatBoot.sides.length; headA++,headZ++ )
 			for( item.chs.cylinder=GetFirstCylinderWithEmptySector(); item.chs.cylinder<formatBoot.nCylinders; item.chs.cylinder++ )
 				for( item.chs.head=headA; item.chs.head<=headZ; item.chs.head++ ){
 					// . getting the list of standard Sectors

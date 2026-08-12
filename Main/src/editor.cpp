@@ -319,7 +319,7 @@
 			const PImage image=d.fnImage(d.deviceName);
 			CMainWindow::CTdiTemplate::pSingleInstance->AddDocument(image); // for the CImage::GetActive function to work
 			// . formatting Image under selected DOS
-			PDos dos = image->dos = d.dosProps->fnInstantiate(image,TFormat::Unknown);
+			PDos dos = image->dos = d.dosProps->fnInstantiate(image,TFormat());
 				image->writeProtected=false; // just to be sure
 				if (dos->ProcessCommand(ID_DOS_FORMAT)==CDos::TCmdResult::REFUSED || !image->GetCylinderCount()){
 					// A|B, A = formatting cancelled by the user, B = formatting failed; the conditions cannot be switched (because of short-circuit evaluation)
@@ -331,7 +331,7 @@
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
 			TFormat formatBoot;
 			dos = image->dos = CDos::CRecognition().Perform(image,formatBoot)->fnInstantiate(image,formatBoot);
-			image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
+			image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, dos->properties->firstSectorNumber );
 			// . creating the user interface for recognized DOS
 			CMainWindow::CTdiTemplate::pSingleInstance->RemoveDocument(image); // added back in CreateUserInterface below
 			if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
@@ -431,7 +431,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 	bool CRideApp::RecognizeAndInstantiateDos(PImage image) const{
 		// - DOS recognition
 		CDos::PCProperties dosProps=nullptr;
-		TFormat formatBoot=TFormat::Unknown; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
+		TFormat formatBoot; // information on Format (# of Cylinders, etc.) obtained from Image's Boot record
 		if (!manuallyForceDos)
 			// automatic recognition of suitable DOS by sequentially testing each of them
 			do{
@@ -550,7 +550,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		const PDos dos = image->dos = dosProps->fnInstantiate( image, formatBoot );
 		if (!dos)
 			return false;
-		image->SetMediumTypeAndGeometry( formatBoot, dos->sideMap, dos->properties->firstSectorNumber );
+		image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, dos->properties->firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
 		image->SetModifiedFlag(FALSE); // just to be sure
 		if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){

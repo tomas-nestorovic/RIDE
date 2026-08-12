@@ -1,27 +1,5 @@
 #include "stdafx.h"
 
-	const TFormat TFormat::Unknown=MakeFormat( UNKNOWN, ANY, -1,-1,-1, Sector::LC_128,-1, 1 );
-
-	DWORD TFormat::GetCountOfAllSectors() const{
-		// determines and returns the count of all Sectors
-		return (DWORD)nCylinders*nHeads*nSectors;
-	}
-	WORD TFormat::GetCountOfSectorsPerCylinder() const{
-		// determines and returns the count of all Sectors on a single Cylinder
-		return (WORD)nHeads*nSectors;
-	}
-	Track::N TFormat::GetCountOfAllTracks() const{
-		// determines and returns the count of all Tracks
-		return (Track::N)nCylinders*nHeads;
-	}
-
-
-
-
-
-
-
-
 namespace Sector
 {
 	const TFdcStatus TFdcStatus::Unknown(-1,-1);

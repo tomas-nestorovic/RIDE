@@ -168,6 +168,7 @@ namespace Track
 #include "Revolution.h"
 #include "Sector.h"
 #include "Codec.h"
+#include "Side.h"
 #include "Medium.h"
 #include "TrackEvent.h"
 #include "Track.h"

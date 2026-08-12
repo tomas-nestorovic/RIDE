@@ -263,7 +263,7 @@
 		// - determining the Statuses of Sectors
 		for( const BYTE track=formatBoot.GetTrackCount(cyl,head); nSectors--; bufferId++ ){
 			const TSector sector=bufferId->sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || sector<TRDOS503_SECTOR_FIRST_NUMBER || formatBoot.nSectors<sector || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || sector<TRDOS503_SECTOR_FIRST_NUMBER || formatBoot.nSectors<sector || bufferId->lengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)
 				*buffer++=TSectorStatus::UNKNOWN; // Sector ID out of official Format - Sector thus Unknown
 			else if (!track && (sector<=TRDOS503_BOOT_SECTOR_NUMBER || !importToSysTrack))
 				*buffer++=TSectorStatus::SYSTEM; // zeroth Track always contains System Sectors (Directory, Boot, etc.)
@@ -293,7 +293,7 @@
 	TCylinder CTRDOS503::GetLastOccupiedStdCylinder() const{
 		// finds and returns number of the last (at least partially) occupied Cylinder (0..N-1)
 		if (const PCBootSector boot=GetBootSector())
-			return boot->firstFree.track/formatBoot.nHeads;
+			return boot->firstFree.track/formatBoot.sides.length;
 		else
 			return __super::GetLastOccupiedStdCylinder();
 	}
@@ -322,7 +322,7 @@
 		if (de->IsDeleted())
 			return false;
 		// - composing the FatPath
-		const div_t B=div( de->first.track, formatBoot.nHeads );
+		const div_t B=div( de->first.track, formatBoot.sides.length );
 			item.chs.cylinder = item.chs.sectorId.cylinder = B.quot,
 			item.chs.sectorId.side=GetSideNumber( item.chs.head=B.rem ),
 			item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER+de->first.sector;
@@ -340,7 +340,7 @@
 			// . determining the PhysicalAddress of the next Sector
 			if (++item.chs.sectorId.sector>formatBoot.nSectors){
 				item.chs.sectorId.sector=TRDOS503_SECTOR_FIRST_NUMBER;
-				if (++item.chs.head==formatBoot.nHeads){
+				if (++item.chs.head==formatBoot.sides.length){
 					item.chs.sectorId.side=GetSideNumber( item.chs.head=0 );
 					item.chs.sectorId.cylinder=++item.chs.cylinder;
 				}else
@@ -547,7 +547,7 @@
 			de->nSectors= fileSizeOnDisk ? n : 0; // 0 = zero-length File has no Sectors
 			de->parameterA = de->parameterB = fileSizeFormal;
 			// . FirstTrack and -Sector
-			de->first.track=item->chs.GetTrackNumber(formatBoot.nHeads); // parametrized version to avoid auto-determination of active DOS (no active DOS may exist if called from within SCL container)
+			de->first.track=item->chs.GetTrackNumber(formatBoot.sides.length); // parametrized version to avoid auto-determination of active DOS (no active DOS may exist if called from within SCL container)
 			de->first.sector=item->chs.sectorId.sector-TRDOS503_SECTOR_FIRST_NUMBER;
 			// . additional File information
 			__setStdParameter1__(de,params.param1);
@@ -579,7 +579,7 @@
 			const TSector sector=officialFileSize/TRDOS503_SECTOR_LENGTH_STD;
 			if (sector>=de->nSectors) return false;
 			const TSectorTrackPair A = de->first+sector;
-			const div_t B=div(A.track,formatBoot.nHeads);
+			const div_t B=div(A.track,formatBoot.sides.length);
 			const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, GetSideNumber(B.rem), A.sector+TRDOS503_SECTOR_FIRST_NUMBER, TRDOS503_SECTOR_LENGTH_STD_CODE } };
 			if (const PSectorData data=image->GetHealthySectorData(chs)){
 				if (modify){

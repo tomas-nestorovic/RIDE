@@ -350,7 +350,7 @@
 		// - checking preconditions (usable only for floppies)
 		if (vp.dos->formatBoot.nCylinders>FDD_CYLINDERS_MAX
 			||
-			vp.dos->formatBoot.nHeads>2
+			vp.dos->formatBoot.sides.length>2
 			||
 			vp.dos->formatBoot.clusterSize!=1 // because of call to CDos::GetFirstEmptyHealthySector
 		)
@@ -497,7 +497,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		// - checking preconditions (usable only for floppies)
 		if (vp.dos->formatBoot.nCylinders>FDD_CYLINDERS_MAX
 			||
-			vp.dos->formatBoot.nHeads>2
+			vp.dos->formatBoot.sides.length>2
 			||
 			vp.dos->formatBoot.clusterSize!=1
 		)
@@ -576,7 +576,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=0; chs.cylinder<vp.dos->formatBoot.nCylinders; ap.UpdateProgress(chs.cylinder++) )
-			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
+			for( chs.head=0; chs.head<vp.dos->formatBoot.sides.length; chs.head++ ){
 				if (ap.Cancelled)
 					return vp.CancelAll();
 				// . getting the list of standard Sectors
@@ -691,7 +691,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 		const Utils::CByteIdentity sectorIdAndPositionIdentity;
 		TPhysicalAddress chs;
 		for( chs.cylinder=vp.dos->GetFirstCylinderWithEmptySector(); chs.cylinder<vp.dos->formatBoot.nCylinders; pAction->UpdateProgress(chs.cylinder++) )
-			for( chs.head=0; chs.head<vp.dos->formatBoot.nHeads; chs.head++ ){
+			for( chs.head=0; chs.head<vp.dos->formatBoot.sides.length; chs.head++ ){
 				if (pAction->Cancelled) return vp.CancelAll();
 				// . getting the list of standard Sectors
 				TSectorId bufferId[(TSector)-1];
@@ -712,7 +712,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					if (statuses[s]==TSectorStatus::EMPTY){
 						chs.sectorId=bufferId[s];
 						if (!image->GetHealthySectorData(chs)){
-							const CString &&msg=Utils::SimpleFormat( _T("On %s, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackIdDesc(vp.dos->formatBoot.nHeads), chs.sectorId.ToString() );
+							const CString &&msg=Utils::SimpleFormat( _T("On %s, empty sector with %s is bad but is not marked so in the FAT."), chs.GetTrackIdDesc(vp.dos->formatBoot.sides.length), chs.sectorId.ToString() );
 							switch (vp.ConfirmFix(msg,_T("Future data loss at stake if not marked so."))){
 								case IDCANCEL:
 									return vp.CancelAll();

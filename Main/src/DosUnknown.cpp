@@ -6,7 +6,7 @@
 	}
 	static TStdWinError __recognize__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		outFormatBoot=TFormat::Unknown;
+		outFormatBoot.Invalidate();
 		return ERROR_SUCCESS;
 	}
 	const CDos::TProperties CUnknownDos::Properties={

@@ -9,7 +9,7 @@
 		#pragma pack(1)
 		typedef const struct TParameters sealed{
 			TCylinder cylinder0;
-			TFormat format;
+			Medium::TFormatDef format;
 			BYTE interleaving;
 			BYTE skew;
 			BYTE gap3;

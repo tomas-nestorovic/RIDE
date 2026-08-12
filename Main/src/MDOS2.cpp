@@ -58,7 +58,7 @@
 	}
 	TPhysicalAddress CMDOS2::__logfyz__(TLogSector ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it
-		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.nHeads );
+		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.sides.length );
 		const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.rem+1, MDOS2_SECTOR_LENGTH_STD_CODE } }; // "+1" = Sectors numbered from 1
 		return chs;
 	}
@@ -117,7 +117,7 @@
 		bool result=true; // assumption (statuses of all Sectors successfully retrieved)
 		for( const TLogSector logSectorBase=formatBoot.GetSectorCount(cyl,head)-1; nSectors--; bufferId++ ){ // "-1" = Sectors numbered from 1
 			const TSector id=bufferId->sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.nHeads || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || id>formatBoot.nSectors || !id || bufferId->lengthCode!=2) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || id>formatBoot.nSectors || !id || bufferId->lengthCode!=2) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				// Sector number out of official Format
 				*buffer++=TSectorStatus::UNKNOWN;
 			else{

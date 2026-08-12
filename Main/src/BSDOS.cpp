@@ -31,7 +31,7 @@
 	}
 	TPhysicalAddress CBSDOS308::__logfyz__(TLogSector ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it
-		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.nHeads );
+		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.sides.length );
 		const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.rem+BSDOS_SECTOR_NUMBER_FIRST, BSDOS_SECTOR_LENGTH_STD_CODE } };
 		return chs;
 	}

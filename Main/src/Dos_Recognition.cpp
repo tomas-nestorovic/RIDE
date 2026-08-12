@@ -100,6 +100,7 @@
 					case ERROR_CANCELLED:
 						return bac.TerminateWithError(ERROR_CANCELLED);
 				}
+			rp.outFormatBoot.Invalidate();
 			bac.IncrementProgress();
 		}
 		( rp.props=&CUnknownDos::Properties )->fnRecognize( rp.image, rp.outFormatBoot ); // just a formality to properly fill up the FormatBoot

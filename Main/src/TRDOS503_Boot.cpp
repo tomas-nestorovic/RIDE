@@ -84,9 +84,9 @@
 	void CTRDOS503::TBootSector::__setDiskType__(RCFormat formatBoot){
 		// sets information on disk Format to one of predefined values that is closest
 		if (formatBoot.nCylinders<=40)
-			format= formatBoot.nHeads==1 ? SS40 : DS40 ;
+			format= formatBoot.sides.length==1 ? SS40 : DS40 ;
 		else
-			format= formatBoot.nHeads==1 ? SS80 : DS80 ;
+			format= formatBoot.sides.length==1 ? SS80 : DS80 ;
 	}
 
 	CTRDOS503::PBootSector CTRDOS503::TBootSector::Get(PImage image){
@@ -102,7 +102,7 @@
 
 	TStdWinError CTRDOS503::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		TFormat fmt=MakeFdMfmFormat256( DD, 1,2,TRDOS503_TRACK_SECTORS_COUNT );
+		Medium::TFormatDef fmt=DefFdMfmFormat256( DD, 1,2,TRDOS503_TRACK_SECTORS_COUNT );
 		if (image->SetMediumTypeAndGeometry(fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD_525;
 			if (image->SetMediumTypeAndGeometry(fmt,image->GetSideMap(),1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
@@ -115,12 +115,12 @@
 				case DS80:
 				case DS40:
 					outFormatBoot.nCylinders= f&1 ? 40 : 80;
-					outFormatBoot.nHeads=2;
+					outFormatBoot.sides.length=2;
 					break;
 				case SS80:
 				case SS40:
 					outFormatBoot.nCylinders= f&1 ? 40 : 80;
-					outFormatBoot.nHeads=1;
+					outFormatBoot.sides.length=1;
 					break;
 				default:
 					return ERROR_UNRECOGNIZED_VOLUME;
@@ -146,12 +146,12 @@
 
 	// 5.25" drives are likely 360 rpm ones in PC
 	const CFormatDialog::TStdFormat CTRDOS503::StdFormats[]={ // zeroth position must always be occupied by the biggest capacity
-		{ DS80_CAPTION, 0, MakeFdMfmFormat256(DD,    79,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ DS40_CAPTION, 0, MakeFdMfmFormat256(DD_525,39,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS80_CAPTION, 0, MakeFdMfmFormat256(DD,	 79,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ DS40_CAPTION, 0, MakeFdMfmFormat256(DD,    39,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS40_CAPTION, 0, MakeFdMfmFormat256(DD,	 39,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
-		{ SS40_CAPTION, 0, MakeFdMfmFormat256(DD_525,39,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
+		{ DS80_CAPTION, 0, DefFdMfmFormat256(DD,    79,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ DS40_CAPTION, 0, DefFdMfmFormat256(DD_525,39,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS80_CAPTION, 0, DefFdMfmFormat256(DD,	 79,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ DS40_CAPTION, 0, DefFdMfmFormat256(DD,    39,2,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS40_CAPTION, 0, DefFdMfmFormat256(DD,	 39,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 },
+		{ SS40_CAPTION, 0, DefFdMfmFormat256(DD_525,39,1,TRDOS503_TRACK_SECTORS_COUNT), 1, 0, TRDOS_SECTOR_GAP3, 0, 128 }
 	};
 	const CDos::TProperties CTRDOS503::Properties={
 		TRDOS_NAME_BASE _T(" 5.03"), // name
@@ -234,16 +234,16 @@
 		switch ((TDiskFormat)newValue.charValue){
 			case DS80:
 				fmt.mediumType=Medium::FLOPPY_DD;
-				fmt.nCylinders=80,fmt.nHeads=2; break;
+				fmt.nCylinders=80,fmt.sides.length=2; break;
 			case DS40:
 				fmt.mediumType=Medium::FLOPPY_DD_525; // likely 360 rpm in PC
-				fmt.nCylinders=40,fmt.nHeads=2; break;
+				fmt.nCylinders=40,fmt.sides.length=2; break;
 			case SS80:
 				fmt.mediumType=Medium::FLOPPY_DD;
-				fmt.nCylinders=80,fmt.nHeads=1; break;
+				fmt.nCylinders=80,fmt.sides.length=1; break;
 			case SS40:
 				fmt.mediumType=Medium::FLOPPY_DD_525; // likely 360 rpm in PC
-				fmt.nCylinders=40,fmt.nHeads=1; break;
+				fmt.nCylinders=40,fmt.sides.length=1; break;
 		}
 		// - accepting new Format
 		return	trdos->ChangeFormatAndReportProblem( true, true, fmt, DOS_MSG_HIT_ESC )
@@ -259,7 +259,7 @@
 			return err;
 		// - must be one of default Formats
 		if (considerBoot || considerFat){
-			auto tmpFmt=f;
+			auto &&tmpFmt=f.GetDef();
 				tmpFmt.nCylinders--; // inclusive!
 			for each( const auto &stdFmt in StdFormats ){
 				tmpFmt.mediumType=stdFmt.params.format.mediumType; // ignore Medium (unreliable for Images)

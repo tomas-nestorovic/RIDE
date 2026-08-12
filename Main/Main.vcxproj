@@ -196,6 +196,7 @@
     <ClInclude Include="src\Memory.h" />
     <ClInclude Include="src\Revolution.h" />
     <ClInclude Include="src\Sector.h" />
+    <ClInclude Include="src\Side.h" />
     <ClInclude Include="src\Time.h" />
     <ClInclude Include="src\Track.h" />
     <ClInclude Include="src\TrackEvent.h" />
@@ -274,6 +275,7 @@
     <ClCompile Include="src\Medium.cpp" />
     <ClCompile Include="src\Memory.cpp" />
     <ClCompile Include="src\Sector.cpp" />
+    <ClCompile Include="src\Side.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\TrackCorrections.cpp" />
     <ClCompile Include="src\TrackEvent.cpp" />
