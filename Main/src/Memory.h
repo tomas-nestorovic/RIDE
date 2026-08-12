@@ -88,7 +88,7 @@ namespace Memory
 				if (growExtra>0)
 					tmp.length=nItems;
 				::memcpy( tmp.begin(), begin(), sizeof(T)*length );
-				return (*this=tmp);
+				return ( *this=tmp ).begin()+lengthOrg;
 			}else{ // the special case for which the above would fail
 				reset();
 				return nullptr;
