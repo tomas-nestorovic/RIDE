@@ -24,7 +24,8 @@ namespace Medium
 
 	TFormat::TFormat()
 		// ctor (initialize to Unknown)
-		: mediumType(UNKNOWN)
+		: Sector::TSameLengthParams( 0, 1 )
+		, mediumType(UNKNOWN)
 		, codecType(Codec::ANY)
 		, nCylinders(0)
 		, sides(Side::CountMax)

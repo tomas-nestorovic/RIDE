@@ -22,6 +22,7 @@ using namespace Yahel;
 	CImageRaw::CImageRaw(PCProperties properties,bool hasEditableSettings)
 		// ctor
 		: CImage(properties,hasEditableSettings)
+		, Sector::TSameLengthParams( 1, 1 )
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized

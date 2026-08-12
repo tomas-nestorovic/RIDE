@@ -2,7 +2,7 @@
 
 namespace Sector
 {
-	const TId TId::Invalid={ -1, -1, -1, -1 };
+	const TId TId::Invalid={ -1, -1, 512, LC_256 };
 	
 	N TId::CountAppearances(const TId *ids,N nIds,const TId &id){
 		// returns the # of appearances of specified ID

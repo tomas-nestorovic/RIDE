@@ -203,9 +203,6 @@ namespace Sector
 		L sectorLength;
 		LC sectorLengthCode;
 
-		inline TSameLengthParams()
-			: nSectors(0) {
-		}
 		inline TSameLengthParams(N nSectors,L sectorLength)
 			: nSectors(nSectors) , firstSectorNumber(1)
 			, sectorLength(sectorLength) , sectorLengthCode(GetLengthCode(sectorLength)) {

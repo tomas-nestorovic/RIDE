@@ -1116,7 +1116,7 @@
 		// initializes a fresh formatted Medium (Boot, FAT, root dir, etc.)
 		ap.SetProgressTarget(4);
 		// - initializing Boot Sector
-		TPhysicalAddress chs={ 0, 0, {0,0,1,params->format.sectorLengthCode} };
+		TPhysicalAddress chs={ 0, 0, {0,0,1,MSDOS7_SECTOR_LENGTH_STD_CODE} };
 		boot.ChangeToSector(chs);
 		const PBootSector bootSector=boot.GetSectorData();
 		if (!bootSector) // Boot Sector may not be found after unsuccessfull formatting
