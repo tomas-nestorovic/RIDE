@@ -25,10 +25,10 @@
 	#define INI_SHELL_COMPLIANT_EXPORT_NAMES	_T("shcomp")
 	#define INI_GETFILESIZE_OPTION				_T("gfsopt")
 
-	CDos::CDos(PImage _image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,PCSide _sideMap,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
+	CDos::CDos(PImage _image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties _properties,TFnCompareNames _fnCompareNames,UINT nResId,CFileManagerView *_pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
 		: image(_image) , properties(_properties) , fnCompareNames(_fnCompareNames)
-		, sideMap(_sideMap) , menu(nResId) , pFileManager(_pFileManager)
+		, menu(nResId) , pFileManager(_pFileManager)
 		, formatBoot(formatBoot) // information on Medium Format retrieved from Boot; this information has ALWAYS priority when manipulating data on the disk; changes in this structure must be projected back to Boot Sector using FlushToBootSector (e.g. called automatically by BootView)
 		, trackAccessScheme(trackAccessScheme) // single Scheme to access Tracks in Image
 		, currentDir(DOS_DIR_ROOT)
@@ -175,7 +175,7 @@
 
 	TSector CDos::GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const{
 		// populates Buffer with standard ("official") Sector IDs for given Track and returns their count (Zone Bit Recording currently NOT supported!)
-		const PCSide sides= image->GetSideMap() ? image->GetSideMap() : sideMap; // prefer Sides defined by Image, e.g. defined by user
+		const auto &sides= image->GetSideMap() ? image->GetSideMap() : formatBoot.sides; // prefer Sides defined by Image, e.g. defined by user
 		for( TSector s=properties->firstSectorNumber,nSectors=formatBoot.nSectors; nSectors--; bufferId++ )
 			bufferId->cylinder=cyl, bufferId->side=sides[head], bufferId->sector=s++, bufferId->lengthCode=formatBoot.sectorLengthCode;
 		return formatBoot.nSectors;
@@ -342,7 +342,7 @@
 					return err;
 				if (!image->EditSettings(true))
 					return ERROR_CANCELLED;
-				if (const TStdWinError err=image->SetMediumTypeAndGeometry( rd.params.format, sideMap, properties->firstSectorNumber ))
+				if (const TStdWinError err=image->SetMediumTypeAndGeometry( rd.params.format, formatBoot.sides, properties->firstSectorNumber ))
 					return err;
 			}
 			// . carrying out the formatting

@@ -230,7 +230,7 @@ namespace Sector
 		outChs.cylinder=h.quot;
 		outChs.head=h.rem;
 		outChs.sectorId.cylinder=h.quot;
-		outChs.sectorId.side=image->GetSideMap()[h.rem];
+		outChs.sectorId.side=image->GetSideMap()[(THead)h.rem];
 		outChs.sectorId.sector=firstSectorNumber+sector.indexOnTrack;
 		outChs.sectorId.lengthCode=sectorLengthCode;
 	}

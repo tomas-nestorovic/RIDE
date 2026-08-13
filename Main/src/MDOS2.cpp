@@ -19,7 +19,7 @@
 		if (formatBoot.mediumType!=Medium::UNKNOWN)
 			__recognizeVersion__(); // recognition of MDOS on inserted disk
 		else
-			sideMap[1]=TVersion::VERSION_2; // disk not inserted, assuming Version 2
+			formatBoot.sides.Second()=TVersion::VERSION_2; // disk not inserted, assuming Version 2
 	}
 
 
@@ -44,12 +44,12 @@
 		for( TSector s=0; s<nSectors; s++ ){
 			const TSectorId idRef={ 0, TVersion::VERSION_1, ids[s].sector, MDOS2_SECTOR_LENGTH_STD_CODE };
 			if (idRef.sector<MDOS2_TRACK_SECTORS_MAX && ids[s]==idRef){
-				sideMap[1]=TVersion::VERSION_1;
+				formatBoot.sides.Second()=TVersion::VERSION_1;
 				return;
 			}
 		}
 		// - recognized Version 2.0
-		sideMap[1]=TVersion::VERSION_2;
+		formatBoot.sides.Second()=TVersion::VERSION_2;
 	}
 
 	CMDOS2::TLogSector CMDOS2::__fyzlog__(RCPhysicalAddress chs) const{
@@ -59,7 +59,7 @@
 	TPhysicalAddress CMDOS2::__logfyz__(TLogSector ls) const{
 		// converts LogicalSector number to PhysicalAddress and returns it
 		const div_t A=div( ls, formatBoot.nSectors ), B=div( A.quot, formatBoot.sides.length );
-		const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, sideMap[B.rem], A.rem+1, MDOS2_SECTOR_LENGTH_STD_CODE } }; // "+1" = Sectors numbered from 1
+		const TPhysicalAddress chs={ B.quot, B.rem, { B.quot, formatBoot.sides[(THead)B.rem], A.rem+1, MDOS2_SECTOR_LENGTH_STD_CODE } }; // "+1" = Sectors numbered from 1
 		return chs;
 	}
 
@@ -73,7 +73,7 @@
 	WORD CMDOS2::__getLogicalSectorFatItem__(TLogSector logSector) const{
 		// returns the value in FAT of the specified LogicalSector; returns MDOS2_FAT_ERROR if FAT Sector read error
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR ); // determining the item ID in FAT Sector
-		const TPhysicalAddress chs={ 0, 0, {0,sideMap[0],1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
+		const TPhysicalAddress chs={ 0, 0, {0,*formatBoot.sides,1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
 		if (PCSectorData itemAddress=image->GetHealthySectorData(chs)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1) // item on odd address in FAT Sector
@@ -87,7 +87,7 @@
 		// True <=> LogicalSector item set in FAT to the specified Value, otherwise False; assumed that the Value contains only 12-bit number
 		ASSERT((value12&0xf000)==0); // must always be a 12-bit Value only
 		div_t d=div( logSector, FAT_ITEMS_IN_SECTOR );	// determining the item ID in FAT Sector
-		const TPhysicalAddress chs={ 0, 0, {0,sideMap[0],1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
+		const TPhysicalAddress chs={ 0, 0, {0,*formatBoot.sides,1+FAT_LOGSECTOR_FIRST+d.quot,MDOS2_SECTOR_LENGTH_STD_CODE} }; // "+1" = Sectors numbered from 1
 		if (PSectorData itemAddress=image->GetHealthySectorData(chs)){
 			itemAddress+=( d.rem*=3 )/2;
 			if (d.rem&1){ // item on odd address in FAT Sector
@@ -117,7 +117,7 @@
 		bool result=true; // assumption (statuses of all Sectors successfully retrieved)
 		for( const TLogSector logSectorBase=formatBoot.GetSectorCount(cyl,head)-1; nSectors--; bufferId++ ){ // "-1" = Sectors numbered from 1
 			const TSector id=bufferId->sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || bufferId->side!=sideMap[head] || id>formatBoot.nSectors || !id || bufferId->lengthCode!=2) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || bufferId->cylinder!=cyl || bufferId->side!=formatBoot.sides[head] || id>formatBoot.nSectors || !id || bufferId->lengthCode!=2) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				// Sector number out of official Format
 				*buffer++=TSectorStatus::UNKNOWN;
 			else{
@@ -256,7 +256,7 @@
 								);
 		int step=0;
 		// - Steps 1-N: verifying FAT Sectors readability
-		TPhysicalAddress chs={ 0, 0, {0,mdos->sideMap[0],FAT_LOGSECTOR_FIRST,MDOS2_SECTOR_LENGTH_STD_CODE} };
+		TPhysicalAddress chs={ 0, 0, {0,*mdos->formatBoot.sides,FAT_LOGSECTOR_FIRST,MDOS2_SECTOR_LENGTH_STD_CODE} };
 		while (chs.sectorId.sector++<MDOS2_DIR_LOGSECTOR_FIRST){ // "++" = Sectors numbered from 1
 			if (!image->GetHealthySectorData(chs))
 				vp.fReport.LogWarning( VERIF_MSG_FAT_SECTOR_BAD, (LPCTSTR)chs.sectorId.ToString() );
@@ -493,11 +493,11 @@
 				return TCmdResult::DONE_REDRAW;
 			case ID_MDOS_VERSION1:
 				// forcing MDOS Version 1.0
-				sideMap[1] = version = TVersion::VERSION_1;
+				formatBoot.sides.Second() = version = TVersion::VERSION_1;
 				return TCmdResult::DONE_REDRAW;
 			case ID_MDOS_VERSION2:
 				// forcing MDOS Version 2.0
-				sideMap[1] = version = TVersion::VERSION_2;
+				formatBoot.sides.Second() = version = TVersion::VERSION_2;
 				return TCmdResult::DONE_REDRAW;
 			case ID_MDOS_IMPORTATTRIBUTES_CUSTOM:
 				// setting new default attributes

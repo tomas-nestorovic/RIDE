@@ -210,9 +210,7 @@
 
 
 	TSide CTRDOS503::GetSideNumber(THead head) const{
-		return	image->GetSideMap() // Side numbers are ignored by TR-DOS ...
-				? image->GetSideMap()[head] // ... so formally prefer numbering by Image, if available ...
-				: StdSidesMap[head]; // ... turning to default numbering otherwise (e.g. when creating a new Image)
+		return image->GetSideMap()[head]; // Side numbers ignored by TR-DOS, so follow whatever numbering in Image
 	}
 
 	bool CTRDOS503::GetSectorStatuses(TCylinder cyl,THead head,TSector nSectors,PCSectorId bufferId,PSectorStatus buffer) const{

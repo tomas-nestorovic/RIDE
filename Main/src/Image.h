@@ -152,7 +152,7 @@
 		void OnCloseDocument() override sealed;
 		bool IsWriteProtected() const;
 		bool CanBeModified() const;
-		inline PCSide GetSideMap() const{ return sideMap; }
+		inline const Side::CMap &GetSideMap() const{ return sideMap; }
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetHeadCount() const=0;
 		THead GetNumberOfFormattedSides(TCylinder cyl) const;

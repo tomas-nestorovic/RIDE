@@ -47,7 +47,7 @@
 		// - refreshing the indication of MDOS Version
 		CStatusBar &rStatusBar=app.GetMainWindow()->statusBar;
 		if (rStatusBar.m_hWnd) // may not exist if the app is closing
-			rStatusBar.SetPaneText( 1, DOS->sideMap[1]==TVersion::VERSION_2?_T("MDOS 2.0"):_T("MDOS 1.0") );
+			rStatusBar.SetPaneText( 1, DOS->formatBoot.sides.Second()==TVersion::VERSION_2?_T("MDOS 2.0"):_T("MDOS 1.0") );
 		// - refreshing the appearance
 		if (displayMode==LVS_ICON){
 			// GK's File Manager

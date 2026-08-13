@@ -213,8 +213,7 @@
 
 	CSpectrumBase::CSpectrumBase(PImage image,RCFormat formatBoot,TTrackScheme trackAccessScheme,PCProperties properties,UINT nResId,CSpectrumBaseFileManagerView *pFileManager,TGetFileSizeOptions _getFileSizeDefaultOption,TSectorStatus unformatFatStatus)
 		// ctor
-		: CDos(image,formatBoot,trackAccessScheme,properties,::StrCmpNW,sideMap,nResId,pFileManager,_getFileSizeDefaultOption,unformatFatStatus) {
-		::memcpy( sideMap, StdSidesMap, sizeof(sideMap) ); // mapping Head numbers to Side numbers as the IBM norm dictates
+		: CDos(image,formatBoot,trackAccessScheme,properties,::StrCmpNW,nResId,pFileManager,_getFileSizeDefaultOption,unformatFatStatus) {
 	}
 
 

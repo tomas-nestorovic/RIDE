@@ -4,8 +4,8 @@
 	constexpr BYTE BOOT_ID=16;
 
 	TPhysicalAddress CTRDOS503::TBootSector::GetPhysicalAddress(PCImage image){
-		const TSide side= image->GetSideMap() ? *image->GetSideMap() : *StdSidesMap;
-		const TPhysicalAddress chs={ 0, 0, {0,side,TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
+		// Side numbers ignored by TR-DOS, so follow whatever numbering in Image
+		const TPhysicalAddress chs={ 0, 0, {0,*image->GetSideMap(),TRDOS503_BOOT_SECTOR_NUMBER,TRDOS503_SECTOR_LENGTH_STD_CODE} };
 		return chs;
 	}
 

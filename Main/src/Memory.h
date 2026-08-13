@@ -74,7 +74,8 @@ namespace Memory
 
 		inline void reset(){ Empty(), length=0; }
 		inline N GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
-		inline const T &Last() const{ ASSERT(length>0); return operator[](length-1); }
+		inline T &Second() const{ return operator[](N(1)); } // 'ASSERT(length>=2)' not included for MDOS2 to not complain
+		inline T &Last() const{ ASSERT(length>0); return operator[](N(length-1)); }
 
 		T *ReserveAnother(N nItems){
 			nItems+=length; // now min capacity required

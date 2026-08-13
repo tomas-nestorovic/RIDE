@@ -400,7 +400,7 @@
 				RCPhysicalAddress chs=pItem->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
 					||
-					chs.sectorId.side!=vp.dos->sideMap[chs.head]
+					chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 					||
 					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 					||
@@ -529,7 +529,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 				RCPhysicalAddress chs=pItem++->chs;
 				if (chs.sectorId.cylinder!=chs.cylinder
 					||
-					chs.sectorId.side!=vp.dos->sideMap[chs.head]
+					chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 					||
 					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 					||
@@ -591,7 +591,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 						chs.sectorId=bufferId[s];
 						if (chs.sectorId.cylinder!=chs.cylinder
 							||
-							chs.sectorId.side!=vp.dos->sideMap[chs.head]
+							chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 							||
 							chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 							||

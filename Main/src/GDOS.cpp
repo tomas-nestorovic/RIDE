@@ -30,7 +30,7 @@
 	TPhysicalAddress CGDOS::TSectorInfo::__getChs__() const{
 		// converts to and returns the PhysicalAddress of this Sector
 		const BYTE cyl=track&127, head=(track&128)!=0;
-		const TPhysicalAddress chs={ cyl, head, {cyl,CImage::GetActive()->dos->sideMap[head],sector,GDOS_SECTOR_LENGTH_STD_CODE} };
+		const TPhysicalAddress chs={ cyl, head, {cyl,CImage::GetActive()->dos->formatBoot.sides[(THead)head],sector,GDOS_SECTOR_LENGTH_STD_CODE} };
 		return chs;
 	}
 
@@ -122,7 +122,7 @@
 		TPhysicalAddress chs={ cyl, head };
 		while (nSectors--){
 			const TSector id=( chs.sectorId=*bufferId++ ).sector;
-			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || chs.sectorId.cylinder!=cyl || chs.sectorId.side!=sideMap[head] || id>GDOS_TRACK_SECTORS_COUNT || !id || chs.sectorId.lengthCode!=GDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
+			if (cyl>=formatBoot.nCylinders || head>=formatBoot.sides.length || chs.sectorId.cylinder!=cyl || chs.sectorId.side!=formatBoot.sides[head] || id>GDOS_TRACK_SECTORS_COUNT || !id || chs.sectorId.lengthCode!=GDOS_SECTOR_LENGTH_STD_CODE) // condition for Sector must be ">", not ">=" (Sectors numbered from 1 - see also "|!id")
 				*buffer++=TSectorStatus::UNKNOWN; // Sector ID out of official Format - Sector thus Unknown
 			else if (cyl<GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT && !head)
 				*buffer++=TSectorStatus::SYSTEM;
@@ -186,7 +186,7 @@
 		if (de==ZX_DIR_ROOT){
 			item.chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
 			item.chs.cylinder = item.chs.sectorId.cylinder = 0;
-			item.chs.sectorId.side=sideMap[ item.chs.head=0 ];
+			item.chs.sectorId.side=formatBoot.sides[ item.chs.head=0 ];
 			item.chs.sectorId.sector=Properties.firstSectorNumber;
 			while (rFatPath.AddItem(&item)){ // also sets an error in FatPath
 				if (++item.chs.sectorId.sector>GDOS_TRACK_SECTORS_COUNT){
@@ -678,7 +678,7 @@
 		// - getting ready to read the first Directory Sector
 		, nRemainingEntriesInSector(0) {
 		chs.cylinder = chs.sectorId.cylinder = 0;
-		chs.sectorId.side=gdos->sideMap[ chs.head=0 ];
+		chs.sectorId.side=gdos->formatBoot.sides[ chs.head=0 ];
 		chs.sectorId.sector=Properties.firstSectorNumber-1;
 		chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
 	}
