@@ -390,7 +390,7 @@ namespace Sector
 		// - initialization
 		: properties(_properties) , dos(nullptr)
 		, hasEditableSettings(hasEditableSettings) , writeProtected(true) , canBeModified(!_properties->isReadOnly)
-		, sideMap(nullptr) // no explicit mapping of Heads to Side numbers
+		, sideMap(0) // no explicit mapping of Heads to Side numbers
 		// - creating the TrackMap
 		, trackMap(this)
 		// - creating MessageBars

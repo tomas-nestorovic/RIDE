@@ -51,7 +51,7 @@
 
 		bool writeProtected;
 		bool canBeModified; // can remove the WriteProtection? (e.g. can't for CAPS *.IPF images that is always read-only)
-		PCSide sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
+		Side::CMap sideMap; // explicit mapping of Heads to Side numbers (index = Head id, [index] = Side number); may be Null if the container doesn't have such feature (e.g. DSK images)
 
 		BOOL DoSave(LPCTSTR lpszPathName,BOOL bReplace) override;
 		BOOL OnCmdMsg(UINT nID,int nCode,LPVOID pExtra,AFX_CMDHANDLERINFO *pHandlerInfo) override; // enabling/disabling ToolBar buttons

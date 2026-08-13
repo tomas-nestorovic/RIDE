@@ -91,7 +91,7 @@
 			return ERROR_SECTOR_NOT_FOUND;
 	}
 
-	TStdWinError CSCL::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CSCL::SetMediumTypeAndGeometry(RCFormat format,PCSide,TSector firstSectorNumber){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
@@ -130,7 +130,7 @@
 					return ERROR_UNRECOGNIZED_VOLUME; // ... hence can never recognize this Image regardless it's clear it's a TR-DOS Image
 				pTrdos->zeroLengthFilesEnabled=true;
 				pTrdos->importToSysTrack=false;
-				::memcpy( pTrdos->sideMap, sideMap, sizeof(pTrdos->sideMap) ); // overwriting the SideMap to make sure it complies with the one provided as input
+				pTrdos->formatBoot.sides=sideMap; // provide DOS with the (user-defined) SideMap
 				// : formatting Image to the maximum possible capacity
 				TStdWinError err=ExtendToNumberOfCylinders( pTrdos->formatBoot.nCylinders, pTrdos->properties->sectorFillerByte, false );
 				if (err!=ERROR_SUCCESS){

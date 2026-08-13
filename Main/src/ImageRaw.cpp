@@ -24,6 +24,7 @@ using namespace Yahel;
 		: CImage(properties,hasEditableSettings)
 		, Sector::TSameLengthParams( 1, 1 )
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
+		, explicitSides(0)
 		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
@@ -40,7 +41,7 @@ using namespace Yahel;
 
 	TStdWinError CImageRaw::BufferAllCylinders(const volatile bool &cancelled){
 		// buffers each Cylinder; returns Windows standard i/o error
-		TPhysicalAddress chs={ 0, 0, {0,sideMap[0],firstSectorNumber,sectorLengthCode} };
+		TPhysicalAddress chs={ 0, 0, {0,*sideMap,firstSectorNumber,sectorLengthCode} };
 		while (chs.cylinder<cylinders.length){
 			if (cancelled)
 				return ERROR_CANCELLED;
@@ -305,7 +306,7 @@ trackNotFound:
 			return ERROR_NOT_SUPPORTED;
 	}
 
-	TStdWinError CImageRaw::SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber){
+	TStdWinError CImageRaw::SetGeometry(RCFormat format,PCSide,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - if geometry already set manually by the user, we are successfully done
 		if (explicitSides)
@@ -315,10 +316,10 @@ trackNotFound:
 								? sizeWithoutGeometry
 								: 0;
 		// - setting up geometry
-		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
+		sideMap=format.sides, firstSectorNumber=_firstSectorNumber;
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=format.sides.length, nSectors=format.nSectors, sectorLengthCode=format.sectorLengthCode;
+			nHeads=format.sides.length, nSectors=format.nSectors, sectorLength=format.sectorLength, sectorLengthCode=format.sectorLengthCode;
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
@@ -661,7 +662,7 @@ trackNotFound:
 			if (d.manualRecognition){
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides=Memory::MakeSharedPodArray<TSide,THead>(d.nHeads,d.sideNumbers);
+				explicitSides=Side::CMap(d.nHeads,d.sideNumbers);
 				nHeads=d.nHeads;
 			}else
 				explicitSides.reset();
@@ -759,7 +760,7 @@ trackNotFound:
 		else{
 			// reinitializing given Track
 			// . buffering Cylinder by reading one of its Sector
-			const TPhysicalAddress chs={ cyl, 0, {cyl,sideMap[0],firstSectorNumber,sectorLengthCode} };
+			const TPhysicalAddress chs={ cyl, 0, {cyl,*sideMap,firstSectorNumber,sectorLengthCode} };
 			GetHealthySectorData(chs);
 			// . reinitializing given Track to FillerByte
 			::memset( cylinders[cyl]+head*nBytesOfTrack, fillerByte, nBytesOfTrack );
