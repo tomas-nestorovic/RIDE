@@ -100,7 +100,9 @@
 			outFormat.nCylinders=0;
 		outFormat.sides.length=nHeads;
 		outFormat.nSectors=nSectorsOnTrack;
-		outFormat.sectorLength=sectorSize;
+		outFormat.sectorLengthCode=Sector::GetLengthCode(
+			outFormat.sectorLength = sectorSize
+		);
 		outFormat.clusterSize=nSectorsInCluster;
 	}
 
@@ -236,7 +238,7 @@
 
 	TStdWinError CMSDOS7::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		Medium::TFormatDef fmt=DefFormat( UNKNOWN, MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD, 1 );
+		Medium::TFormatDef fmt=DefFormat( UNKNOWN, MFM, 1,1,MSDOS7_SECTOR_BKBOOT, MSDOS7_SECTOR_LENGTH_STD, 1 );
 		// - finding Boot Sector
 		bool bootSectorRecognized;
 		const TPhysicalAddress bootChs=TBootSector::__getRecognizedChs__(image,true,&bootSectorRecognized,&fmt.mediumType);
@@ -281,7 +283,7 @@
 		{ _T("Standard 3.5\", 720 kB"), 0, DefFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
 		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,2), 2, 9, 5, 2, 128 },
 		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,16), 2, 9, 5, 1, 16 },
-		{ _T("Hard disk 50 MB (without MBR)"), 0, DefFormat(HDD_RAW,MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD_CODE,MSDOS7_SECTOR_LENGTH_STD,4), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
+		{ _T("Hard disk 50 MB (without MBR)"), 0, DefFormat(HDD_RAW,MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD,4), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
 		_T("MS-DOS 7.1 (experimental)"), // name

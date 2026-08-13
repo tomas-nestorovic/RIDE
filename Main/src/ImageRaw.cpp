@@ -318,7 +318,7 @@ trackNotFound:
 		sideMap=_sideMap, firstSectorNumber=_firstSectorNumber;
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nHeads=format.sides.length, nSectors=format.nSectors, sectorLengthCode=Sector::GetLengthCode( sectorLength=format.sectorLength );
+			nHeads=format.sides.length, nSectors=format.nSectors, sectorLengthCode=format.sectorLengthCode;
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
@@ -650,7 +650,7 @@ trackNotFound:
 				const Medium::TFormatDef fmt=DefFormat(
 					UNKNOWN, ANY, // the Image Format is no longer Unknown, but the Medium can be Any of supported
 					nCylinders, nHeads, nSectors,
-					sectorLengthCode, Sector::GetLength(sectorLengthCode),
+					Sector::GetLength(sectorLengthCode),
 					1
 				);
 				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );

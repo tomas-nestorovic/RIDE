@@ -105,10 +105,6 @@
 			DDV_MinMaxUInt( pDX, params.format.nSectors, propDos->nSectorsOnTrackMin, propDos->nSectorsOnTrackMax );
 		DDX_Text( pDX,	ID_SIZE	,(short &)params.format.sectorLength );
 			DDV_MinMaxUInt( pDX, params.format.sectorLength, propImage->sectorLengthMin, propImage->sectorLengthMax );
-			if (pDX->m_bSaveAndValidate)
-				params.format.sectorLengthCode=Sector::GetLengthCode(params.format.sectorLength);
-			else
-				params.format.sectorLengthCode=dos->formatBoot.sectorLengthCode;
 		DDX_Text( pDX,	ID_INTERLEAVE,params.interleaving);
 			DDV_MinMaxUInt( pDX, params.interleaving, 1, params.format.nSectors );
 		DDX_Text( pDX,	ID_SKEW	,params.skew);
@@ -290,7 +286,7 @@
 		const TCylinder cylA=GetDlgItemInt(ID_CYLINDER);
 		const BYTE interleaving=GetDlgItemInt(ID_INTERLEAVE), skew=GetDlgItemInt(ID_SKEW), gap3=GetDlgItemInt(ID_GAP), nAllocationTables=GetDlgItemInt(ID_FAT);
 		const WORD nRootDirectoryEntries=GetDlgItemInt(ID_DIRECTORY);
-		const Medium::TFormatDef f=DefFormat( UNKNOWN, ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), Sector::GetLengthCode(GetDlgItemInt(ID_SIZE)), GetDlgItemInt(ID_SIZE), GetDlgComboBoxSelectedValue(ID_CLUSTER) );
+		const Medium::TFormatDef f=DefFormat( UNKNOWN, ANY, GetDlgItemInt(ID_CYLINDER_N), GetDlgItemInt(ID_HEAD), GetDlgItemInt(ID_SECTOR), GetDlgItemInt(ID_SIZE), GetDlgComboBoxSelectedValue(ID_CLUSTER) );
 		for( char n=nFormatsInTotal-1; n-->0; ){ // "-1" = custom format
 			const PCStdFormat psf=(PCStdFormat)ComboBox_GetItemData(hFormat,n);
 			if (psf->params.cylinder0==cylA && psf->params.format==f && psf->params.interleaving==interleaving && psf->params.skew==skew && psf->params.gap3==gap3 && psf->params.nAllocationTables==nAllocationTables && psf->params.nRootDirectoryEntries==nRootDirectoryEntries){

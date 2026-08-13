@@ -46,7 +46,7 @@ namespace Medium
 
 	TFormatDef TFormat::GetDef() const{
 		const TFormatDef tmp=DefFormatEx(
-			mediumType, codecType, nCylinders, sides.length, nSectors, sectorLengthCode, sectorLength, clusterSize
+			mediumType, codecType, nCylinders, sides.length, nSectors, sectorLength, clusterSize
 		);
 		return tmp;
 	}

@@ -47,7 +47,6 @@ namespace Medium
 		TCylinder nCylinders;
 		THead nHeads;
 		TSector nSectors;
-		Sector::LC sectorLengthCode;
 		Sector::L sectorLength;
 		TSector clusterSize; // in Sectors
 
@@ -82,23 +81,23 @@ namespace Medium
 typedef Medium::TFormat TFormat,*PFormat;
 typedef const Medium::TFormat *PCFormat,&RCFormat;
 
-#define DefFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
-	{ medium, codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize }
+#define DefFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLength,clusterSize)\
+	{ medium, codec, nCyls, nHeads, nSectors, sectorLength, clusterSize }
 
-#define DefFormat(medium,codec,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
-	DefFormatEx( Medium::##medium, Codec::##codec, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+#define DefFormat(medium,codec,nCyls,nHeads,nSectors,sectorLength,clusterSize)\
+	DefFormatEx( Medium::##medium, Codec::##codec, nCyls, nHeads, nSectors, sectorLength, clusterSize )
 
-#define DefFdMfmFormat(medium,nCyls,nHeads,nSectors,sectorLengthCode,sectorLength,clusterSize)\
-	DefFormat( FLOPPY_##medium, MFM, nCyls, nHeads, nSectors, sectorLengthCode, sectorLength, clusterSize )
+#define DefFdMfmFormat(medium,nCyls,nHeads,nSectors,sectorLength,clusterSize)\
+	DefFormat( FLOPPY_##medium, MFM, nCyls, nHeads, nSectors, sectorLength, clusterSize )
 
 #define DefFdMfmFormat256(medium,nCyls,nHeads,nSectors)\
-	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_256, 256, 1 )
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, 256, 1 )
 
 #define DefFdMfmFormat512C(medium,nCyls,nHeads,nSectors,clusterSize)\
-	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_512, 512, clusterSize )
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, 512, clusterSize )
 
 #define DefFdMfmFormat512(medium,nCyls,nHeads,nSectors)\
 	DefFdMfmFormat512C( medium, nCyls, nHeads, nSectors, 1 )
 
 #define DefFdMfmFormat1024(medium,nCyls,nHeads,nSectors)\
-	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, Sector::LC_1024, 1024, 1 )
+	DefFdMfmFormat( medium, nCyls, nHeads, nSectors, 1024, 1 )
