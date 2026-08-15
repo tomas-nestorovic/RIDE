@@ -79,7 +79,8 @@ namespace Medium
 }
 
 typedef Medium::TFormat TFormat,*PFormat;
-typedef const Medium::TFormat *PCFormat,&RCFormat;
+typedef const Medium::TFormat &RCFormat;
+typedef const Medium::TFormatDef *PCFormatDef;
 
 #define DefFormatEx(medium,codec,nCyls,nHeads,nSectors,sectorLength,clusterSize)\
 	{ medium, codec, nCyls, nHeads, nSectors, sectorLength, clusterSize }

@@ -24,3 +24,4 @@ namespace Side
 typedef Side::T TSide;
 typedef Side::N THead;
 typedef const TSide *PCSide;
+typedef const THead *PCHead;

@@ -91,9 +91,6 @@ typedef long TStdWinError; // Windows standard i/o error
 
 typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
 typedef const TCylinder *PCCylinder;
-typedef BYTE THead,*PHead,TSide,*PSide;
-typedef const THead *PCHead;
-typedef const TSide *PCSide;
 
 class CImage; // forward
 typedef CImage *PImage;
@@ -166,9 +163,9 @@ namespace Track
 #include "MainWindow.h"
 #include "HexaEditor.h"
 #include "Revolution.h"
+#include "Side.h"
 #include "Sector.h"
 #include "Codec.h"
-#include "Side.h"
 #include "Medium.h"
 #include "TrackEvent.h"
 #include "Track.h"
