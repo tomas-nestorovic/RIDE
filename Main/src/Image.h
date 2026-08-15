@@ -101,7 +101,7 @@
 			void AddHeadCount(THead n);
 			void AddRevolutionCount(TRev n);
 			void AddSectorCount(TSector n);
-			void AddSides(PCSide list,THead n);
+			void AddSides(const Side::CMap &sides);
 			void AddSectorSize(Sector::L nBytes);
 			void Add40TrackDrive(bool value);
 			void AddDoubleTrackStep(bool isDouble,bool userForced);

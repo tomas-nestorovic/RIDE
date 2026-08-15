@@ -176,11 +176,11 @@ namespace Sector
 		Add( _T("sectors"), n );
 	}
 
-	void CImage::CSettings::AddSides(PCSide list,THead n){
-		ASSERT( list && n );
+	void CImage::CSettings::AddSides(const Side::CMap &sides){
+		ASSERT( sides );
 		TCHAR buf[1024], *p=buf;
-		while (n-->0)
-			p+=::wsprintf( p, _T("%d, "), (int)*list++ );
+		for each( const auto &s in sides )
+			p+=::wsprintf( p, _T("%d, "), s );
 		p[-2]='\0'; // drop last comma
 		SetAt( _T("sides"), buf );
 	}

@@ -3,7 +3,6 @@
 	
 	class CImageRaw:public CImage,private Sector::TSameLengthParams{
 		Memory::CSharedPodArray<Sector::PData,TCylinder,64> cylinders;
-		THead nHeads;
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;
 		PSectorData GetBufferedSectorData(TCylinder cyl,THead head,PCSectorId sectorId) const;
