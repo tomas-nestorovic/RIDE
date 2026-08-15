@@ -77,7 +77,6 @@
 		: CCapsBase( &Properties, fddId+'0', true, INI_GREASEWEAZLE )
 		// - initialization
 		, driver(driver) , fddId(fddId)
-		, dataBuffer( GW_BUFFER_CAPACITY )
 		, sampleClock(0,1) {
 		preservationQuality=false;
 		informedOnPoorPrecompensation=false;
@@ -418,19 +417,19 @@
 		return	p[0]>>1 | (p[1]&0xfe)<<6 | (p[2]&0xfe)<<13 | (p[3]&0xfe)<<20;
 	}
 
-	CTrackReaderWriter CGreaseweazleV4::GwV4StreamToTrack(PCBYTE p,DWORD length) const{
+	CTrackReaderWriter CGreaseweazleV4::GwV4StreamToTrack(const Memory::CSharedBytes &stream) const{
 		// converts Device Stream to general Track representation
 		if (sampleClock==0){
 			ASSERT(FALSE); // SampleClock must be queried from the Device before decoding the Stream!
 			return Track::Invalid;
 		}
-		if (!length || p[--length]) // invalid last Byte in the Stream (must be 0x00)
+		if (stream.Last()) // invalid last Byte in the Stream (must be 0x00)
 			return Track::Invalid;
 		CTrackReaderWriter result(
-			length, // a pessimistic estimation of # of Fluxes
+			stream.length, // a pessimistic estimation of # of Fluxes
 			params.fluxDecoder, params.resetFluxDecoderOnIndex
 		);
-		const PCBYTE pEnd=p+length;
+		PCBYTE p=stream, pEnd=stream.end()-1; // excluding the terminal 0x00 Byte
 		for( int sampleCounter=0,sampleCounterSinceIndex=0; p<pEnd; p++ ){
 			const BYTE i=*p;
 			if (i<TFluxOp::Special){
@@ -491,7 +490,7 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return Track::Invalid;
 	}	// - selecting floppy drive
-		PBYTE p=dataBuffer;
+		Memory::CSharedBytes buffer( GW_BUFFER_CAPACITY, true );
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		// - issuing a Request to the Greaseweazle Device to read fluxes in the specified Track
 		if (SeekTo(cyl) || SelectHead(head))
@@ -502,22 +501,22 @@
 			WORD nIndicesRequested;
 		} readParams={
 			0,
-			std::min( params.PrecisionToFullRevolutionCount(), (BYTE)Revolution::MAX )+1 // N+1 indices = N full revolutions
+			std::min( params.PrecisionToFullRevolutionCount(), (TRev)Revolution::MAX )+1 // N+1 indices = N full revolutions
 		};
 		static_assert( sizeof(readParams)==6, "" );
 		if (const TStdWinError err=SendRequest( TRequest::READ_FLUX, &readParams, sizeof(readParams) ))
 			return Track::Invalid;
-		while (const DWORD nBytesFree=dataBuffer+GW_BUFFER_CAPACITY-p)
-			if (const DWORD nBytesRead=Read( p, nBytesFree )){
-				p+=nBytesRead;
-				if (!p[-1]) // terminal zero, aka. end of Track data?
-					break;
-			}else
+		do{
+			constexpr int DataChunkSize=32768;
+			const auto n=Read( buffer.ReserveAnother(DataChunkSize), DataChunkSize );
+			buffer.length+=n-DataChunkSize; // put back unused Bytes
+			if (!buffer.Last()) // terminal zero, aka. end of Track data?
 				break;
+		}while (true);
 		if (const TStdWinError err=GetLastFluxOperationError())
 			return Track::Invalid;
 	}	// - making sure the read content is a Greaseweazle Stream whose data actually make sense
-		if (CTrackReaderWriter trw=GwV4StreamToTrack( dataBuffer, p-dataBuffer )){
+		if (CTrackReaderWriter &&trw=GwV4StreamToTrack( buffer )){
 			// it's a Greaseweazle Stream whose data make sense
 			if (head && params.flippyDisk)
 				trw.Reverse();
