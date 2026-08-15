@@ -804,31 +804,32 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return Track::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
-		Memory::CSharedBytes tmpDataBuffer(KF_BUFFER_CAPACITY,true);
-		WriteCreatorOob(tmpDataBuffer); // inject app signature
-		PBYTE p=tmpDataBuffer.end();
+		Memory::CSharedBytes buffer(KF_BUFFER_CAPACITY,true);
+		WriteCreatorOob(buffer); // inject app signature
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))
 			return Track::Invalid;
 		const TRev nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (TRev)Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
-			while (const DWORD nBytesFree=tmpDataBuffer+KF_BUFFER_CAPACITY-p)
-				if (const auto n=Read( p, nBytesFree )){
-					p+=n;
-					if (p-tmpDataBuffer>7
+			do{
+				constexpr int DataChunkSize=32768;
+				const auto n=Read( buffer.ReserveAnother(DataChunkSize), DataChunkSize );
+				buffer.length+=n-DataChunkSize; // put back unused Bytes
+				if (n>0){
+					if (buffer.length>7
 						&&
-						!::memcmp( p-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
+						!::memcmp( buffer.end()-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
 					)
 						break;
 				}else if (::GetLastError()!=ERROR_IO_PENDING) // i/o operation anything but pending
 					break; // possibly disconnected while in operation
+			}while (true);
 			const TStdWinError err=::GetLastError();
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
 		if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
 			return Track::Invalid;
-		tmpDataBuffer.length=p-tmpDataBuffer;
 	}	// - making sure the read content is a KryoFlux Stream whose data actually make sense
-		if (CTrackReaderWriter &&trw=StreamToTrack( tmpDataBuffer )){
+		if (CTrackReaderWriter &&trw=StreamToTrack( buffer )){
 			// it's a KryoFlux Stream whose data make sense
 			if (head && params.flippyDisk)
 				trw.Reverse();
