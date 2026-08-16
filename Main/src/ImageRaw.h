@@ -13,7 +13,7 @@
 		DWORD sizeWithoutGeometry;
 		CFile f;
 
-		void SetGeometry(RCFormat format,PCSide _sideMap,TSector _firstSectorNumber);
+		void SetGeometry(RCFormat format,TSector _firstSectorNumber);
 		TStdWinError BufferAllCylinders(const volatile bool &cancelled);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
 		void FreeCylinder(TCylinder i);

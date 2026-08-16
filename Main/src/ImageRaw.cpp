@@ -306,7 +306,7 @@ trackNotFound:
 			return ERROR_NOT_SUPPORTED;
 	}
 
-	void CImageRaw::SetGeometry(RCFormat format,PCSide,TSector _firstSectorNumber){
+	void CImageRaw::SetGeometry(RCFormat format,TSector _firstSectorNumber){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - determining the Image Size based on the size of Image's underlying file
 		const DWORD fileSize=	f.m_hFile!=CFile::hFileNull // InvalidHandle if creating a new Image, for instance
@@ -314,11 +314,11 @@ trackNotFound:
 								: 0;
 		// - setting up geometry
 		sideMap=format.sides, firstSectorNumber=_firstSectorNumber;
+		FreeAllCylinders();
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
 			nSectors=format.nSectors, sectorLength=format.sectorLength, sectorLengthCode=format.sectorLengthCode;
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
-				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
 				switch (trackAccessScheme){
 					case TTrackScheme::BY_CYLINDERS:{
@@ -340,7 +340,6 @@ trackNotFound:
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
-			FreeAllCylinders();
 			if (fileSize){
 				cylinders.Append(nullptr), sideMap.length=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 			}//else
@@ -363,7 +362,7 @@ trackNotFound:
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		*/
 		// - setting up Medium's Type and geometry
-		SetGeometry(format,sideMap,firstSectorNumber);
+		SetGeometry(format,firstSectorNumber);
 		return ERROR_SUCCESS;
 	}
 
@@ -644,12 +643,14 @@ trackNotFound:
 			TStdWinError TrySetMediumTypeAndGeometry() const{
 				// tries to apply current geometry; returns Windows standard i/o error
 				rawImage.trackAccessScheme = autoCylinders==BST_UNCHECKED ? TTrackScheme::BY_HEADS : TTrackScheme::BY_CYLINDERS;
-				const Medium::TFormatDef fmt=DefFdMfmFormat(
+				const Medium::TFormatDef def=DefFdMfmFormat(
 					DD, // both MediumType and Codec are irrelevant for this Image
 					nCylinders, nHeads, nSectors,
 					Sector::GetLength(sectorLengthCode),
 					1
 				);
+				TFormat fmt=def;
+					fmt.sides=Side::CMap( nHeads, sideNumbers );
 				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );
 			}
 		} d( *this, initialEditing );
@@ -658,15 +659,7 @@ trackNotFound:
 			if (d.manualRecognition){
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				FreeAllCylinders();
-				cylinders.AppendZeroed(
-					d.nCylinders
-				);
 				explicitSides=Side::CMap(d.nHeads,d.sideNumbers);
-				nSectors=d.nSectors;
-				sectorLength=Sector::GetLength(
-					sectorLengthCode = d.sectorLengthCode
-				);
 			}else
 				explicitSides.reset();
 			sideMap=explicitSides;
