@@ -653,16 +653,6 @@ namespace Sector
 			return TRUE;
 	}
 
-	bool CImage::IsWriteProtected() const{
-		// True <=> Image is WriteProtected, otherwise False
-		return writeProtected;
-	}
-
-	bool CImage::CanBeModified() const{
-		// True <=> content of this Image CanBeModified (can't be if, for instance, opened from CD-ROM), otherwise False and the Disk remains WriteProtected
-		return canBeModified;
-	}
-
 	THead CImage::GetNumberOfFormattedSides(TCylinder cyl) const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		for( THead head=GetHeadCount(); head-->0; )

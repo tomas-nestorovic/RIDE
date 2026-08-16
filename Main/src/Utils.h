@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define MSG_HELP_CANCEL	_T("Don't need any help now.")
+#define MSG_HELP_CANCEL	_T("Don't need help now.")
 
 namespace Utils{
 

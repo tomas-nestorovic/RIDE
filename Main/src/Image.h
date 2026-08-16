@@ -150,8 +150,8 @@
 
 		BOOL OnSaveDocument(LPCTSTR lpszPathName) override sealed; // sealed = override CImage::SaveAllModifiedTracks instead
 		void OnCloseDocument() override sealed;
-		bool IsWriteProtected() const;
-		bool CanBeModified() const;
+		inline bool IsWriteProtected() const{ return writeProtected; }
+		inline bool CanBeModified() const{ return canBeModified; }
 		inline const Side::CMap &GetSideMap() const{ return sideMap; }
 		virtual TCylinder GetCylinderCount() const=0;
 		virtual THead GetHeadCount() const=0;

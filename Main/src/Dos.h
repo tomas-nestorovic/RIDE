@@ -53,7 +53,7 @@
 			CPathString(const CString &s);
 			CPathString(const CPathString &r);
 
-			operator LPCTSTR() const{ return GetBuffer(); } // returns UTF-8 string in ANSI build
+			inline operator LPCTSTR() const{ return GetBuffer(); } // returns UTF-8 string in ANSI build
 
 		#ifdef UNICODE
 			static_assert( false, "GetAnsi/GetUnicode not implemented for Unicode" );
