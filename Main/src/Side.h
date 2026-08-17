@@ -5,18 +5,14 @@ namespace Side
 	typedef BYTE T; // value
 	typedef BYTE N; // index or count
 
-	enum:N{
-		CountMax=64
-	};
-
 	class CMap:public Memory::CSharedPodArray<T,N,16>{
 	public:
-		CMap(N nSides); // identity
+		enum:N{
+			CapacityMin=64
+		};
 
-		inline CMap(N nSides,const T *sides)
-			// ctor (explicit Sides)
-			: Memory::CSharedPodArray<T,N,16>( nSides, sides ) {
-		}
+		CMap(N nSides); // identity
+		CMap(N nSides,const T *sides); // cloning
 	};
 
 }

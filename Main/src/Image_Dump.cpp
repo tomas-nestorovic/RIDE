@@ -1305,19 +1305,19 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 				goto error;
 			}
 			// . setting geometry to the Target Image
-			const struct TDeducedSides sealed{
-				bool ambigous; // multiple Side numbers on a single Track?
-				TSide map[(THead)-1];
+			const struct TDeducedSides sealed:public Side::CMap{
 				TDeducedSides(PCImage source)
-					: ambigous(false) {
-					for( THead head=0; head<source->GetHeadCount(); head++ ){
+					: Side::CMap( source->GetHeadCount() ) {
+					for( THead head=0; head<length; head++ ){
 						TSectorId ids[(TSector)-1];
 						if (TSector nSectors=source->ScanTrack( 0, head, nullptr, ids )){
-							for( map[head]=ids->side; nSectors>0; )
-								if ( ambigous|=ids[--nSectors].side!=map[head] )
+							for( operator[](head)=ids->side; nSectors>0; )
+								if (ids[--nSectors].side!=operator[](head)){
+									length=0; // discard this map, for can't use it - Sectors with different Side numbers under the same Head
 									break;
-						}else
-							ambigous=true;
+								}
+						}//else
+							//nop (consider identity mapping)
 					}
 				}
 			} deducedSides(dos->image);
@@ -1325,8 +1325,8 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 			const Medium::TFormatDef targetGeometry=DefFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLength, 1 );
 			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
 									? dos->image->GetSideMap() // ... adopt them
-									: !deducedSides.ambigous // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...
-									? deducedSides.map // ... adopt them
+									: deducedSides // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...
+									? deducedSides // ... adopt them
 									: dos->formatBoot.sides; // otherwise adopt Sides defined by the DOS
 			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
 				goto error;

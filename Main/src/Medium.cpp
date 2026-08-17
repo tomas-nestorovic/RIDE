@@ -28,9 +28,8 @@ namespace Medium
 		, mediumType(UNKNOWN)
 		, codecType(Codec::ANY)
 		, nCylinders(0)
-		, sides(Side::CountMax)
+		, sides(0)
 		, clusterSize(0) {
-		sides.length=0;
 	}
 
 	TFormat::TFormat(const TFormatDef &f)
@@ -39,9 +38,8 @@ namespace Medium
 		, mediumType(f.mediumType)
 		, codecType(f.codecType)
 		, nCylinders(f.nCylinders)
-		, sides(Side::CountMax)
+		, sides(f.nHeads)
 		, clusterSize(f.clusterSize) {
-		sides.length=f.nHeads;
 	}
 
 	TFormatDef TFormat::GetDef() const{
