@@ -314,11 +314,11 @@ trackNotFound:
 								: 0;
 		// - setting up geometry
 		sideMap=format.sides, firstSectorNumber=_firstSectorNumber;
-		FreeAllCylinders();
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
 			nSectors=format.nSectors, sectorLength=format.sectorLength, sectorLengthCode=format.sectorLengthCode;
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
+				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
 				switch (trackAccessScheme){
 					case TTrackScheme::BY_CYLINDERS:{
@@ -340,6 +340,7 @@ trackNotFound:
 			}
 		}else{
 			// MediumType and/or its Format were not successfully determined (DosUnknown)
+			FreeAllCylinders();
 			if (fileSize){
 				cylinders.Append(nullptr), sideMap.length=1, nSectors=1, sectorLengthCode=Sector::GetLengthCode( sectorLength=std::min(fileSize,(DWORD)USHRT_MAX) );
 			}//else
@@ -657,6 +658,7 @@ trackNotFound:
 		// - showing the Dialog and processing its result
 		if (d.DoModal()==IDOK){
 			if (d.manualRecognition){
+				FreeAllCylinders();
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
 				explicitSides=Side::CMap(d.nHeads,d.sideNumbers);
