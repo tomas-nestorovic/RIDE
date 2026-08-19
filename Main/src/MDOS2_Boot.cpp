@@ -61,7 +61,6 @@
 		-1, // maximum size of a Cluster (in Bytes)
 		1,1, // range of supported number of allocation tables (FATs)
 		128,128, // range of supported number of root Directory entries
-		1,	// lowest Sector number on each Track
 		0xe5,TDirectoryEntry::EMPTY_ENTRY,	// regular Sector and Directory Sector filler Byte
 		0,0 // number of reserved Bytes at the beginning and end of each Sector
 	};

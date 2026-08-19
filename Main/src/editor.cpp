@@ -331,7 +331,7 @@
 			// . automatically recognizing suitable DOS (e.g. because a floppy might not have been formatted correctly)
 			TFormat formatBoot;
 			dos = image->dos = CDos::CRecognition().Perform(image,formatBoot)->fnInstantiate(image,formatBoot);
-			image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, dos->properties->firstSectorNumber );
+			image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, formatBoot.firstSectorNumber );
 			// . creating the user interface for recognized DOS
 			CMainWindow::CTdiTemplate::pSingleInstance->RemoveDocument(image); // added back in CreateUserInterface below
 			if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){
@@ -538,7 +538,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 					Utils::FatalError( _T("Can't recognize the medium"), err, _T("The disk can't be open.") );
 					return false;
 			}
-			if (const TStdWinError err=image->SetMediumTypeAndGeometry( formatBoot, CDos::StdSidesMap, d.dosProps->firstSectorNumber )){
+			if (const TStdWinError err=image->SetMediumTypeAndGeometry( formatBoot, CDos::StdSidesMap, formatBoot.firstSectorNumber )){
 				Utils::FatalError( _T("Can't change the medium geometry"), err, _T("The disk can't be open.") );
 				return false;
 			}
@@ -550,7 +550,7 @@ openImage:	if (image->OnOpenDocument(lpszFileName)){ // if opened successfully .
 		const PDos dos = image->dos = dosProps->fnInstantiate( image, formatBoot );
 		if (!dos)
 			return false;
-		image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, dos->properties->firstSectorNumber );
+		image->SetMediumTypeAndGeometry( formatBoot, formatBoot.sides, formatBoot.firstSectorNumber );
 		// - creating the user interface for recognized/selected DOS
 		image->SetModifiedFlag(FALSE); // just to be sure
 		if (const TStdWinError err=dos->CreateUserInterface(TDI_HWND)){

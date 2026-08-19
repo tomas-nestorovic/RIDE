@@ -12,6 +12,10 @@
 	class CGDOS sealed:public CSpectrumDos{
 		typedef CGDOS *PGDOS;
 
+		enum{
+			FirstSectorNumber=1
+		};
+
 		#pragma pack(1)
 		struct TSectorInfo sealed{
 			BYTE track,sector;

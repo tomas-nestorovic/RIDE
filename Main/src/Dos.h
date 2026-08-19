@@ -137,7 +137,6 @@
 			WORD clusterSizeMax; // maximum size of a Cluster (in Bytes)
 			BYTE nAllocationTablesMin,nAllocationTablesMax; // range of supported number of allocation tables (FATs)
 			WORD nRootDirectoryEntriesMin,nRootDirectoryEntriesMax; // range of supported number of root Directory entries
-			TSector firstSectorNumber; // lowest Sector number on each Track
 			BYTE sectorFillerByte,directoryFillerByte; // regular Sector and Directory Sector filler Byte
 			BYTE dataBeginOffsetInSector,dataEndOffsetInSector; // number of reserved Bytes at the beginning and end of each Sector
 

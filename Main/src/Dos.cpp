@@ -176,7 +176,7 @@
 	TSector CDos::GetListOfStdSectors(TCylinder cyl,THead head,PSectorId bufferId) const{
 		// populates Buffer with standard ("official") Sector IDs for given Track and returns their count (Zone Bit Recording currently NOT supported!)
 		const auto &sides= image->GetSideMap() ? image->GetSideMap() : formatBoot.sides; // prefer Sides defined by Image, e.g. defined by user
-		for( TSector s=properties->firstSectorNumber,nSectors=formatBoot.nSectors; nSectors--; bufferId++ )
+		for( TSector s=formatBoot.firstSectorNumber,nSectors=formatBoot.nSectors; nSectors--; bufferId++ )
 			bufferId->cylinder=cyl, bufferId->side=sides[head], bufferId->sector=s++, bufferId->lengthCode=formatBoot.sectorLengthCode;
 		return formatBoot.nSectors;
 	}
@@ -342,7 +342,9 @@
 					return err;
 				if (!image->EditSettings(true))
 					return ERROR_CANCELLED;
-				if (const TStdWinError err=image->SetMediumTypeAndGeometry( rd.params.format, formatBoot.sides, properties->firstSectorNumber ))
+				TFormat f=rd.params.format;
+					( f.sides=formatBoot.sides ).length=rd.params.format.nHeads;
+				if (const TStdWinError err=image->SetMediumTypeAndGeometry( f, f.sides, f.firstSectorNumber ))
 					return err;
 			}
 			// . carrying out the formatting

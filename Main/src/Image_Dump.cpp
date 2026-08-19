@@ -1328,7 +1328,7 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 									: deducedSides // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...
 									? deducedSides // ... adopt them
 									: dos->formatBoot.sides; // otherwise adopt Sides defined by the DOS
-			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->properties->firstSectorNumber ) )
+			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->formatBoot.firstSectorNumber ) )
 				goto error;
 			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping

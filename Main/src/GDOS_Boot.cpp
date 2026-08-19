@@ -14,7 +14,7 @@
 		//static const TFormat Fmt={ Medium::FLOPPY_DD, 1,1,10, GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD, 1 };
 		//if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS) return false;
 		( outFormatBoot=StdFormats[0].params.format ).nCylinders++;
-		if (const TStdWinError err=image->SetMediumTypeAndGeometry( outFormatBoot, StdSidesMap, Properties.firstSectorNumber ))
+		if (const TStdWinError err=image->SetMediumTypeAndGeometry( outFormatBoot, StdSidesMap, FirstSectorNumber ))
 			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );
@@ -65,7 +65,6 @@
 		-1, // maximum size of a Cluster (in Bytes)
 		1,1, // range of supported number of allocation tables (FATs)
 		GDOS_DIR_FILES_COUNT_MAX,GDOS_DIR_FILES_COUNT_MAX, // range of supported number of root Directory entries
-		1,	// lowest Sector number on each Track
 		0,0,	// regular Sector and Directory Sector filler Byte
 		0,2 // number of reserved Bytes at the beginning and end of each Sector
 	};

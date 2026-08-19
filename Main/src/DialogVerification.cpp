@@ -402,7 +402,7 @@
 					||
 					chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 					||
-					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+					chs.sectorId.sector<vp.dos->formatBoot.firstSectorNumber || vp.dos->formatBoot.firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 					||
 					chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
 				)
@@ -531,7 +531,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 					||
 					chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 					||
-					chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+					chs.sectorId.sector<vp.dos->formatBoot.firstSectorNumber || vp.dos->formatBoot.firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 					||
 					chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
 				)
@@ -593,7 +593,7 @@ nextFile:	// . if the File is actually a Directory, processing it recurrently
 							||
 							chs.sectorId.side!=vp.dos->formatBoot.sides[chs.head]
 							||
-							chs.sectorId.sector<vp.dos->properties->firstSectorNumber || vp.dos->properties->firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
+							chs.sectorId.sector<vp.dos->formatBoot.firstSectorNumber || vp.dos->formatBoot.firstSectorNumber+vp.dos->formatBoot.nSectors<=chs.sectorId.sector
 							||
 							chs.sectorId.lengthCode!=vp.dos->formatBoot.sectorLengthCode
 						)

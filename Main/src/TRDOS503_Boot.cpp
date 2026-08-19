@@ -171,7 +171,6 @@
 		-1, // maximum size of a Cluster (in Bytes)
 		0,0, // range of supported number of allocation tables (FATs)
 		128,128, // range of supported number of root Directory entries
-		TRDOS503_SECTOR_FIRST_NUMBER,	// lowest Sector number on each Track
 		0,TDirectoryEntry::END_OF_DIR,	// regular Sector and Directory Sector filler Byte
 		0,0 // number of reserved Bytes at the beginning and end of each Sector
 	};

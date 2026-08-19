@@ -19,7 +19,7 @@
 
 	bool CGDOS::TSectorInfo::__isValid__() const{
 		// True <=> information on this Sector is valid, otherwise False
-		return	sector>=Properties.firstSectorNumber && sector<=GDOS_TRACK_SECTORS_COUNT // correct (not only data) Sector numbers
+		return	sector>=FirstSectorNumber && sector<=GDOS_TRACK_SECTORS_COUNT // correct (not only data) Sector numbers
 				&&
 				(	track>=GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT && track<GDOS_CYLINDERS_COUNT // correct data Cylinders for Head 0
 					||
@@ -50,7 +50,7 @@
 
 	WORD CGDOS::TDirectoryEntry::TSectorAllocationBitmap::__sectorChs2sectorId__(RCPhysicalAddress chs){
 		// converts Sector's PhysicalAddress to bit sequence number in the SectorAllocationTable
-		return (chs.head*GDOS_CYLINDERS_COUNT+chs.cylinder)*GDOS_TRACK_SECTORS_COUNT+chs.sectorId.sector-Properties.firstSectorNumber-GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD;
+		return (chs.head*GDOS_CYLINDERS_COUNT+chs.cylinder)*GDOS_TRACK_SECTORS_COUNT+chs.sectorId.sector-FirstSectorNumber-GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD;
 	}
 
 	CGDOS::TDirectoryEntry::TSectorAllocationBitmap::TSectorAllocationBitmap(){
@@ -187,10 +187,10 @@
 			item.chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
 			item.chs.cylinder = item.chs.sectorId.cylinder = 0;
 			item.chs.sectorId.side=formatBoot.sides[ item.chs.head=0 ];
-			item.chs.sectorId.sector=Properties.firstSectorNumber;
+			item.chs.sectorId.sector=FirstSectorNumber;
 			while (rFatPath.AddItem(&item)){ // also sets an error in FatPath
 				if (++item.chs.sectorId.sector>GDOS_TRACK_SECTORS_COUNT){
-					item.chs.sectorId.sector=Properties.firstSectorNumber;
+					item.chs.sectorId.sector=FirstSectorNumber;
 					if (( item.chs.sectorId.cylinder=++item.chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT) // end of Directory
 						break; // end of Directory
 				}
@@ -205,7 +205,7 @@
 		if (!de->firstSector.__isValid__())
 			return true;
 		// - extracting the FatPath
-		const TSectorInfo *psi=&de->firstSector, lastValidSector(formatBoot.nCylinders,formatBoot.sides.length,Properties.firstSectorNumber);
+		const TSectorInfo *psi=&de->firstSector, lastValidSector(formatBoot.nCylinders,formatBoot.sides.length,FirstSectorNumber);
 		do{
 			// . determining Sector's PhysicalAddress
 			item.chs=psi->__getChs__();
@@ -679,7 +679,7 @@
 		, nRemainingEntriesInSector(0) {
 		chs.cylinder = chs.sectorId.cylinder = 0;
 		chs.sectorId.side=gdos->formatBoot.sides[ chs.head=0 ];
-		chs.sectorId.sector=Properties.firstSectorNumber-1;
+		chs.sectorId.sector=FirstSectorNumber-1;
 		chs.sectorId.lengthCode=GDOS_SECTOR_LENGTH_STD_CODE;
 	}
 
@@ -688,7 +688,7 @@
 		// - getting the next Sector with Directory
 		if (!nRemainingEntriesInSector){
 			if (++chs.sectorId.sector>GDOS_TRACK_SECTORS_COUNT){
-				chs.sectorId.sector=Properties.firstSectorNumber;
+				chs.sectorId.sector=FirstSectorNumber;
 				if (( chs.sectorId.cylinder=++chs.cylinder )==GDOS_DIR_FILES_COUNT_MAX*sizeof(TDirectoryEntry)/GDOS_SECTOR_LENGTH_STD/GDOS_TRACK_SECTORS_COUNT){ // end of Directory
 					entryType=TDirectoryTraversal::END;
 					return false; // end of Directory
