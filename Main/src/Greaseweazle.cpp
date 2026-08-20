@@ -538,10 +538,11 @@
 		return p;
 	}
 
-	DWORD CGreaseweazleV4::TrackToGwV4Stream(CTrackReader tr,PBYTE pOutStream) const{
+	Memory::CSharedBytes CGreaseweazleV4::TrackToGwV4Stream(CTrackReader tr) const{
 		// converts general Track representation to Device Stream
 		tr.SetCurrentTime(0);
-		PBYTE p=pOutStream;
+		Memory::CSharedBytes result( tr.GetTimesCount()*sizeof(int), true ); // very pessimistic estimation of memory required
+		PBYTE p=result;
 		TLogTime tPrev=0; int prevSampleCounter=0;
 		for( bool dummyFluxAppended=false; !dummyFluxAppended; ){
 			TLogTime flux; int fluxSampleCounter;
@@ -554,7 +555,7 @@
 				fluxSampleCounter=( flux=TIME_MICRO(100) )/sampleClock; // emit a final dummy Flux; never written to disk, just is sacrificial, ensuring that the real final flux gets written in full
 				dummyFluxAppended=true;
 			}
-			if (fluxSampleCounter<=0)
+			if (fluxSampleCounter<0) // can be zero if writing a test Track to determine pre-compensation params
 				ASSERT(FALSE); // tachyon flux!
 			else if (fluxSampleCounter<250)
 				// "short" flux (1-249 samples, single Byte; 0 indicates end of Stream)
@@ -584,14 +585,15 @@
 			}
 		}
 		*p++=0; // last Byte in the Stream must be 0x00
-		return p-pOutStream;
+		result.length=p-result;
+		return result;
 	}
 
 	TStdWinError CGreaseweazleV4::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
 		// uploads specified Track to a CAPS-based Device (e.g. KryoFlux); returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
 		// - converting the supplied Track to internal data format, below streamed directly to Greaseweazle
-		const DWORD nBytesToWrite=TrackToGwV4Stream( tr, dataBuffer );
+		const auto &&data=TrackToGwV4Stream( tr );
 		// - streaming formatted data to Greaseweazle
 		if (const TStdWinError err=SeekTo(cyl))
 			return err;
@@ -606,9 +608,9 @@
 		};
 		if (const TStdWinError err=SendRequest( TRequest::WRITE_FLUX, &Params, sizeof(Params) ))
 			return err;
-		if (const TStdWinError err=WriteFull( dataBuffer, nBytesToWrite ))
+		if (const TStdWinError err=WriteFull( data, data.length ))
 			return err;
-		if (const TStdWinError err=ReadFull( dataBuffer, 1 )) // sync with Greaseweazle
+		if (const TStdWinError err=ReadFull( data, 1 )) // sync with Greaseweazle
 			return err;
 		return GetLastFluxOperationError();
 	}

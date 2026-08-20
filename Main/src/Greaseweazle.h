@@ -67,7 +67,6 @@
 			BUS_LAST
 		};
 		const BYTE fddId;
-		const Memory::CSharedBytes dataBuffer;
 		#pragma pack(1)
 		struct{
 			BYTE major, minor, isMainFirmware, maxCmd;
@@ -101,7 +100,7 @@
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError SendRequest(TRequest req,LPCVOID params,BYTE paramsLength) const;
 		CTrackReaderWriter GwV4StreamToTrack(const Memory::CSharedBytes &stream) const;
-		DWORD TrackToGwV4Stream(CTrackReader tr,PBYTE pOutStream) const;
+		Memory::CSharedBytes TrackToGwV4Stream(CTrackReader tr) const;
 		TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const override;
 		inline TStdWinError GetLastFluxOperationError() const{ return SendRequest( TRequest::GET_FLUX_STATUS, nullptr, 0 ); }
 		inline TStdWinError SelectDrive() const{ return SendRequest( TRequest::SELECT_DRIVE, &fddId, sizeof(BYTE) ); }
