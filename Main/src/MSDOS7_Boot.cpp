@@ -276,13 +276,13 @@
 
 	static constexpr CFormatDialog::TStdFormat StdFormats[]={
 		{ _T("Standard 3.5\", 1440 kB"), 0, DefFdMfmFormat512(HD_350,79,2,18), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ DMF_1024, 0, DefFdMfmFormat512C(HD_350,79,2,21,2), 2, 0, 6, 2, 16 },
-		{ DMF_2048, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,4), 2, 0, 6, 2, 16 },
-		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,2), 2, 20, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,16), 2, 20, 5, 1, 16 },
+		{ DMF_1024, 0, DefFdMfmFormat512C(HD_350,79,2,21,2), 2, 0, 16, 2, 16 },
+		{ DMF_2048, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,4), 2, 0, 16, 2, 16 },
+		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,2), 2, 20, 16, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(HD_350,FDD_CYLINDERS_MAX-1,2,21,16), 2, 20, 16, 1, 16 },
 		{ _T("Standard 3.5\", 720 kB"), 0, DefFdMfmFormat512(DD,79,2,9), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 },
-		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,2), 2, 9, 5, 2, 128 },
-		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,16), 2, 9, 5, 1, 16 },
+		{ BOOSTED_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,2), 2, 9, 32, 2, 128 },
+		{ ARCHIVE_CAPACITY, 0, DefFdMfmFormat512C(DD,FDD_CYLINDERS_MAX-1,2,10,16), 2, 9, 32, 1, 16 },
 		{ _T("Hard disk 50 MB (without MBR)"), 0, DefFormat(HDD_RAW,MFM,99,16,63,MSDOS7_SECTOR_LENGTH_STD,4), 1, 0, FDD_350_SECTOR_GAP3, 2, 224 }
 	};
 	const CDos::TProperties CMSDOS7::Properties={
