@@ -342,8 +342,7 @@
 					return err;
 				if (!image->EditSettings(true))
 					return ERROR_CANCELLED;
-				TFormat f=rd.params.format;
-					( f.sides=formatBoot.sides ).length=rd.params.format.nHeads;
+				const TFormat f=rd.params.format;
 				if (const TStdWinError err=image->SetMediumTypeAndGeometry( f, f.sides, f.firstSectorNumber ))
 					return err;
 			}
