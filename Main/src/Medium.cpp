@@ -28,7 +28,7 @@ namespace Medium
 		, mediumType(UNKNOWN)
 		, codecType(Codec::ANY)
 		, nCylinders(0)
-		, sides(0)
+		, sides(1) // avoid client's division by zero, e.g. in 'CTRDOS503::GetLastOccupiedStdCylinder'
 		, clusterSize(0) {
 	}
 

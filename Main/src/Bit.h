@@ -49,7 +49,7 @@ namespace Bit
 			inline void Validate(){ __super::value=1; }
 		};
 	private:
-		Memory::CSharedPodArray<TBit,N> bitBuffer;
+		Memory::CSharedPodArray<TBit,N,1024> bitBuffer;
 		TBit *pBits;
 		N nBits;
 	public:
@@ -58,7 +58,10 @@ namespace Bit
 		CSequence(const CSequence &base,const TLogTimeInterval &ti);
 
 		inline operator bool() const{ return nBits>0; }
-		inline TBit &operator[](N i) const{ ASSERT(0<=i&&i<nBits); return pBits[i]; }
+		inline TBit &operator[](N i) const{
+			ASSERT( 0<=i && i<=nBits ); // 'i<=nBits' - okay to query 'nBits'-th Bit, e.g. diff "Insertion" when Ours misses tail Bits that Theirs contain
+			return pBits[i];
+		}
 		inline N GetBitCount() const{ return nBits; }
 		TData<WORD> GetWord(int i) const;
 		PCBit Find(TLogTime t) const;

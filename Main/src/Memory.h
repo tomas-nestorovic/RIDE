@@ -44,7 +44,7 @@ namespace Memory
 			static_assert( std::is_integral<N>().value, "'TIndex' must be integral" );
 			static_assert( sizeof(N)<=sizeof(Memory::UniversalEmptySharedPodArray.length), "Can't reference common empty array" );
 			if (initEmpty)
-				length=0;
+				this->length=0;
 		}
 		CSharedPodArray(N length,const T *pCopyInitData)
 			: CSharedPodPtr( *pCopyInitData, sizeof(T)*length )
