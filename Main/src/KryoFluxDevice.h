@@ -61,7 +61,6 @@
 			WINUSB
 		} driver;
 		const BYTE fddId;
-		const Memory::CSharedBytes dataBuffer;
 		struct{
 			mutable CMutex locker;
 			HANDLE handle;
@@ -85,11 +84,11 @@
 		TStdWinError SamBaCommand(LPCSTR cmd,LPCSTR end) const;
 		TStdWinError UploadFirmware() override;
 		TStdWinError UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const override;
-		DWORD TrackToKfw1(CTrackReader tr) const;
+		Memory::CSharedBytes TrackToKfw1(CTrackReader tr) const;
 		TStdWinError SendRequest(TRequest req,WORD index=0,WORD value=0) const;
 	    int GetLastRequestResult() const;
 		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
-		TStdWinError ReadFull(PVOID buffer,DWORD nBytes) const;
+		TStdWinError Read(Memory::CSharedBytes &outBuffer,const Memory::CSharedBytes::TView &until) const;
 		DWORD Write(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
 		TStdWinError SetMotorOn(bool on=true) const;

@@ -30,6 +30,16 @@ namespace Memory
 	public:
 		typedef TIndex N;
 
+		struct TView{ // compile-time version
+			const T *const items;
+			const N length;
+
+			const CSharedPodArray &Enum() const{
+				static_assert( sizeof(TView)==sizeof(CSharedPodArray), "see casting below" );
+				return *reinterpret_cast<const CSharedPodArray *>(this);
+			}
+		};
+
 		inline static const CSharedPodArray &GetEmpty(){
 			return static_cast<const CSharedPodArray &>( // this is utmost nasty but efficient, provided 'TIndex' of 'Empty' covers all possible ranges
 				static_cast<const CString &>(Memory::UniversalEmptySharedPodArray)
@@ -73,6 +83,7 @@ namespace Memory
 		inline bool operator()(N i) const{ ASSERT(i>=0); return i<length; }
 		inline T *operator+(N i) const{ return begin()+i; }
 		inline T &operator[](N i) const{ return begin()[i]; }
+		inline operator const TView &() const{ return *reinterpret_cast<const TView *>(this); }
 
 		inline void reset(){ Empty(), length=0; }
 		inline N GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }

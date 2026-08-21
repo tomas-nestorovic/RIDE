@@ -111,8 +111,7 @@
 		// - base
 		: CKryoFluxBase( &Properties, fddId+'0', device.firmwareVersion )
 		// - initialization
-		, driver(driver) , fddId(fddId)
-		, dataBuffer( KF_BUFFER_CAPACITY ) {
+		, driver(driver) , fddId(fddId) {
 		informedOnPoorPrecompensation=false;
 		// - connecting to a local KryoFlux device
 		hDevice=INVALID_HANDLE_VALUE;
@@ -210,22 +209,9 @@
 		if (const TStdWinError err=WriteFull( cmd, ::lstrlenA(cmd) ))
 			return err;
 		if (const int endLength=::lstrlenA(end)){
-			for( PBYTE p=dataBuffer; const int nBytesFree=dataBuffer+KF_BUFFER_CAPACITY-p; )
-				if (const auto n=Read( p, nBytesFree )){
-					p+=n;
-					if (p-dataBuffer>=endLength)
-						if (!::memcmp( p-endLength, end, endLength ))
-							return ERROR_SUCCESS;
-				}else
-					switch (const TStdWinError err=::GetLastError()){
-						case ERROR_IO_PENDING:
-							continue;
-						default: // i/o operation anything but pending
-							return err;
-					}
-			return ERROR_INSUFFICIENT_BUFFER;
-		}else
-			return ERROR_SUCCESS;
+			const Memory::CSharedBytes::TView cond={ (PCBYTE)end, endLength };
+			Read( Memory::CSharedBytes(0), cond ); // throw away the response
+		}
 	}
 
 	LPCSTR CKryoFluxDevice::GetProductName() const{
@@ -267,8 +253,7 @@
 			*cmd='R';
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			const Memory::CSharedBytes p(fw.length);
-			if (ReadFull(p,p.length)!=ERROR_SUCCESS || ::memcmp(fw,p,p.length)!=0) // uploaded wrongly?
+			if (Read( Memory::CSharedBytes(fw.length,true), fw )!=ERROR_SUCCESS) // uploaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
 			::wsprintfA( cmd, "G%08lx#\r", KF_FIRMWARE_EXEC_ADDR );
@@ -341,21 +326,28 @@
 		}
 	}
 
-	TStdWinError CKryoFluxDevice::ReadFull(PVOID buffer,DWORD nBytes) const{
-		// blocks caller until all requested Bytes are read from the device; returns Windows standard i/o error
-		for( PBYTE p=(PBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Read( p, nBytes )){
-				p+=n;
-				if (p-(PBYTE)buffer>=nBytes)
-					break;
-				nBytes-=n;
+	TStdWinError CKryoFluxDevice::Read(Memory::CSharedBytes &outBuffer,const Memory::CSharedBytes::TView &until) const{
+		// blocks caller until reading condition met; returns Windows standard i/o error
+		ASSERT( until.length>0 );
+		do{
+			constexpr int DataChunkSize=32768;
+			const auto n=Read( outBuffer.ReserveAnother(DataChunkSize), DataChunkSize );
+			outBuffer.length+=n-DataChunkSize; // put back unused Bytes
+			if (n>0){
+				if (outBuffer.length>=until.length) // sufficient # of Bytes read ?
+					if (!until.items // no requirement on tail content
+						||
+						!memcmp( outBuffer.end()-until.length, until.items, until.length ) // must match tail Byte pattern
+					)
+						break;
 			}else
 				switch (const TStdWinError err=::GetLastError()){
 					case ERROR_IO_PENDING:
 						continue;
 					default: // i/o operation anything but pending
-						return err;
+						return err; // possibly disconnected while in operation
 				}
+		}while (true);
 		return ERROR_SUCCESS;
 	}
 
@@ -438,13 +430,14 @@
 		return SeekTo(0);
 	}
 
-	DWORD CKryoFluxDevice::TrackToKfw1(CTrackReader tr) const{
+	Memory::CSharedBytes CKryoFluxDevice::TrackToKfw1(CTrackReader tr) const{
 		// converts specified Track representation into "KFW" format and returns the length of the representation
 		union{
 			PBYTE pb;
 			PWORD pw;
 			PDWORD pdw;
 		};
+		Memory::CSharedBytes dataBuffer( tr.GetTimesCount()*sizeof(int), true ); // very pessimistic estimation of memory required
 		pb=dataBuffer;
 		// - composing the Histogram of unique flux lengths
 		static constexpr WORD UNIQUE_FLUXES_COUNT_MAX=10000;
@@ -566,7 +559,7 @@
 		}
 		static constexpr BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, FluxTablePostamble, sizeof(FluxTablePostamble) )+sizeof(FluxTablePostamble);
-		const int nHeaderBytes=(pb-dataBuffer+63)/64*64; // rounding header to whole multiples of 64 Bytes
+		const int nHeaderBytes=Utils::RoundDivUp( pb-dataBuffer, 64 ); // rounding header to whole multiples of 64 Bytes
 		::ZeroMemory(pb,64);
 		pb=dataBuffer+nHeaderBytes;
 		// - converting UniqueFluxesUsed to an auxiliary Track (with LogicalTime set to SampleCounter) so that nearest neighbors can be used to approximate fluxes excluded from the Histogram
@@ -616,19 +609,18 @@
 		rnTrackDataBytes=nUsedFluxesTableBytes+rnFluxDataBytes+0x18; // TODO: find out why 0x18
 		// - padding the content to a whole multiple of 64 Bytes
 		*pw++=0x2000; // TODO: find out the meaning
-		const int nContentBytes=(pb-dataBuffer+63)/64*64; // rounding to whole multiples of 64 Bytes
+		dataBuffer.length=Utils::RoundDivUp( pb-dataBuffer, 64 ); // rounding to whole multiples of 64 Bytes
 		::ZeroMemory( pb, 64 );
-		pb=dataBuffer+nContentBytes;
 		// - successfully processed
 		::SetLastError(ERROR_SUCCESS);
-		return pb-dataBuffer;
+		return dataBuffer;
 	}
 
 	TStdWinError CKryoFluxDevice::UploadTrack(TCylinder cyl,THead head,CTrackReader tr) const{
 		// uploads specified Track to a CAPS-based device (e.g. KryoFlux); returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_DEVICE();
 		// - converting the supplied Track to "KFW" data, below streamed directly to KryoFlux
-		const DWORD nBytesToWrite=TrackToKfw1( tr );
+		const auto &&data=TrackToKfw1( tr );
 		#ifdef _DEBUG
 			if (false){
 				CFile f;
@@ -636,7 +628,7 @@
 				TCHAR kfwName[80];
 				::wsprintf( kfwName, _T("r:\\kfw\\track%02d-%c.bin"), cyl, '0'+head );
 				f.Open( kfwName, CFile::modeCreate|CFile::modeWrite|CFile::typeBinary|CFile::shareExclusive );
-					f.Write( dataBuffer, nBytesToWrite );
+					f.Write( data, data.length );
 				f.Close();
 			}
 		#endif
@@ -649,7 +641,7 @@
 		if (const TStdWinError err=SelectHead(head))
 			return err;
 		SendRequest( TRequest::STREAM, 2 ); // start streaming
-			TStdWinError err=WriteFull( dataBuffer, nBytesToWrite );
+			TStdWinError err=WriteFull( data, data.length );
 			if (err==ERROR_SUCCESS)
 				do{
 					if (err=SendRequest( TRequest::RESULT_WRITE ))
@@ -793,6 +785,11 @@
 		return err;
 	}
 
+	static const Memory::CSharedBytes::TView StreamEnd={
+		(PCBYTE)"\xd\xd\xd\xd\xd\xd\xd", // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
+		7
+	};
+
 	CTrackReader CKryoFluxDevice::ReadTrack(TCylinder cyl,THead head) const{
 		// creates and returns a general description of the specified Track, represented using neutral LogicalTimes
 		PInternalTrack &rit=internalTracks[cyl][head];
@@ -811,20 +808,7 @@
 			return Track::Invalid;
 		const TRev nIndicesRequested=std::min( params.PrecisionToFullRevolutionCount(), (TRev)Revolution::MAX )+1; // N+1 indices = N full revolutions
 		SendRequest( TRequest::STREAM, MAKEWORD(1,nIndicesRequested) ); // start streaming
-			do{
-				constexpr int DataChunkSize=32768;
-				const auto n=Read( buffer.ReserveAnother(DataChunkSize), DataChunkSize );
-				buffer.length+=n-DataChunkSize; // put back unused Bytes
-				if (n>0){
-					if (buffer.length>7
-						&&
-						!::memcmp( buffer.end()-7, "\xd\xd\xd\xd\xd\xd\xd", 7 ) // the final Out-of-Stream block (see KryoFlux Stream specification for explanation)
-					)
-						break;
-				}else if (::GetLastError()!=ERROR_IO_PENDING) // i/o operation anything but pending
-					break; // possibly disconnected while in operation
-			}while (true);
-			const TStdWinError err=::GetLastError();
+			const TStdWinError err=Read( buffer, StreamEnd );
 		SendRequest( TRequest::STREAM, 0 ); // stop streaming
 		if (err==ERROR_SEM_TIMEOUT) // currently, the only known way how to detect a non-existing FDD is to observe a timeout during reading
 			return Track::Invalid;
