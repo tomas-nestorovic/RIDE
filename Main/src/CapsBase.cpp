@@ -1302,13 +1302,16 @@ invalidTrack:
 						::wsprintf( msg, _T("Determined for medium in Drive %c using latest <a id=\"details\">Method %d</a>. No action needed now."), tmpPrecomp.driveLetter, tmpPrecomp.methodVersion );
 						break;
 					case ERROR_INVALID_DATA:
-						::wsprintf( msg, _T("Not determined for medium in Drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						//::wsprintf( msg, _T("Not determined for medium in Drive %c!\n<a id=\"compute\">Determine now using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						::lstrcpy( msg, _T("Determination temporarily suspended\nBACK SOON!") );
 						break;
 					case ERROR_EVT_VERSION_TOO_OLD:
-						::wsprintf( msg, _T("Determined for medium using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
+						//::wsprintf( msg, _T("Determined for medium using <a id=\"details\">Method %d</a>. <a id=\"compute\">Redetermine using latest Method %d</a>"), tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
+						::wsprintf( msg, _T("Determined for medium using <a id=\"details\">Method %d</a>. <a id=\"compute\">Latest Method %d BACK SOON!</a>"), tmpPrecomp.methodVersion, CPrecompensation::MethodLatest );
 						break;
 					case ERROR_UNRECOGNIZED_MEDIA:
-						::wsprintf( msg, _T("Unknown medium in Drive %c.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						//::wsprintf( msg, _T("Unknown medium in Drive %c.\n<a id=\"details\">Determine even so using latest Method %d</a>"), tmpPrecomp.driveLetter, CPrecompensation::MethodLatest );
+						::lstrcpy( msg, _T("Determination temporarily suspended\nBACK SOON!") );
 						break;
 					default:
 						::FormatMessage(
