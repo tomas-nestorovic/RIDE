@@ -253,7 +253,7 @@
 			*cmd='R';
 			if (const TStdWinError err=SamBaCommand( cmd, nullptr ))
 				return err;
-			if (Read( Memory::CSharedBytes(fw.length,true), fw )!=ERROR_SUCCESS) // uploaded wrongly?
+			if (Read( Memory::CSharedBytes(0), static_cast<const Memory::CSharedBytes::TView &>(fw) )!=ERROR_SUCCESS) // uploaded wrongly?
 				return ERROR_NOT_READY;
 			// . executing the firmware
 			::wsprintfA( cmd, "G%08lx#\r", KF_FIRMWARE_EXEC_ADDR );
