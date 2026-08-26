@@ -1217,6 +1217,16 @@ invalidTrack:
 				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
 			}
 
+			bool HasAnyHeadSufficientSectorsLike(TCylinder cyl,TCylinder cylLike) const{
+				for( THead head=ARRAYSIZE(*rcb.internalTracks); head-->0; ){ // begin with Head 1
+					const CTrackTempReset rit( rcb.internalTracks[cyl][head] );
+					TSectorId ids[(TSector)-1];
+					if (5<=CountSectorsBelongingToCylinder( cylLike, ids, rcb.ScanTrack(cyl,head,nullptr,ids) ))
+						return true; // at least N Sectors (empirical value) from Cylinder are actually LikeCylinder
+				}
+				return false;		
+			}
+
 			void RefreshMediumInformation(){
 				// detects a floppy in the Drive and attempts to recognize its Type
 				// . making sure that a floppy is in the Drive
@@ -1235,16 +1245,14 @@ invalidTrack:
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
 								Medium::TType mt;
 								if (rcb.GetInsertedMediumType(1,mt)==ERROR_SUCCESS){
-									const CTrackTempReset rit( rcb.internalTracks[2][0] );
-									TSectorId ids[(TSector)-1];
 									ShowDlgItem( ID_INFORMATION,
 										!CheckDlgItem( ID_40D80,
-											mt==Medium::UNKNOWN // first Track is empty, so likely each odd Track is empty
-											||
-											CountSectorsBelongingToCylinder( 1, ids, rcb.ScanTrack(2,0,nullptr,ids) )>=5 // ">=N" = at least N Sectors (empirical value) from Cylinder 2 actually belong to Cylinder 1
+											//mt==Medium::UNKNOWN // first Track is empty, so likely each odd Track is empty
+											//|| // commented out for evaluation not to stop here when Track 0 is damaged
+											HasAnyHeadSufficientSectorsLike( 2, 1 ) // finding on Cylinder 2 Sectors belonging to Cylinder 1 ?
 										)
 										&&
-										CountSectorsBelongingToCylinder( 1, ids, rcb.ScanTrack(1,0,nullptr,ids) )<5 // "<N" = less than N Sectors (empirical value) from Cylinder 1 actually belong to Cylinder 1
+										!HasAnyHeadSufficientSectorsLike( 1, 1 ) // finding on Cylinder 1 Sectors belonging to Cylinder 1 ?
 									);
 								}
 								rcb.SeekHeadsHome();
