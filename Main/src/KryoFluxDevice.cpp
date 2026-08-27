@@ -559,7 +559,7 @@
 		}
 		static constexpr BYTE FluxTablePostamble[]={ 0x0B, 0x05, 0x09, 0x00, 0x01, 0x05, 0x07, 0x0A, 0x05, 0x06, 0x01 }; // TODO: find out the meaning
 		pb=(PBYTE)::memcpy( pb, FluxTablePostamble, sizeof(FluxTablePostamble) )+sizeof(FluxTablePostamble);
-		const int nHeaderBytes=Utils::RoundDivUp( pb-dataBuffer, 64 ); // rounding header to whole multiples of 64 Bytes
+		const int nHeaderBytes=Utils::RoundUpToMuls( pb-dataBuffer, 64 ); // rounding header to whole multiples of 64 Bytes
 		::ZeroMemory(pb,64);
 		pb=dataBuffer+nHeaderBytes;
 		// - converting UniqueFluxesUsed to an auxiliary Track (with LogicalTime set to SampleCounter) so that nearest neighbors can be used to approximate fluxes excluded from the Histogram
@@ -609,7 +609,7 @@
 		rnTrackDataBytes=nUsedFluxesTableBytes+rnFluxDataBytes+0x18; // TODO: find out why 0x18
 		// - padding the content to a whole multiple of 64 Bytes
 		*pw++=0x2000; // TODO: find out the meaning
-		dataBuffer.length=Utils::RoundDivUp( pb-dataBuffer, 64 ); // rounding to whole multiples of 64 Bytes
+		dataBuffer.length=Utils::RoundUpToMuls( pb-dataBuffer, 64 ); // rounding to whole multiples of 64 Bytes
 		::ZeroMemory( pb, 64 );
 		// - successfully processed
 		::SetLastError(ERROR_SUCCESS);
