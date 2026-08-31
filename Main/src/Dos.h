@@ -230,7 +230,7 @@
 			LPCTSTR GetErrorDesc() const;
 		};
 
-		class CFileReaderWriter:public Sector::CSameLengthReaderWriter{
+		class CFileReaderWriter:public Cylinder::CGeometryReaderWriter{
 			const Sector::N nSectorsToSkip;
 		public:
 			const CFatPath fatPath;

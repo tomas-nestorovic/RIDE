@@ -1,7 +1,7 @@
 #ifndef IMAGERAW_H
 #define IMAGERAW_H
 	
-	class CImageRaw:public CImage,private Sector::TSameLengthParams{
+	class CImageRaw:public CImage,private TGeometry{
 		Memory::CSharedPodArray<Sector::PData,TCylinder,64> cylinders;
 
 		bool IsKnownSector(TCylinder cyl,THead head,RCSectorId id) const;

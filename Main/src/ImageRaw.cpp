@@ -22,7 +22,6 @@ using namespace Yahel;
 	CImageRaw::CImageRaw(PCProperties properties,bool hasEditableSettings)
 		// ctor
 		: CImage(properties,hasEditableSettings)
-		, Sector::TSameLengthParams( 1, 1 )
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
 		, explicitSides(0)
 		, sizeWithoutGeometry(0) {
@@ -307,16 +306,16 @@ trackNotFound:
 	}
 
 	void CImageRaw::SetGeometry(RCFormat format){
-		// sets Medium's Type and geometry; returns Windows standard i/o error
+		// sets Medium's Type and Geometry
 		// - determining the Image Size based on the size of Image's underlying file
 		const DWORD fileSize=	f.m_hFile!=CFile::hFileNull // InvalidHandle if creating a new Image, for instance
 								? sizeWithoutGeometry
 								: 0;
-		// - setting up geometry
-		sideMap=format.sides, firstSectorNumber=format.firstSectorNumber;
+		// - adopting Geometry
+		static_cast<TGeometry &>(*this)=format;
+		sideMap=sides;
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
-			nSectors=format.nSectors, sectorLength=format.sectorLength, sectorLengthCode=format.sectorLengthCode;
 			if (fileSize){ // some Cylinders exist only if Image contains some data (may not exist if Image not yet formatted)
 				FreeAllCylinders();
 				const auto nSectorsInTotal=fileSize/sectorLength;
@@ -801,11 +800,11 @@ trackNotFound:
 		// abstracts all Sector data (good and bad) into a single file and returns the result
 		// - defining the class
 		//static const TRev nDiscoveredRawRevolutions=1; // doesn't function, always initialized as 0 instead of 1
-		class CSerializer sealed:public Sector::CSameLengthReaderWriter{
+		class CSerializer sealed:public Cylinder::CGeometryReaderWriter{
 		public:
 			CSerializer(CImageRaw *image)
 				// ctor
-				: Sector::CSameLengthReaderWriter( image, image->cylinders.length*image->sideMap.length*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
+				: Cylinder::CGeometryReaderWriter( image, image->cylinders.length*image->sideMap.length*image->nSectors*image->sectorLength, NoPadding, nDiscoveredRawRevolutions, nullptr, *image ) {
 			}
 
 			HRESULT STDMETHODCALLTYPE Clone(IStream **ppstm) override{

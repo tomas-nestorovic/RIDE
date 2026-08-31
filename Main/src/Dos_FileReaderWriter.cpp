@@ -4,7 +4,7 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,PCFile file,bool wholeSectors)
 		// ctor to read/edit an existing File in Image
-		: Sector::CSameLengthReaderWriter(
+		: Cylinder::CGeometryReaderWriter(
 				dos->image,
 				wholeSectors ? dos->GetFileSizeOnDisk(file) : dos->GetFileOccupiedSize(file),
 				Yahel::TInterval<char>(
@@ -13,7 +13,7 @@
 				),
 				nDiscoveredRevolutions,
 				nullptr,
-				Sector::TSameLengthParams( dos->formatBoot.nSectors, dos->formatBoot.sectorLength )
+				dos->formatBoot
 			)
 		, nSectorsToSkip(0) // Files are not known to occupy Sectors with duplicate IDs
 		, fatPath(dos,file) {
@@ -22,13 +22,13 @@
 
 	CDos::CFileReaderWriter::CFileReaderWriter(const CDos *dos,RCPhysicalAddress chs,Sector::N nSectorsToSkip,FOnWritten onWritten)
 		// ctor to read/edit particular Sector in Image (e.g. Boot Sector)
-		: Sector::CSameLengthReaderWriter(
+		: Cylinder::CGeometryReaderWriter(
 				dos->image,
 				Sector::GetLength(chs.sectorId.lengthCode),
 				NoPadding,
 				nDiscoveredRevolutions,
 				onWritten,
-				Sector::TSameLengthParams( 1, Sector::GetLength(chs.sectorId.lengthCode) )
+				dos->formatBoot//TGeometry( 1, 1, Sector::GetLength(chs.sectorId.lengthCode) )
 			)
 		, nSectorsToSkip(nSectorsToSkip)
 		, fatPath(dos,chs) {

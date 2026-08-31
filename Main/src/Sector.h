@@ -198,33 +198,6 @@ namespace Sector
 		TPhysicalAddress GetPhysicalAddress(Yahel::TPosition pos) const;
 	};
 
-	struct TSameLengthParams{
-		N nSectors, firstSectorNumber;
-		L sectorLength;
-		LC sectorLengthCode;
-
-		inline TSameLengthParams(N nSectors,L sectorLength)
-			: nSectors(nSectors) , firstSectorNumber(1)
-			, sectorLength(sectorLength) , sectorLengthCode(GetLengthCode(sectorLength)) {
-		}
-	};
-
-	class CSameLengthReaderWriter abstract:public CReaderWriter,protected TSameLengthParams{
-	protected:
-		CSameLengthReaderWriter(PImage image,Yahel::TPosition dataTotalLength,const Yahel::TInterval<char> &padding,const TRev &nDiscoveredRevolutions,FOnWritten onWritten,const TSameLengthParams &slsp);
-	public:
-		const L usableSectorLength;
-
-		// Yahel::Stream::IAdvisor methods
-		Yahel::TRow LogicalPositionToRow(Yahel::TPosition logPos,WORD nBytesInRow) override;
-		Yahel::TPosition RowToLogicalPosition(Yahel::TRow row,WORD nBytesInRow) override;
-		void GetRecordInfo(Yahel::TPosition logPos,Yahel::PPosition pOutRecordStartLogPos,Yahel::PPosition pOutRecordLength,bool *pOutDataReady) override;
-
-		// other
-		Yahel::TPosition GetSectorStartPosition(const TPhysicalAddress &chs,N nSectorsToSkip) const override;
-		void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,N &outSectorIndex,PL pOutOffset) const override;
-	};
-
 }
 
 typedef Sector::N TSector,*PSector;
