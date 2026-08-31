@@ -8,7 +8,7 @@
 
 		CSCL();
 
-		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(RCFormat format) override;
 	};
 
 #endif // SCL_H

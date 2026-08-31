@@ -223,7 +223,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ::GetCellTime(dataBitRate*1000);
 	}
 
-	TStdWinError CHFE::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CHFE::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - must be setting Medium compatible with the FloppyInterface specified in the Header
@@ -262,7 +262,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				return ERROR_UNRECOGNIZED_MEDIA;
 		}
 		// - base
-		return __super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber );
+		return __super::SetMediumTypeAndGeometry( format );
 	}
 
 	bool CHFE::EditSettings(bool initialEditing){

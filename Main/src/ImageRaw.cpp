@@ -306,14 +306,14 @@ trackNotFound:
 			return ERROR_NOT_SUPPORTED;
 	}
 
-	void CImageRaw::SetGeometry(RCFormat format,TSector _firstSectorNumber){
+	void CImageRaw::SetGeometry(RCFormat format){
 		// sets Medium's Type and geometry; returns Windows standard i/o error
 		// - determining the Image Size based on the size of Image's underlying file
 		const DWORD fileSize=	f.m_hFile!=CFile::hFileNull // InvalidHandle if creating a new Image, for instance
 								? sizeWithoutGeometry
 								: 0;
 		// - setting up geometry
-		sideMap=format.sides, firstSectorNumber=_firstSectorNumber;
+		sideMap=format.sides, firstSectorNumber=format.firstSectorNumber;
 		if (format.mediumType!=Medium::UNKNOWN){
 			// MediumType and its Format are already known
 			nSectors=format.nSectors, sectorLength=format.sectorLength, sectorLengthCode=format.sectorLengthCode;
@@ -348,7 +348,7 @@ trackNotFound:
 		}
 	}
 
-	TStdWinError CImageRaw::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CImageRaw::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if geometry already set manually by the user, we are successfully done
@@ -363,7 +363,7 @@ trackNotFound:
 				trackAccessScheme=TTrackScheme::BY_CYLINDERS;
 		*/
 		// - setting up Medium's Type and geometry
-		SetGeometry(format,firstSectorNumber);
+		SetGeometry(format);
 		return ERROR_SUCCESS;
 	}
 
@@ -652,7 +652,8 @@ trackNotFound:
 				);
 				TFormat fmt=def;
 					fmt.sides=Side::CMap( nHeads, sideNumbers );
-				return rawImage.SetMediumTypeAndGeometry( fmt, sideNumbers, firstSectorNumber );
+					fmt.firstSectorNumber=firstSectorNumber;
+				return rawImage.SetMediumTypeAndGeometry( fmt );
 			}
 		} d( *this, initialEditing );
 		// - showing the Dialog and processing its result

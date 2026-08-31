@@ -1321,14 +1321,15 @@ error:				return Utils::FatalError(_T("Cannot dump"),err);
 					}
 				}
 			} deducedSides(dos->image);
-			TSector nSectors=dos->image->ScanTrack(0,0);
-			const Medium::TFormatDef targetGeometry=DefFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, nSectors, dos->formatBoot.sectorLength, 1 );
-			const PCSide sideMap =	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
+			const Medium::TFormatDef targetGeometry=DefFormatEx( d.dumpParams.mediumType, dos->formatBoot.codecType, d.dumpParams.cylinderZ+1, d.dumpParams.nHeads, dos->image->ScanTrack(0,0), dos->formatBoot.sectorLength, dos->formatBoot.clusterSize );
+			Medium::TFormat targetFormat(targetGeometry);
+				targetFormat.firstSectorNumber=dos->formatBoot.firstSectorNumber;
+				targetFormat.sides=	dos->image->GetSideMap() // if Source explicitly defines Sides (e.g. by user; e.g. *.SCP doesn't) ...
 									? dos->image->GetSideMap() // ... adopt them
 									: deducedSides // if unique Sides can be deduced from the first Cylinder (e.g. for *.SCP; e.g. not for *.IMA) ...
 									? deducedSides // ... adopt them
 									: dos->formatBoot.sides; // otherwise adopt Sides defined by the DOS
-			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetGeometry, sideMap, dos->formatBoot.firstSectorNumber ) )
+			if ( err=d.dumpParams.target->SetMediumTypeAndGeometry( targetFormat ) )
 				goto error;
 			d.dumpParams.target->SetPathName( d.dumpParams.targetFileName, FALSE );
 			// . dumping

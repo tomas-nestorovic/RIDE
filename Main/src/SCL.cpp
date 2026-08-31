@@ -91,11 +91,11 @@
 			return ERROR_SECTOR_NOT_FOUND;
 	}
 
-	TStdWinError CSCL::SetMediumTypeAndGeometry(RCFormat format,PCSide,TSector firstSectorNumber){
+	TStdWinError CSCL::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(format,sideMap,firstSectorNumber))
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry(format))
 			return err; // we should always succeeed, but just to be sure
 		// - allowed are only TRDOS-compliant formats
 		if (format.nSectors!=TRDOS503_TRACK_SECTORS_COUNT || format.sectorLength!=TRDOS503_SECTOR_LENGTH_STD || format.sectorLengthCode!=TRDOS503_SECTOR_LENGTH_STD_CODE)

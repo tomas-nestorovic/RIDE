@@ -122,7 +122,7 @@
 		BOOL OnOpenDocument(LPCTSTR lpszPathName) override;
 		TStdWinError SaveTrack(TCylinder cyl,THead head,const volatile bool &cancelled) const;
 		CTrackReader ReadTrack(TCylinder cyl,THead head) const override;
-		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(RCFormat format) override;
 		bool EditSettings(bool initialEditing) override;
 		//void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;

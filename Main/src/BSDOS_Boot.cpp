@@ -4,14 +4,15 @@
 	TStdWinError CBSDOS308::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
 		// - determining the Type of Medium (type of floppy)
-		Medium::TFormatDef fmt=DefFdMfmFormat1024( DD_525, 1,1,BSDOS_SECTOR_NUMBER_TEMP );
-		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		constexpr Medium::TFormatDef Def=DefFdMfmFormat1024( DD_525, 1,1,BSDOS_SECTOR_NUMBER_TEMP );
+		Medium::TFormat fmt=Def;
+		if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 					fmt.mediumType=Medium::FLOPPY_HD_525;
-					if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,BSDOS_SECTOR_NUMBER_FIRST)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+					if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 						return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 				}
 			}
@@ -26,7 +27,7 @@
 					if (boot->nSectorsPerTrack>BSDOS_SECTOR_NUMBER_LAST/2)
 						fmt.mediumType=Medium::FLOPPY_HD_350; // ... estimating the MediumType from BootSector
 				fmt.nCylinders=boot->nCylinders;
-				fmt.nHeads=boot->nHeads;
+				fmt.sides.length=boot->nHeads;
 				fmt.nSectors=boot->nSectorsPerTrack;
 				fmt.clusterSize=boot->nSectorsPerCluster;
 				outFormatBoot=fmt;

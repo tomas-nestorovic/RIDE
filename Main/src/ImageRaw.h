@@ -13,7 +13,7 @@
 		DWORD sizeWithoutGeometry;
 		CFile f;
 
-		void SetGeometry(RCFormat format,TSector _firstSectorNumber);
+		void SetGeometry(RCFormat format);
 		TStdWinError BufferAllCylinders(const volatile bool &cancelled);
 		TStdWinError ExtendToNumberOfCylinders(TCylinder nCyl,BYTE fillerByte,const volatile bool &cancelled);
 		void FreeCylinder(TCylinder i);
@@ -33,7 +33,7 @@
 		void GetTrackData(TCylinder cyl,THead head,Revolution::TType rev,PCSectorId bufferId,PCBYTE bufferNumbersOfSectorsToSkip,TSector nSectors,PSectorData *outBufferData,PByteInfo *outByteInfos,PWORD outBufferLengths,TFdcStatus *outFdcStatuses,TLogTime *outDataStarts,TRev *outRevs) override;
 		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override;
 		TStdWinError MarkSectorAsDirty(RCPhysicalAddress chs,BYTE,PCFdcStatus pFdcStatus,bool flush) override;
-		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(RCFormat format) override;
 		bool EditSettings(bool initialEditing) override;
 		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;

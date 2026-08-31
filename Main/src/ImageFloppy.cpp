@@ -64,11 +64,11 @@ using namespace Yahel;
 		}
 	}
 
-	TStdWinError CFloppyImage::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CFloppyImage::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		floppyType=format.mediumType;
-		return __super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber );
+		return __super::SetMediumTypeAndGeometry( format );
 	}
 
 	TStdWinError CFloppyImage::UnscanTrack(TCylinder cyl,THead head){

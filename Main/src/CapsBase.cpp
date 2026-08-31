@@ -766,7 +766,7 @@ invalidTrack:
 
 	#define SCANNED_CYLINDERS	3
 
-	TStdWinError CCapsBase::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CCapsBase::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		// - determining if library initialized ok
 		if (capsLibLoadingError)
@@ -783,7 +783,7 @@ invalidTrack:
 					WORD score=0;
 					tmp.mediumType=(Medium::TType)type;
 					const Utils::CVarTempReset<PDos> dos0( dos, nullptr );
-					const TStdWinError err=SetMediumTypeAndGeometry( tmp, sideMap, firstSectorNumber );
+					const TStdWinError err=SetMediumTypeAndGeometry( tmp );
 					if (params.userForcedMedium && tmp.mediumType==floppyType)
 						return ERROR_SUCCESS;
 					if (err)
@@ -798,7 +798,7 @@ invalidTrack:
 				}
 			if (scoreMax>0){
 				tmp.mediumType=bestMediumType;
-				return SetMediumTypeAndGeometry( tmp, sideMap, firstSectorNumber );
+				return SetMediumTypeAndGeometry( tmp );
 			}
 		}else if (!params.userForcedMedium || params.userForcedMedium&&format.mediumType==floppyType){
 			// a particular Medium specified
@@ -813,7 +813,7 @@ invalidTrack:
 			if (m_strPathName.IsEmpty() && !blankMedium)
 				return	newMediumTypeDifferent ? ERROR_NOT_SUPPORTED : ERROR_SUCCESS;
 			// . base
-			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber ))
+			if (const TStdWinError err=__super::SetMediumTypeAndGeometry( format ))
 				return err;
 			// . if blank (not yet formatted) new disk, we are done
 			if (m_strPathName.IsEmpty() && blankMedium)

@@ -8,10 +8,11 @@
 
 	TStdWinError CMDOS2::__recognizeDisk__(PImage image,TFormat &outFormatBoot){
 		// returns the result of attempting to recognize Image by this DOS as follows: ERROR_SUCCESS = recognized, ERROR_CANCELLED = user cancelled the recognition sequence, any other error = not recognized
-		Medium::TFormatDef fmt=DefFdMfmFormat512( DD_525, 1,1,10 );
-		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		constexpr Medium::TFormatDef Def=DefFdMfmFormat512( DD_525, 1,1,10 );
+		Medium::TFormat fmt=Def;
+		if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
+			if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0))
 				return ERROR_UNRECOGNIZED_VOLUME; // unknown Medium Type
 		}
 		if (const PCBootSector boot=(PCBootSector)image->GetHealthySectorData(TBootSector::CHS))

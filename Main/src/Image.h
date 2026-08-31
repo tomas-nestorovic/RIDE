@@ -180,7 +180,7 @@
 		void MarkSectorAsDirty(RCPhysicalAddress chs);
 		virtual Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const;
 		virtual TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const;
-		virtual TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber);
+		virtual TStdWinError SetMediumTypeAndGeometry(RCFormat format);
 		virtual bool EditSettings(bool initialEditing)=0;
 		virtual void EnumSettings(CSettings &rOut) const;
 		virtual TStdWinError Reset()=0;

@@ -300,8 +300,6 @@
 			const CFileManagerView &fileManager;
 		};
 	protected:
-		static const TSide StdSidesMap[];
-
 		static void __warnOnEnteringCriticalConfiguration__(bool b);
 
 		inline static BYTE XorChecksum(LPCVOID bytes,WORD nBytes){

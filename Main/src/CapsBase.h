@@ -176,7 +176,7 @@
 		TDataStatus IsSectorDataReady(TCylinder cyl,THead head,RCSectorId id,BYTE nSectorsToSkip,Revolution::TType rev) const override sealed;
 		Revolution::TType GetDirtyRevolution(RCPhysicalAddress chs,BYTE nSectorsToSkip) const override sealed;
 		TStdWinError GetInsertedMediumType(TCylinder cyl,Medium::TType &rOutMediumType) const override;
-		TStdWinError SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber) override;
+		TStdWinError SetMediumTypeAndGeometry(RCFormat format) override;
 		bool EditSettings(bool initialEditing) override;
 		void EnumSettings(CSettings &rOut) const override;
 		TStdWinError Reset() override;

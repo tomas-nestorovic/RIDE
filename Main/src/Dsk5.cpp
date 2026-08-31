@@ -408,11 +408,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SECTOR_NOT_FOUND;
 	}
 
-	TStdWinError CDsk5::SetMediumTypeAndGeometry(RCFormat format,PCSide sideMap,TSector firstSectorNumber){
+	TStdWinError CDsk5::SetMediumTypeAndGeometry(RCFormat format){
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - base
-		if (const TStdWinError err=__super::SetMediumTypeAndGeometry( format, sideMap, firstSectorNumber ))
+		if (const TStdWinError err=__super::SetMediumTypeAndGeometry( format ))
 			return err;
 		// - changes in geometry allowed only if Image is empty
 		if (!diskInfo.nCylinders)

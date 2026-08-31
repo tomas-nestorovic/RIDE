@@ -14,7 +14,7 @@
 		//static const TFormat Fmt={ Medium::FLOPPY_DD, 1,1,10, GDOS_SECTOR_LENGTH_STD_CODE,GDOS_SECTOR_LENGTH_STD, 1 };
 		//if (image->SetMediumTypeAndGeometry( &fmt, StdSidesMap, 1 )!=ERROR_SUCCESS) return false;
 		( outFormatBoot=StdFormats[0].params.format ).nCylinders++;
-		if (const TStdWinError err=image->SetMediumTypeAndGeometry( outFormatBoot, StdSidesMap, FirstSectorNumber ))
+		if (const TStdWinError err=image->SetMediumTypeAndGeometry( outFormatBoot ))
 			return err;
 		if (image->GetCylinderCount()<GDOS_CYLINDERS_COUNT)
 			return Utils::ErrorByOs( ERROR_VOLMGR_DISK_LAYOUT_PARTITIONS_TOO_SMALL, ERROR_UNRECOGNIZED_VOLUME );

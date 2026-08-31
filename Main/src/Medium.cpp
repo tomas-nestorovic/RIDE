@@ -29,7 +29,7 @@ namespace Medium
 		, codecType(Codec::ANY)
 		, nCylinders(0)
 		, sides(1) // avoid client's division by zero, e.g. in 'CTRDOS503::GetLastOccupiedStdCylinder'
-		, clusterSize(0) {
+		, clusterSize(1) { // avoid client's division by zero
 	}
 
 	TFormat::TFormat(const TFormatDef &f)

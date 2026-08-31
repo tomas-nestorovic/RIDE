@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-	const TSide CDos::StdSidesMap[]={ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
 	Memory::CPtrList<CDos::PCProperties> CDos::Known;
 
 
@@ -342,8 +341,7 @@
 					return err;
 				if (!image->EditSettings(true))
 					return ERROR_CANCELLED;
-				const TFormat f=rd.params.format;
-				if (const TStdWinError err=image->SetMediumTypeAndGeometry( f, f.sides, f.firstSectorNumber ))
+				if (const TStdWinError err=image->SetMediumTypeAndGeometry( rd.params.format ))
 					return err;
 			}
 			// . carrying out the formatting

@@ -20,14 +20,15 @@
 		// True <=> Boot Sector has been recognized on the disk, otherwise False
 		TPhysicalAddress chs={ 0, 0, {0,0,1,MSDOS7_SECTOR_LENGTH_STD_CODE} };
 		// - in case the Image is a physical floppy disk, determining the Type of Medium (type of floppy)
-		Medium::TFormatDef fmt=DefFdMfmFormat512( DD_525, 1,1,MSDOS7_SECTOR_BKBOOT );
-		if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+		constexpr Medium::TFormatDef Def=DefFdMfmFormat512( DD_525, 1,1,MSDOS7_SECTOR_BKBOOT );
+		Medium::TFormat fmt=Def;
+		if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 			fmt.mediumType=Medium::FLOPPY_DD;
-			if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+			if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 				fmt.mediumType=Medium::FLOPPY_HD_350;
-				if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+				if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 					fmt.mediumType=Medium::FLOPPY_HD_525;
-					if (image->SetMediumTypeAndGeometry(fmt,StdSidesMap,1)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
+					if (image->SetMediumTypeAndGeometry(fmt)!=ERROR_SUCCESS || !image->GetNumberOfFormattedSides(0)){
 						if (pSuccess) *pSuccess=false; // unknown Medium
 						return chs; // unknown Medium Type, any address will sooner or later cause a failure in access
 					}
