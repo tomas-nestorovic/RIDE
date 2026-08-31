@@ -53,11 +53,10 @@ namespace Medium
 		bool operator==(const TFormatDef &f) const;
 	};
 
-	struct TFormat:public Sector::TSameLengthParams{
+	struct TFormat:public Cylinder::TGeometry{
 		TType mediumType;
 		Codec::TType codecType;
 		TCylinder nCylinders;
-		Side::CMap sides;
 		TSector clusterSize;
 
 		TFormat(); // initialize to Unknown

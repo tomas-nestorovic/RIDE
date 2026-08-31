@@ -31,7 +31,7 @@ namespace Sector
 		static N CountAppearances(const TId *ids,N nIds,const TId &id);
 		static CString List(const TId *ids,N nIds,N iHighlight=-1,char highlightBullet='\0');
 
-		TCylinder cylinder;
+		Cylinder::N cylinder;
 		TSide side;
 		N sector;
 		LC lengthCode;
@@ -49,9 +49,9 @@ namespace Sector
 	struct TPhysicalAddress{
 		static const TPhysicalAddress Invalid;
 
-		inline static Track::N GetTrackNumber(TCylinder cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
+		inline static Track::N GetTrackNumber(Cylinder::N cyl,THead head,THead nHeads){ return cyl*nHeads+head; }
 
-		TCylinder cylinder;
+		Cylinder::N cylinder;
 		THead head;
 		TId sectorId;
 
@@ -188,11 +188,11 @@ namespace Sector
 		inline N GetCurrentSectorIndexOnTrack() const{ return sector.indexOnTrack; } // returns the zero-based index of current Sector on the Track
 		inline L GetPositionInCurrentSector() const{ return sector.offset; }
 		inline const TPhysicalAddress &GetCurrentPhysicalAddress() const{ return sector; }
-		TRev GetAvailableRevolutionCount(TCylinder cyl,THead head) const;
+		TRev GetAvailableRevolutionCount(Cylinder::N cyl,THead head) const;
 		inline Revolution::TType GetCurrentRevolution() const{ return revolution; }
 		inline void SetCurrentRevolution(Revolution::TType rev){ revolution=rev; }
 		virtual Yahel::TPosition GetSectorStartPosition(const TPhysicalAddress &chs,N nSectorsToSkip) const=0;
-		virtual TScannerStatus GetTrackScannerStatus(PCylinder pnOutScannedCyls=nullptr) const;
+		virtual TScannerStatus GetTrackScannerStatus(Cylinder::N *pnOutScannedCyls=nullptr) const;
 		virtual void SetTrackScannerStatus(TScannerStatus status);
 		virtual void GetPhysicalAddress(Yahel::TPosition pos,TPhysicalAddress &outChs,N &outSectorIndex,PL pOutOffset) const=0;
 		TPhysicalAddress GetPhysicalAddress(Yahel::TPosition pos) const;

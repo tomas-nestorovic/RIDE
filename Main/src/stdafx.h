@@ -89,9 +89,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 typedef long TStdWinError; // Windows standard i/o error
 
-typedef WORD TCylinder,*PCylinder; typedef short &RCylinder;
-typedef const TCylinder *PCCylinder;
-
 class CImage; // forward
 typedef CImage *PImage;
 typedef const CImage *PCImage;
@@ -149,6 +146,10 @@ namespace Track
 	typedef int N; // index or count
 	class CReader; // forward
 }
+namespace Cylinder
+{
+	typedef WORD N; // index or count
+}
 
 #include "Memory.h"
 #include "Utils.h"
@@ -162,6 +163,7 @@ namespace Track
 #include "Revolution.h"
 #include "Side.h"
 #include "Sector.h"
+#include "Cylinder.h"
 #include "Codec.h"
 #include "Medium.h"
 #include "TrackEvent.h"

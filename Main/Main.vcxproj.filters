@@ -88,6 +88,12 @@
     <Filter Include="Source Files\Image\Foundation">
       <UniqueIdentifier>{af914b81-a6d4-4046-bbf2-c3e1169c4de8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Dos\Foundation">
+      <UniqueIdentifier>{e76db949-dd42-4ce3-96be-1c6d2f6503dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Dos\Foundation">
+      <UniqueIdentifier>{cd07474d-1fca-4a00-9b01-bbb2b0707b14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stdafx.h">
@@ -274,6 +280,12 @@
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Side.h">
+      <Filter>Header Files\Image\Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Format.h">
+      <Filter>Header Files\Dos\Foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cylinder.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
   </ItemGroup>
@@ -570,6 +582,12 @@
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="src\Side.cpp">
+      <Filter>Source Files\Image\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Format.cpp">
+      <Filter>Source Files\Dos\Foundation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Cylinder.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
     </ClCompile>
   </ItemGroup>

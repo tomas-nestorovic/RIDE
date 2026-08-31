@@ -175,6 +175,7 @@
     <ClInclude Include="src\Checksum.h" />
     <ClInclude Include="src\Codec.h" />
     <ClInclude Include="src\CtRaw.h" />
+    <ClInclude Include="src\Cylinder.h" />
     <ClInclude Include="src\Debug.h" />
     <ClInclude Include="src\DialogEmptySpaceFilling.h" />
     <ClInclude Include="src\DialogFormatting.h" />
@@ -241,6 +242,7 @@
     <ClCompile Include="src\Checksum.cpp" />
     <ClCompile Include="src\Codec.cpp" />
     <ClCompile Include="src\CtRaw.cpp" />
+    <ClCompile Include="src\Cylinder.cpp" />
     <ClCompile Include="src\Debug.cpp" />
     <ClCompile Include="src\DialogRealDeviceSelection.cpp" />
     <ClCompile Include="src\DialogVerification.cpp" />

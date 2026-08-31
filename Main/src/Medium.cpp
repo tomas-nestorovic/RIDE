@@ -24,21 +24,18 @@ namespace Medium
 
 	TFormat::TFormat()
 		// ctor (initialize to Unknown)
-		: Sector::TSameLengthParams( 0, 1 )
-		, mediumType(UNKNOWN)
+		: mediumType(Medium::UNKNOWN)
 		, codecType(Codec::ANY)
 		, nCylinders(0)
-		, sides(1) // avoid client's division by zero, e.g. in 'CTRDOS503::GetLastOccupiedStdCylinder'
 		, clusterSize(1) { // avoid client's division by zero
 	}
 
 	TFormat::TFormat(const TFormatDef &f)
 		// ctor
-		: Sector::TSameLengthParams( f.nSectors, f.sectorLength )
+		: TGeometry( f.nHeads, f.nSectors, f.sectorLength )
 		, mediumType(f.mediumType)
 		, codecType(f.codecType)
 		, nCylinders(f.nCylinders)
-		, sides(f.nHeads)
 		, clusterSize(f.clusterSize) {
 	}
 
