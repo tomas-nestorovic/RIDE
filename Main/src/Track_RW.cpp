@@ -131,7 +131,7 @@ namespace Track
 
 	const Memory::CSharedBytes &CReader::GetRawDeviceData(TTypeId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
-		if (const auto &r=pLogTimesInfo->rawDeviceData)
+		if (const auto &r=rawDeviceData)
 			if (r.id==dataId)
 				return r;
 		return static_cast<const Memory::CSharedBytes &>(Memory::CSharedBytes::GetEmpty());
@@ -879,7 +879,7 @@ namespace Track
 		ASSERT( logTimes.length<GetBufferCapacity() );
 		ASSERT( logTime>=0 );
 		logTimes[logTimes.length++]=logTime;
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CReaderWriter::AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
@@ -898,7 +898,7 @@ namespace Track
 			// caller used its own buffer to store new LogicalTimes
 			AppendExternalTimes( logTimes, nLogTimes );
 		}
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CReaderWriter::AppendByte(TLogTimeInterval &at,BYTE b){
@@ -934,14 +934,14 @@ namespace Track
 		ASSERT( logTime>=0 );
 		indexPulses[nIndexPulses++]=logTime;
 		indexPulses[nIndexPulses]=Time::Infinity;
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CReaderWriter::TrimToTimesCount(Time::N nKeptLogTimes){
 		// discards some tail LogicalTimes, keeping only specified amount of them
 		ASSERT( nKeptLogTimes<=logTimes.length ); // can only shrink
 		logTimes.length=nKeptLogTimes;
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
 	void CReaderWriter::InsertMetaData(const TMetaDataItem &mdi){
@@ -1003,8 +1003,8 @@ namespace Track
 
 	void CReaderWriter::SetRawDeviceData(TTypeId dataId,const Memory::CSharedBytes &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
-		static_cast<Memory::CSharedBytes &>(pLogTimesInfo->rawDeviceData)=data;
-		pLogTimesInfo->rawDeviceData.id=dataId;
+		static_cast<Memory::CSharedBytes &>(rawDeviceData)=data;
+		rawDeviceData.id=dataId;
 	}
 
 	void CReaderWriter::ClearMetaData(const TLogTimeInterval &ti){
@@ -1048,7 +1048,7 @@ namespace Track
 			writeTimes.GetBuffer(),
 			writeTimes.GetTimesCount()*sizeof(TLogTime)
 		);
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		#ifdef _DEBUG
 			VerifyChronology();
 		#endif

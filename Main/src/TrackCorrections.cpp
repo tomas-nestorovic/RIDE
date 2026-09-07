@@ -89,7 +89,7 @@ return ERROR_SUCCESS; // temporarily suspended
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();
-		pLogTimesInfo->rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
+		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		pLogTimesInfo->corrected=true;
 		// - shifting Indices by shifting all Times in oposite direction
 		const TLogTime tLastIndexOrg=GetLastIndexTime();

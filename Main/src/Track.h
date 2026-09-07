@@ -32,9 +32,6 @@ namespace Track
 			Codec::TType codec;
 			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 			Time::CMetaData metaData;
-			struct:public Memory::CSharedBytes{
-				TTypeId id;
-			} rawDeviceData; // valid until Track modified, then disposed
 
 			TLogTimesInfoData(bool resetDecoderOnIndex);
 		};
@@ -67,6 +64,9 @@ namespace Track
 		};
 
 		TRev iNextIndexPulse,nIndexPulses;
+		struct:public Memory::CSharedBytes{
+			TTypeId id;
+		} rawDeviceData; // valid until Track modified, then disposed
 
 		CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
 
