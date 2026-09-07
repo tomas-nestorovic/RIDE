@@ -23,7 +23,7 @@ using namespace Yahel;
 		// ctor
 		: CImage(properties,hasEditableSettings)
 		, trackAccessScheme(TTrackScheme::BY_CYLINDERS)
-		, explicitSides(0)
+		, hasCustomSides(false)
 		, sizeWithoutGeometry(0) {
 		Reset(); // to be correctly initialized
 	}
@@ -194,7 +194,7 @@ using namespace Yahel;
 	THead CImageRaw::GetHeadCount() const{
 		// determines and returns the number of Sides formatted on given Cylinder; returns 0 iff Cylinder not formatted
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
-		return cylinders || explicitSides ? sideMap.length : 0;
+		return cylinders || hasCustomSides ? sides.length : 0;
 	}
 
 	TSector CImageRaw::ScanTrack(TCylinder cyl,THead head,Codec::PType pCodec,PSectorId bufferId,PWORD bufferLength,PLogTime startTimesNanoseconds,PBYTE pAvgGap3) const{
@@ -351,7 +351,7 @@ trackNotFound:
 		// sets the given MediumType and its geometry; returns Windows standard i/o error
 		EXCLUSIVELY_LOCK_THIS_IMAGE();
 		// - if geometry already set manually by the user, we are successfully done
-		if (explicitSides)
+		if (hasCustomSides)
 			return ERROR_SUCCESS;
 		// - choosing a proper TrackAccessScheme based on commonly known restrictions on emulation
 		/*
@@ -625,14 +625,14 @@ trackNotFound:
 				, ignoreUiNotifications(0)
 				, initialEditing(initialEditing)
 				, rawImage(rawImage)
-				, manualRecognition( rawImage.explicitSides )
+				, manualRecognition( rawImage.hasCustomSides )
 				, autoCylinders( rawImage.trackAccessScheme==TTrackScheme::BY_CYLINDERS )
 				, nCylinders( rawImage.cylinders.length )
 				, nHeads( rawImage.sideMap.length )
 				, nSectors( rawImage.nSectors ) , firstSectorNumber( rawImage.firstSectorNumber )
 				, sectorLengthCode( rawImage.sectorLengthCode ) {
-				if (rawImage.explicitSides)
-					::memcpy( sideNumbers, rawImage.explicitSides, nHeads*sizeof(TSide) );
+				if (manualRecognition)
+					::memcpy( sideNumbers, rawImage.sides, nHeads*sizeof(TSide) );
 				else if (initialEditing){ // automatic geometry - need to initialize the defaults
 					nCylinders=1;
 					nHeads=1, *sideNumbers=0;
@@ -661,10 +661,8 @@ trackNotFound:
 				FreeAllCylinders();
 				if (d.TrySetMediumTypeAndGeometry())
 					return false; // we should always succeed, but just to be sure
-				explicitSides=Side::CMap(d.nHeads,d.sideNumbers);
-			}else
-				explicitSides.reset();
-			sideMap=explicitSides;
+			}
+			hasCustomSides=d.manualRecognition!=0; // must be set as last to allow for adoption of user-defined Sides in 'SetMediumTypeAndGeometry'
 			return true;
 		}else
 			return false;
@@ -674,7 +672,7 @@ trackNotFound:
 		// returns a collection of relevant settings for this Image
 		__super::EnumSettings(rOut);
 		rOut.Add( _T("sequence of cylinders"), trackAccessScheme==TTrackScheme::BY_CYLINDERS );
-		rOut.Add( _T("auto geometry"), !explicitSides );
+		rOut.Add( _T("auto geometry"), !hasCustomSides );
 		rOut.AddCylinderCount(cylinders.length);
 		rOut.AddHeadCount(sideMap.length);
 		rOut.AddSides(sideMap);

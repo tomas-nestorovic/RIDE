@@ -9,7 +9,7 @@
 		TStdWinError SaveTrackToCurrentPositionInFile(CFile *pfOtherThanCurrentFile,TPhysicalAddress chs);
 	protected:
 		TTrackScheme trackAccessScheme;
-		Side::CMap explicitSides; // non-Null = Side numbers explicitly provided by user
+		bool hasCustomSides; // non-Null = Side numbers specified by user
 		DWORD sizeWithoutGeometry;
 		CFile f;
 
