@@ -4,6 +4,10 @@ namespace Track
 {
 	typedef DWORD TTypeId;
 
+	enum:TTypeId{
+		InvalidTypeId=0
+	};
+
 	enum TOrder:BYTE{
 		BY_CYLINDERS	=1,
 		BY_HEADS		=2

@@ -131,10 +131,9 @@ namespace Track
 
 	const Memory::CSharedBytes &CReader::GetRawDeviceData(TTypeId dataId) const{
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
-		if (const auto &r=rawDeviceData)
-			if (r.id==dataId)
-				return r;
-		return static_cast<const Memory::CSharedBytes &>(Memory::CSharedBytes::GetEmpty());
+		return	rawDeviceData.id==dataId
+				? rawDeviceData
+				: static_cast<const Memory::CSharedBytes &>(Memory::CSharedBytes::GetEmpty());
 	}
 
 	void CReader::SetCodec(Codec::TType codec){
@@ -842,6 +841,7 @@ namespace Track
 			new CLogTimesInfo( resetDecoderOnIndex ),
 			Codec::MFM
 		){
+		rawDeviceData.id=Track::InvalidTypeId;
 	}
 
 	CReaderWriter::CReaderWriter(const CReader &tr,bool shareTimes)
@@ -1003,6 +1003,7 @@ namespace Track
 
 	void CReaderWriter::SetRawDeviceData(TTypeId dataId,const Memory::CSharedBytes &data){
 		// remembers data as they were received from a disk (later used for fast copying between compatible disks)
+		ASSERT( dataId!=Track::InvalidTypeId );
 		static_cast<Memory::CSharedBytes &>(rawDeviceData)=data;
 		rawDeviceData.id=dataId;
 	}
