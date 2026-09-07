@@ -6,12 +6,12 @@ namespace Memory
 
 
 
-	CSharedBytes::N CSharedBytes::AppendRepeated(BYTE value,N count){
+	CSharedBytes::N CSharedBytesEx::AppendRepeated(BYTE value,N count){
 		::memset( ReserveAnother(count), value, count );
 		return count;
 	}
 
-	CSharedBytes::N CSharedBytes::AppendFormatted(LPCSTR format,...){
+	CSharedBytes::N CSharedBytesEx::AppendFormatted(LPCSTR format,...){
 		va_list argList;
 		va_start( argList, format );
 			char tmp[512];
@@ -20,7 +20,7 @@ namespace Memory
 		return Append( tmp, n+1 ); // incl. terminal Null char
 	}
 
-	CSharedBytes::N CSharedBytes::Append(LPCVOID bytes,N nBytes){
+	CSharedBytes::N CSharedBytesEx::Append(LPCVOID bytes,N nBytes){
 		::memcpy( ReserveAnother(nBytes), bytes, nBytes );
 		return nBytes;
 	}

@@ -237,7 +237,7 @@
 	CTrackReaderWriter CKryoFluxBase::StreamToTrack(const Memory::CSharedBytes &bytes) const{
 		// creates and returns a Track representation of the Stream data
 		// - parsing the input raw Bytes obtained from the KryoFlux device (eventually producing an error)
-		Memory::CSharedBytes inStreamData( bytes.length, bytes ); // extracted "in-stream-data" only
+		Memory::CSharedBytesEx inStreamData( bytes.length, bytes ); // extracted "in-stream-data" only
 		bool isKryofluxStream=false; // assumption (actually NOT a KryoFlux Stream)
 		LPBYTE pis=inStreamData, pb=bytes;
 		DWORD nFluxes=0;
@@ -425,7 +425,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 		return result;
 	}
 
-	static void WriteIndexBlock(Memory::CSharedBytes &buffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
+	static void WriteIndexBlock(Memory::CSharedBytesEx &buffer,TLogTime firstIndexTime,DWORD totalSampleCounter,DWORD inStreamDataLength,TLogTime indexTime){
 		const struct{
 			BYTE header,type;
 			WORD size;
@@ -436,12 +436,12 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			CKryoFluxBase::TimeToStdSampleCounter(indexTime)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
 			IndexClockDefault*(indexTime-firstIndexTime)/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
 		};
-		buffer.Append( &indexBlock, sizeof(indexBlock) );
+		buffer.Append(indexBlock);
 	}
 
 	Memory::CSharedBytes CKryoFluxBase::TrackToStream(CTrackReader tr) const{
 		// converts specified Track representation into Stream data and returns the length of the Stream
-		Memory::CSharedBytes buffer(KF_BUFFER_CAPACITY,true);
+		Memory::CSharedBytesEx buffer(KF_BUFFER_CAPACITY,true);
 		// - writing app signature
 		WriteCreatorOob(buffer);
 		// - writing hardware information
@@ -499,13 +499,13 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				tr.GetIndexTime(index)
 			);
 		// - there are no more flux-related data in the Stream
-		buffer.Append( &streamInfoBlock, sizeof(streamInfoBlock) );
+		buffer.Append(streamInfoBlock);
 		// - end of Stream
 		buffer.AppendRepeated( '\xd', 7 );
 		return buffer;
 	}
 
-	void CKryoFluxBase::WriteCreatorOob(Memory::CSharedBytes &buffer){
+	void CKryoFluxBase::WriteCreatorOob(Memory::CSharedBytesEx &buffer){
 		// writes "creator" out-of-stream-buffer block into the Buffer
 		#define APP_SIGNATURE "creator=" APP_ABBREVIATION " " APP_VERSION ", " GITHUB_REPOSITORY
 		buffer.AppendFormatted( "\xd\x4%c%c" APP_SIGNATURE, sizeof(APP_SIGNATURE), 0 );

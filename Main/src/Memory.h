@@ -132,14 +132,19 @@ namespace Memory
 
 
 
-	class CSharedBytes:public CSharedPodArray<BYTE,int,32768>{
+	typedef CSharedPodArray<BYTE,int,32768> CSharedBytes;
+
+	class CSharedBytesEx:public CSharedBytes{
 	public:
-		inline CSharedBytes(N length=0,bool initEmpty=false)
-			: CSharedPodArray( length, initEmpty ) {
+		inline CSharedBytesEx(N length=0,bool initEmpty=false)
+			: CSharedBytes( length, initEmpty ) {
 		}
-		inline CSharedBytes(LPCTSTR filename)
-			: CSharedPodArray(filename) {
+		inline CSharedBytesEx(LPCTSTR filename)
+			: CSharedBytes(filename) {
 		}
+
+		template<typename T>
+		N Append(const T &obj){ return Append( &obj, sizeof(obj) ); }
 
 		N AppendRepeated(BYTE value,N count);
 		N AppendFormatted(LPCSTR format,...);

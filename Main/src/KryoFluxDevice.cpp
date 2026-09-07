@@ -801,7 +801,7 @@
 		if (cyl>capsImageInfo.maxcylinder || head>capsImageInfo.maxhead)
 			return Track::Invalid;
 	}	// - issuing a Request to the KryoFlux device to read fluxes in the specified Track
-		Memory::CSharedBytes buffer(KF_BUFFER_CAPACITY,true);
+		Memory::CSharedBytesEx buffer(KF_BUFFER_CAPACITY,true);
 		WriteCreatorOob(buffer); // inject app signature
 	{	EXCLUSIVELY_LOCK_DEVICE();
 		if (SeekTo(cyl) || SelectHead(head))

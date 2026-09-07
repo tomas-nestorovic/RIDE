@@ -133,7 +133,7 @@ namespace Track
 		// retrieves data as they were received from a disk (e.g. used for fast copying between compatible disks)
 		return	rawDeviceData.id==dataId
 				? rawDeviceData
-				: static_cast<const Memory::CSharedBytes &>(Memory::CSharedBytes::GetEmpty());
+				: Memory::CSharedBytes::GetEmpty();
 	}
 
 	void CReader::SetCodec(Codec::TType codec){

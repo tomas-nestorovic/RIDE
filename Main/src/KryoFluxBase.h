@@ -7,7 +7,7 @@
 
 	class CKryoFluxBase abstract:public CCapsBase{
 	protected:
-		static void WriteCreatorOob(Memory::CSharedBytes &buffer);
+		static void WriteCreatorOob(Memory::CSharedBytesEx &buffer);
 
 		struct TParamsEtc{
 			// persistent (saved and loaded)
