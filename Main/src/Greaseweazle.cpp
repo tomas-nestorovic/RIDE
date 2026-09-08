@@ -508,8 +508,7 @@
 			return Track::Invalid;
 		do{
 			constexpr int DataChunkSize=32768;
-			const auto n=Read( buffer.ReserveAnother(DataChunkSize), DataChunkSize );
-			buffer.length+=n-DataChunkSize; // put back unused Bytes
+			buffer.length+=Read( buffer.ReserveAnother(DataChunkSize), DataChunkSize );
 			if (!buffer.Last()) // terminal zero, aka. end of Track data?
 				break;
 		}while (true);

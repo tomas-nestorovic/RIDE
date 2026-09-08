@@ -162,7 +162,7 @@ using namespace Charting;
 				const auto iTimeStride=Utils::RoundDivUp( trw.GetTimesCount(), (Time::N)MINED_TRACK_TIMES_COUNT_MAX ); // round up so that we never overrun the buffer
 				const PCLogTime trackTiming=trw.GetBuffer();
 				minedTrackDeltaTiming.length=0;
-				PLogPoint pxy=minedTrackDeltaTiming.ReserveAnother( trw.GetTimesCount() );
+				PLogPoint pxy=minedTrackDeltaTiming.AppendUninit( trw.GetTimesCount() );
 				for( Time::N i=1; i<trw.GetTimesCount(); i+=iTimeStride,pxy++ ){
 					pxy->x=trackTiming[i];
 					pxy->y=trackTiming[i]-trackTiming[i-1];

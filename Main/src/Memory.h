@@ -92,29 +92,36 @@ namespace Memory
 
 		T *ReserveAnother(N nItems){
 			nItems+=length; // now min capacity required
-			const N lengthOrg=length;
-			if (nItems<=GetCapacity()){ // already allocated sufficient space ?
-				length=nItems;
-				return begin()+lengthOrg;
-			}else if (nItems){
+			if (nItems<=GetCapacity()) // already allocated sufficient space ?
+				return end();
+			if (nItems){
 				static_assert( growExtra>=0, "" );
-				CSharedPodArray tmp(nItems+growExtra); // avoid excessive reallocations by allocating a little bit more than required
-				if (growExtra>0)
-					tmp.length=nItems;
-				::memcpy( tmp.begin(), begin(), sizeof(T)*length );
-				return ( *this=tmp ).begin()+lengthOrg;
-			}else{ // the special case for which the above would fail
-				reset();
-				return nullptr;
+				GetBufferSetLength(
+					( sizeof(T)*(nItems+growExtra) + sizeof(TCHAR)-1 )/sizeof(TCHAR) // avoid excessive reallocations by allocating a little bit more than required
+				);
+				return end();
 			}
+			reset(); // the special case for which the above would fail
+			return nullptr;
+		}
+
+		T *AppendUninit(N nItems){
+			T *const p=ReserveAnother(nItems);
+			length+=nItems;
+			return p;
 		}
 
 		T *AppendZeroed(N nItems){
-			return (T *)::ZeroMemory( ReserveAnother(nItems), sizeof(T)*nItems );
+			return (T *)::ZeroMemory( AppendUninit(nItems), sizeof(T)*nItems );
 		}
 
 		void Append(const T &item){
-			*ReserveAnother(1)=item;
+			*AppendUninit(1)=item;
+		}
+
+		N Append(LPCVOID items,N nItems){
+			::memcpy( AppendUninit(nItems), items, sizeof(T)*nItems );
+			return nItems;
 		}
 
 		template<typename V,class Predicate>
@@ -144,11 +151,10 @@ namespace Memory
 		}
 
 		template<typename T>
-		N Append(const T &obj){ return Append( &obj, sizeof(obj) ); }
+		N AppendObj(const T &obj){ return Append( &obj, sizeof(obj) ); }
 
 		N AppendRepeated(BYTE value,N count);
 		N AppendFormatted(LPCSTR format,...);
-		N Append(LPCVOID bytes,N nBytes);
 	};
 
 

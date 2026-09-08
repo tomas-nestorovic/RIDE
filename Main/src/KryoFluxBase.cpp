@@ -436,7 +436,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			CKryoFluxBase::TimeToStdSampleCounter(indexTime)-totalSampleCounter, // temporary 64-bit precision even on 32-bit machines
 			IndexClockDefault*(indexTime-firstIndexTime)/TIME_SECOND(1) // temporary 64-bit precision even on 32-bit machines
 		};
-		buffer.Append(indexBlock);
+		buffer.AppendObj(indexBlock);
 	}
 
 	Memory::CSharedBytes CKryoFluxBase::TrackToStream(CTrackReader tr) const{
@@ -485,7 +485,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 			if (sampleCounter<=0x0d) // Flux2
 				streamInfoBlock.dataLength+=buffer.AppendFormatted( "%c%c", 0, sampleCounter );
 			else if (sampleCounter<=0xff) // Flux1
-				streamInfoBlock.dataLength+=buffer.Append( &sampleCounter, sizeof(BYTE) );
+				streamInfoBlock.dataLength++, buffer.Append( sampleCounter );
 			else if (sampleCounter<=0x7ff) // Flux2
 				streamInfoBlock.dataLength+=buffer.AppendFormatted( "%c%c", sampleCounter>>8, sampleCounter&0xff );
 			else // Flux3
@@ -499,7 +499,7 @@ badFormat:		::SetLastError(ERROR_BAD_FORMAT);
 				tr.GetIndexTime(index)
 			);
 		// - there are no more flux-related data in the Stream
-		buffer.Append(streamInfoBlock);
+		buffer.AppendObj(streamInfoBlock);
 		// - end of Stream
 		buffer.AppendRepeated( '\xd', 7 );
 		return buffer;

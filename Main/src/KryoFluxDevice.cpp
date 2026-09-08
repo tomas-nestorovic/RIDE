@@ -332,7 +332,7 @@
 		do{
 			constexpr int DataChunkSize=32768;
 			const auto n=Read( outBuffer.ReserveAnother(DataChunkSize), DataChunkSize );
-			outBuffer.length+=n-DataChunkSize; // put back unused Bytes
+			outBuffer.length+=n;
 			if (n>0){
 				if (outBuffer.length>=until.length) // sufficient # of Bytes read ?
 					if (!until.items // no requirement on tail content

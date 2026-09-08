@@ -7,7 +7,7 @@ namespace Memory
 
 
 	CSharedBytes::N CSharedBytesEx::AppendRepeated(BYTE value,N count){
-		::memset( ReserveAnother(count), value, count );
+		::memset( AppendUninit(count), value, count );
 		return count;
 	}
 
@@ -20,8 +20,4 @@ namespace Memory
 		return Append( tmp, n+1 ); // incl. terminal Null char
 	}
 
-	CSharedBytes::N CSharedBytesEx::Append(LPCVOID bytes,N nBytes){
-		::memcpy( ReserveAnother(nBytes), bytes, nBytes );
-		return nBytes;
-	}
 }
