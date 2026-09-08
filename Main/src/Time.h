@@ -6,7 +6,7 @@ namespace Time
 
 	typedef TLogValue T,*P; // time in nanoseconds
 	typedef const T *PC;
-	typedef Memory::CSharedPodArray<T,N> CSharedArray;
+	typedef Memory::CSharedPodArray<T,N,2048> CSharedArray;
 
 	enum{
 		Invalid=INT_MIN,

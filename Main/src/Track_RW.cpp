@@ -43,14 +43,13 @@ namespace Track
 
 
 
-	CReader::CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
+	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
 		: CReaderBuffers(
-			CDecoder( method, nLogTimesMax, pLti->metaData ),
+			CDecoder( method, logTimes, pLti->metaData ),
 			pLti
 		)
 		, iNextIndexPulse(0) , nIndexPulses(0) {
-		logTimes.length=0;
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(codec); // init values associated with the specified Codec
 	}
@@ -832,12 +831,15 @@ namespace Track
 
 	typedef Time::TMetaDataItem TMetaDataItem;
 
+	constexpr Time::N LogTimesCountExtra=1;
+
 	const CReaderWriter Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
 
-	CReaderWriter::CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex)
+	CReaderWriter::CReaderWriter(Time::N nBufferCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: CReader(
-			nLogTimesMax+LogTimesCountExtra, method,
+			Time::CSharedArray( nBufferCapacity+LogTimesCountExtra, true ),
+			method,
 			new CLogTimesInfo( resetDecoderOnIndex ),
 			Codec::MFM
 		){
@@ -848,8 +850,8 @@ namespace Track
 		// copy ctor
 		: CReader( tr ) {
 		if (!shareTimes){
-			CReaderWriter tmp( GetBufferCapacity(), profile.method, pLogTimesInfo->resetDecoderOnIndex );
-			tmp.AppendExternalTimes( logTimes, logTimes.length );
+			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, pLogTimesInfo->resetDecoderOnIndex );
+			tmp.logTimes.Append( logTimes, logTimes.length );
 			*static_cast<TLogTimesInfoData *>(tmp.pLogTimesInfo)=*pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
 		}
@@ -858,7 +860,8 @@ namespace Track
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CReader(
-			nLogTimes+LogTimesCountExtra, TDecoderMethod::KEIR_FRASER,
+			Time::CSharedArray( nLogTimes+LogTimesCountExtra, true ),
+			TDecoderMethod::KEIR_FRASER,
 			new CLogTimesInfo( true ),
 			Codec::MFM
 		){
@@ -876,27 +879,19 @@ namespace Track
 	
 	void CReaderWriter::AppendTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
-		ASSERT( logTimes.length<GetBufferCapacity() );
 		ASSERT( logTime>=0 );
-		logTimes[logTimes.length++]=logTime;
+		logTimes.Append(logTime);
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
-	}
-
-	void CReaderWriter::AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes){
-		// appends given amount of LogicalTimes at the end of the Track
-		::memcpy( this->logTimes+this->logTimes.length, logTimes, nLogTimes*sizeof(TLogTime) );
-		this->logTimes.length+=nLogTimes;
 	}
 
 	void CReaderWriter::AppendTimes(PCLogTime logTimes,Time::N nLogTimes){
 		// appends given amount of LogicalTimes at the end of the Track
-		ASSERT( this->logTimes.length+nLogTimes<=GetBufferCapacity() );
 		if (this->logTimes+this->logTimes.length==logTimes)
 			// caller wrote directly into the buffer (e.g. creation of initial content); faster than calling N-times AddTime
 			this->logTimes.length+=nLogTimes;
 		else{
 			// caller used its own buffer to store new LogicalTimes
-			AppendExternalTimes( logTimes, nLogTimes );
+			this->logTimes.Append( logTimes, nLogTimes );
 		}
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
@@ -1035,15 +1030,15 @@ namespace Track
 		SetCurrentTime(clearTimes.tEnd);
 		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
 		// - replacing the LogicalTimes
-		const Time::N nNewLogTimes=logTimes.length+writeTimes.GetTimesCount()-nLogTimesToClear;
-		if (nNewLogTimes>GetBufferCapacity())
-			return false;
+		const Time::N dn=writeTimes.GetTimesCount()-nLogTimesToClear;
+		if (dn>0)
+			logTimes.ReserveAnother( dn+LogTimesCountExtra );
 		::memmove(
 			logTimes+iLogTimeToClearA+writeTimes.GetTimesCount(),
 			logTimes+iNextTime,
 			(logTimes.length-iNextTime)*sizeof(TLogTime)
 		);
-		logTimes.length=nNewLogTimes;
+		logTimes.length+=dn;
 		::memcpy(
 			logTimes+iLogTimeToClearA,
 			writeTimes.GetBuffer(),

@@ -63,16 +63,12 @@ namespace Track
 
 	class CReader:public CReaderBuffers{
 	protected:
-		enum{
-			LogTimesCountExtra=1
-		};
-
 		TRev iNextIndexPulse,nIndexPulses;
 		struct:public Memory::CSharedBytes{
 			TTypeId id;
 		} rawDeviceData; // valid until Track modified, then disposed
 
-		CReader(Time::N nLogTimesMax,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
+		CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
 
 		WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
 		WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
@@ -85,7 +81,6 @@ namespace Track
 
 		inline TRev GetIndexCount() const{ return nIndexPulses; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
-		inline Time::N GetBufferCapacity() const{ return logTimes.GetCapacity()-LogTimesCountExtra; }
 		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }
 
 		inline
@@ -148,11 +143,10 @@ namespace Track
 	};
 
 	class CReaderWriter:public CReader{
-		void AppendExternalTimes(PCLogTime logTimes,Time::N nLogTimes);
 		bool WriteDataFm(Event::TData &peData,TFdcStatus sr);
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
 	public:
-		CReaderWriter(Time::N nLogTimesMax,TDecoderMethod method,bool resetDecoderOnIndex);
+		CReaderWriter(Time::N nBufferCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 		CReaderWriter(const CReader &tr,bool shareTimes=true);
 		CReaderWriter(CReaderWriter &&trw);

@@ -104,7 +104,7 @@ return ERROR_SUCCESS; // temporarily suspended
 		// - normalization
 		const Time::N iModifStart=iNextTime;
 		Time::N iTime=iModifStart;
-		const Time::CSharedArray buffer( GetBufferCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
+		const Time::CSharedArray buffer( logTimes.GetCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
 		const PLogTime ptModified=buffer;
 		for( TRev nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
 			// . resetting inspection conditions
