@@ -8,7 +8,8 @@ namespace Track
 		// ctor
 		: CDecoder(decoder)
 		, pLogTimesInfo(pLti)
-		, indexPulses(pLti->indexPulses) {
+		, indexPulses( Revolution::MAX+2, true ) { // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
 
@@ -20,7 +21,6 @@ namespace Track
 		// ctor
 		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
 		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
-		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
 	CReaderBuffers::CLogTimesInfo::CLogTimesInfo(bool resetDecoderOnIndex)
@@ -49,7 +49,7 @@ namespace Track
 			CDecoder( method, logTimes, pLti->metaData ),
 			pLti
 		)
-		, iNextIndexPulse(0) , nIndexPulses(0) {
+		, iNextIndexPulse(0) {
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(codec); // init values associated with the specified Codec
 	}
@@ -57,14 +57,14 @@ namespace Track
 	CReader::CReader(const CReader &tr)
 		// copy ctor
 		: CReaderBuffers(tr)
-		, iNextIndexPulse(tr.iNextIndexPulse) , nIndexPulses(tr.nIndexPulses) {
+		, iNextIndexPulse(tr.iNextIndexPulse) {
 		pLogTimesInfo->AddRef();
 	}
 
 	CReader::CReader(CReader &&tr)
 		// move ctor
 		: CReaderBuffers(tr)
-		, iNextIndexPulse(tr.iNextIndexPulse) , nIndexPulses(tr.nIndexPulses) {
+		, iNextIndexPulse(tr.iNextIndexPulse) {
 		pLogTimesInfo->AddRef();
 	}
 
@@ -84,7 +84,7 @@ namespace Track
 		FindMetaDataIteratorAndApply();
 		//TODO: indexPulses.FindNextGreater( time, arrayLength=0 )
 		//TODO: indexPulses.FindNextGreaterIndex( time, arrayLength=0 )
-		for( iNextIndexPulse=0; iNextIndexPulse<nIndexPulses; iNextIndexPulse++ )
+		for( iNextIndexPulse=0; iNextIndexPulse<indexPulses.length; iNextIndexPulse++ )
 			if (logTime<indexPulses[iNextIndexPulse])
 				break;
 	}
@@ -109,7 +109,7 @@ namespace Track
 
 	TLogTime CReader::GetIndexTime(TRev index) const{
 		// returns the Time at which the specified IndexPulse occurs
-		if (index<nIndexPulses)
+		if (index<indexPulses.length)
 			return indexPulses[index];
 		ASSERT(FALSE); // the case of ending here requires an attention!
 		return GetLastTime();
@@ -117,9 +117,9 @@ namespace Track
 
 	TLogTime CReader::GetAvgIndexDistance() const{
 		// given at least two indices, computes and returns the average distance between them, otherwise 0
-		if (nIndexPulses<2)
+		if (indexPulses.length<2)
 			return 0;
-		const TRev nFullRevs=nIndexPulses-1;
+		const TRev nFullRevs=indexPulses.length-1;
 		return (indexPulses[nFullRevs]-*indexPulses)/nFullRevs;
 	}
 
@@ -807,7 +807,7 @@ namespace Track
 	CBits CReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
 		CBits result;
 		static_cast<Bit::CSequence &>(result)=CreateBitSequence(oneOkPercent);
-		for( TRev i=1; i<nIndexPulses; i++ )
+		for( TRev i=1; i<indexPulses.length; i++ )
 			result.revs[i-1]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i-1) );
 		return result;
 	}
@@ -852,6 +852,7 @@ namespace Track
 		if (!shareTimes){
 			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, pLogTimesInfo->resetDecoderOnIndex );
 			tmp.logTimes.Append( logTimes, logTimes.length );
+			tmp.indexPulses=indexPulses;
 			*static_cast<TLogTimesInfoData *>(tmp.pLogTimesInfo)=*pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
 		}
@@ -925,10 +926,10 @@ namespace Track
 
 	void CReaderWriter::AppendIndexTime(TLogTime logTime){
 		// appends LogicalTime representing the position of the index pulse on the disk
-		ASSERT( nIndexPulses<=Revolution::MAX );
+		ASSERT( indexPulses.length<=Revolution::MAX );
 		ASSERT( logTime>=0 );
-		indexPulses[nIndexPulses++]=logTime;
-		indexPulses[nIndexPulses]=Time::Infinity;
+		indexPulses.Append(logTime);
+		indexPulses[indexPulses.length]=Time::Infinity;
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 	}
 
@@ -1018,7 +1019,7 @@ namespace Track
 
 	TLogTime CReader::GetLastIndexTime() const{
 		// returns the LogicalTime of the last added Index (or 0)
-		return	nIndexPulses ? indexPulses[nIndexPulses-1] : 0;
+		return	indexPulses.length ? indexPulses[indexPulses.length-1] : 0;
 	}
 
 	bool CReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes){

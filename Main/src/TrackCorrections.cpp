@@ -82,7 +82,7 @@ return ERROR_SUCCESS; // temporarily suspended
 			return ERROR_SUCCESS;
 		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
-		if (nIndexPulses<2)
+		if (indexPulses.length<2)
 			return ERROR_SUCCESS;
 		// - MediumType must be supported
 		const Medium::PCProperties mp=pLogTimesInfo->mediumProps;
@@ -97,7 +97,7 @@ return ERROR_SUCCESS; // temporarily suspended
 			TLogTime dt=TIME_MICRO(c.indexOffsetMicroseconds);
 			if (dt<0)
 				dt=std::max( *indexPulses+dt, 0 )-*indexPulses; // mustn't run into negative timing
-			for( TRev i=nIndexPulses; i; indexPulses[--i]+=dt );
+			for( TRev i=indexPulses.length; i; indexPulses[--i]+=dt );
 		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
@@ -106,7 +106,7 @@ return ERROR_SUCCESS; // temporarily suspended
 		Time::N iTime=iModifStart;
 		const Time::CSharedArray buffer( logTimes.GetCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
 		const PLogTime ptModified=buffer;
-		for( TRev nextIndex=1; nextIndex<nIndexPulses; nextIndex++ ){
+		for( TRev nextIndex=1; nextIndex<indexPulses.length; nextIndex++ ){
 			// . resetting inspection conditions
 			profile.Reset();
 			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);

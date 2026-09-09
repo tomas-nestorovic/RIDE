@@ -34,7 +34,6 @@ namespace Track
 			bool resetDecoderOnIndex;
 			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 			Codec::TType codec;
-			TLogTime indexPulses[Revolution::MAX+2]; // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 			Time::CMetaData metaData;
 
 			TLogTimesInfoData(bool resetDecoderOnIndex);
@@ -51,7 +50,7 @@ namespace Track
 		} *PLogTimesInfo;
 
 		PLogTimesInfo pLogTimesInfo;
-		PLogTime indexPulses; // buffer to contain 'Max' full Revolutions
+		Time::CSharedArray indexPulses; // buffer to contain 'Max' full Revolutions
 
 		CReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti);
 	public:
@@ -63,7 +62,7 @@ namespace Track
 
 	class CReader:public CReaderBuffers{
 	protected:
-		TRev iNextIndexPulse,nIndexPulses;
+		TRev iNextIndexPulse;
 		struct:public Memory::CSharedBytes{
 			TTypeId id;
 		} rawDeviceData; // valid until Track modified, then disposed
@@ -79,15 +78,15 @@ namespace Track
 		CReader(CReader &&tr);
 		~CReader();
 
-		inline TRev GetIndexCount() const{ return nIndexPulses; }
+		inline TRev GetIndexCount() const{ return indexPulses.length; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
 		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }
 
 		inline
 		const TLogTimeInterval &GetFullRevolutionTimeInterval(TRev rev) const{
 			static_assert( sizeof(TLogTimeInterval)==2*sizeof(*indexPulses), "" );
-			ASSERT( rev<GetIndexCount()-1 );
-			return *(TLogTimeInterval *)(indexPulses+rev);
+			ASSERT( rev<indexPulses.length-1 );
+			return *(TLogTimeInterval *)(indexPulses.begin()+rev);
 		}
 
 		void SetCodec(Codec::TType codec);
