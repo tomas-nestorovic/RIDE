@@ -29,29 +29,19 @@ namespace Track
 		typedef Time::Decoder::TProfile TProfile;
 		typedef Time::Decoder::CBase CDecoder;
 
-		struct TLogTimesInfoData abstract{
+		struct TLogTimesInfo sealed{
 			Medium::PCProperties mediumProps;
 			bool resetDecoderOnIndex;
 			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 			Codec::TType codec;
 
-			TLogTimesInfoData(bool resetDecoderOnIndex);
+			TLogTimesInfo(bool resetDecoderOnIndex);
 		};
 
-		typedef class CLogTimesInfo sealed:public TLogTimesInfoData{
-			UINT nRefs;
-		public:
-			CLogTimesInfo(bool resetDecoderOnIndex);
-
-			inline UINT GetRefCount() const{ return nRefs; }
-			inline void AddRef(){ ::InterlockedIncrement(&nRefs); }
-			bool Release();
-		} *PLogTimesInfo;
-
-		PLogTimesInfo pLogTimesInfo;
+		Memory::CSharedPodPtr<TLogTimesInfo> pLogTimesInfo;
 		Time::CSharedArray indexPulses; // buffer to contain 'Max' full Revolutions
 
-		CReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti);
+		CReaderBuffers(const CDecoder &decoder,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
 	};
 
 
@@ -64,17 +54,13 @@ namespace Track
 			TTypeId id;
 		} rawDeviceData; // valid until Track modified, then disposed
 
-		CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec);
+		CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti,Codec::TType codec);
 
 		WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
 		WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
 		TFdcStatus ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,Event::CSharedPtr *pOutDataPe,Event::CList *pOutParseEvents);
 		TFdcStatus ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,Event::CSharedPtr *pOutDataPe,Event::CList *pOutParseEvents);
 	public:
-		CReader(const CReader &tr);
-		CReader(CReader &&tr);
-		~CReader();
-
 		inline TRev GetIndexCount() const{ return indexPulses.length; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
 		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }

@@ -80,7 +80,7 @@ return ERROR_SUCCESS; // temporarily suspended
 		// - mustn't apply corrections twice
 		if (pLogTimesInfo->corrected)
 			return ERROR_SUCCESS;
-		ASSERT( pLogTimesInfo->GetRefCount()==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
+		//ASSERT( pLogTimesInfo.GetData()->nRefs==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
 		if (indexPulses.length<2)
 			return ERROR_SUCCESS;

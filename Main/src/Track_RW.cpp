@@ -4,7 +4,7 @@ namespace MFM=Codec::Impl::MFM;
 
 namespace Track
 {
-	CReaderBuffers::CReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti)
+	CReaderBuffers::CReaderBuffers(const CDecoder &decoder,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
 		// ctor
 		: CDecoder(decoder)
 		, pLogTimesInfo(pLti)
@@ -17,33 +17,18 @@ namespace Track
 
 
 
-	CReaderBuffers::TLogTimesInfoData::TLogTimesInfoData(bool resetDecoderOnIndex)
+	CReaderBuffers::TLogTimesInfo::TLogTimesInfo(bool resetDecoderOnIndex)
 		// ctor
 		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
 		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
 	}
 
-	CReaderBuffers::CLogTimesInfo::CLogTimesInfo(bool resetDecoderOnIndex)
-		// "ctor"
-		: TLogTimesInfoData( resetDecoderOnIndex )
-		, nRefs(1) {
-	}
-
-	bool CReaderBuffers::CLogTimesInfo::Release(){
-		// "dtor"
-		if (::InterlockedDecrement(&nRefs)==0){
-			delete this;
-			return true;
-		}else
-			return false;
-	}
 
 
 
 
 
-
-	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
+	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti,Codec::TType codec)
 		// ctor
 		: CReaderBuffers(
 			CDecoder( method, logTimes ),
@@ -52,25 +37,6 @@ namespace Track
 		, iNextIndexPulse(0) {
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(codec); // init values associated with the specified Codec
-	}
-
-	CReader::CReader(const CReader &tr)
-		// copy ctor
-		: CReaderBuffers(tr)
-		, iNextIndexPulse(tr.iNextIndexPulse) {
-		pLogTimesInfo->AddRef();
-	}
-
-	CReader::CReader(CReader &&tr)
-		// move ctor
-		: CReaderBuffers(tr)
-		, iNextIndexPulse(tr.iNextIndexPulse) {
-		pLogTimesInfo->AddRef();
-	}
-
-	CReader::~CReader(){
-		// dtor
-		pLogTimesInfo->Release();
 	}
 
 
@@ -840,7 +806,7 @@ namespace Track
 		: CReader(
 			Time::CSharedArray( nBufferCapacity+LogTimesCountExtra, true ),
 			method,
-			new CLogTimesInfo( resetDecoderOnIndex ),
+			TLogTimesInfo( resetDecoderOnIndex ),
 			Codec::MFM
 		){
 		rawDeviceData.id=Track::InvalidTypeId;
@@ -853,7 +819,7 @@ namespace Track
 			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, pLogTimesInfo->resetDecoderOnIndex );
 			tmp.logTimes.Append( logTimes, logTimes.length );
 			tmp.indexPulses=indexPulses;
-			*static_cast<TLogTimesInfoData *>(tmp.pLogTimesInfo)=*pLogTimesInfo;
+			tmp.pLogTimesInfo=pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
 		}
 	}
@@ -863,7 +829,7 @@ namespace Track
 		: CReader(
 			Time::CSharedArray( nLogTimes+LogTimesCountExtra, true ),
 			TDecoderMethod::KEIR_FRASER,
-			new CLogTimesInfo( true ),
+			TLogTimesInfo(true),
 			Codec::MFM
 		){
 		SetMediumType(mediumType);
