@@ -19,7 +19,7 @@ namespace Track
 
 	CReaderBuffers::TLogTimesInfo::TLogTimesInfo(bool resetDecoderOnIndex)
 		// ctor
-		: mediumProps(nullptr) , codec(Codec::UNKNOWN)
+		: mediumProps(nullptr) , codec(Codec::MFM)
 		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
 	}
 
@@ -28,7 +28,7 @@ namespace Track
 
 
 
-	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti,Codec::TType codec)
+	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
 		// ctor
 		: CReaderBuffers(
 			CDecoder( method, logTimes ),
@@ -36,7 +36,7 @@ namespace Track
 		)
 		, iNextIndexPulse(0) {
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
-		SetCodec(codec); // init values associated with the specified Codec
+		SetCodec(pLti->codec); // init values associated with the specified Codec
 	}
 
 
@@ -806,8 +806,7 @@ namespace Track
 		: CReader(
 			Time::CSharedArray( nBufferCapacity+LogTimesCountExtra, true ),
 			method,
-			TLogTimesInfo( resetDecoderOnIndex ),
-			Codec::MFM
+			TLogTimesInfo( resetDecoderOnIndex )
 		){
 		rawDeviceData.id=Track::InvalidTypeId;
 	}
@@ -829,8 +828,7 @@ namespace Track
 		: CReader(
 			Time::CSharedArray( nLogTimes+LogTimesCountExtra, true ),
 			TDecoderMethod::KEIR_FRASER,
-			TLogTimesInfo(true),
-			Codec::MFM
+			TLogTimesInfo(true)
 		){
 		SetMediumType(mediumType);
 		AppendIndexTime(0);
