@@ -142,7 +142,9 @@ namespace Time
 		};
 
 		class CBase{
-			const CMetaData *pMetaData;
+		protected:
+			Memory::CSharedPtr<CMetaData> pMetaData;
+		private:
 			TMethod defaultMethod; // when no MetaData available
 			CMetaData::const_iterator itCurrMetaData;
 		protected:
@@ -153,7 +155,7 @@ namespace Time
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			Bit::TPattern lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CBase(TMethod defaultMethod,const CSharedArray &logTimes,const CMetaData &metaData);
+			CBase(TMethod defaultMethod,const CSharedArray &logTimes);
 
 			N GetNextTimeIndex(T t) const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
@@ -178,6 +180,7 @@ namespace Time
 			inline operator bool() const{ return iNextTime<logTimes.length; } // still some LogicalTimes to read ?
 			inline T GetCurrentTime() const{ return currentTime; }
 			inline const TProfile &GetCurrentProfile() const{ return profile; }
+			inline const CMetaData &GetMetaData() const{ return *pMetaData; }
 			inline const CMetaData::const_iterator &GetCurrentTimeMetaDataIterator() const{ return itCurrMetaData; }
 			void SetCurrentTime(T logTime);
 			TProfile CreateResetProfile() const;

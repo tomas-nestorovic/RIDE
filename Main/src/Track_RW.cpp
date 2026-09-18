@@ -46,7 +46,7 @@ namespace Track
 	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,PLogTimesInfo pLti,Codec::TType codec)
 		// ctor
 		: CReaderBuffers(
-			CDecoder( method, logTimes, pLti->metaData ),
+			CDecoder( method, logTimes ),
 			pLti
 		)
 		, iNextIndexPulse(0) {
@@ -944,7 +944,7 @@ namespace Track
 		// inserts the MetaDataItem at correct chronological position, eventually overwritting some existing MetaDataItems
 		if (!mdi) // empty or invalid?
 			return;
-		auto &metaData=pLogTimesInfo->metaData;
+		auto &metaData=*pMetaData;
 		auto it=metaData.lower_bound(mdi);
 		// - do we FULLY clear any later MetaDataItem?
 		while (it!=metaData.end())
@@ -1012,8 +1012,7 @@ namespace Track
 
 	void CReaderWriter::ClearAllMetaData(){
 		// removes all MetaDataItems
-		auto &metaData=pLogTimesInfo->metaData;
-		metaData.clear();
+		pMetaData->clear();
 		FindMetaDataIteratorAndApply();
 	}
 
@@ -1098,7 +1097,7 @@ namespace Track
 			mdi.tEnd=tTotal-mdi.tEnd;
 			metaData.insert(mdi);
 		}
-		pLogTimesInfo->metaData=metaData;
+		*pMetaData=metaData;
 		//pLogTimesInfo->rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
 		return *this;
 	}

@@ -174,12 +174,12 @@ namespace Time
 
 
 
-		CBase::CBase(TMethod defaultMethod,const CSharedArray &logTimes,const CMetaData &metaData)
+		CBase::CBase(TMethod defaultMethod,const CSharedArray &logTimes)
 			// ctor
 			: defaultMethod(defaultMethod) , profile(defaultMethod)
 			, logTimes(logTimes)
 			, iNextTime(0) , currentTime(0) , lastReadBits(0)
-			, pMetaData(&metaData) , itCurrMetaData(metaData.cbegin()) {
+			, itCurrMetaData(pMetaData->cbegin()) {
 		}
 
 		PCMetaDataItem CBase::GetCurrentTimeMetaData() const{

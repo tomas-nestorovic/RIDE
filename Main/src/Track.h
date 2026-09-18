@@ -34,7 +34,6 @@ namespace Track
 			bool resetDecoderOnIndex;
 			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 			Codec::TType codec;
-			Time::CMetaData metaData;
 
 			TLogTimesInfoData(bool resetDecoderOnIndex);
 		};
@@ -53,8 +52,6 @@ namespace Track
 		Time::CSharedArray indexPulses; // buffer to contain 'Max' full Revolutions
 
 		CReaderBuffers(const CDecoder &decoder,PLogTimesInfo pLti);
-	public:
-		inline const Time::CMetaData &GetMetaData() const{ return pLogTimesInfo->metaData; }
 	};
 
 

@@ -25,6 +25,29 @@ namespace Memory
 
 
 
+	template<typename T>
+	class CSharedPtr:public CSharedPodPtr<T>{
+		CSharedPtr(CSharedPtr &&obj); // delete
+	public:
+		CSharedPtr()
+			: CSharedPodPtr( _T('\0') ) {
+			static_assert( !std::is_polymorphic<T>().value, "'T' with 'vtable' untested" );
+			new(operator->()) T(); // see https://isocpp.org/wiki/faq/dtors#placement-new
+		}
+		CSharedPtr(T &&obj)
+			: CSharedPodPtr( _T('\0') ) {
+			static_assert( !std::is_polymorphic<T>().value, "'T' with 'vtable' untested" );
+			new(operator->()) T( std::forward<T>(obj) ); // see https://isocpp.org/wiki/faq/dtors#placement-new
+		}
+		~CSharedPtr(){
+			if (::_InterlockedOr( &GetData()->nRefs, 0 )==1)
+				operator*().~T(); // explicitly called dtor
+		}
+	};
+
+
+
+
 	template<typename T,typename TIndex=int,TIndex growExtra=0>
 	class CSharedPodArray:public CSharedPodPtr<T>{ // 'std::shared_ptr'-like pointer to array of Plain Old Data
 	public:
