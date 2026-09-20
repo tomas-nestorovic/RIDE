@@ -39,7 +39,7 @@ namespace Track
 		};
 
 		Memory::CSharedPodPtr<TLogTimesInfo> pLogTimesInfo;
-		Time::CSharedArray indexPulses; // buffer to contain 'Max' full Revolutions
+		Time::CSharedArrayEx indexPulses; // buffer to contain 'Max' full Revolutions
 
 		CReaderBuffers(const CDecoder &decoder,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
 	};
@@ -49,12 +49,11 @@ namespace Track
 
 	class CReader:public CReaderBuffers{
 	protected:
-		TRev iNextIndexPulse;
 		struct:public Memory::CSharedBytes{
 			TTypeId id;
 		} rawDeviceData; // valid until Track modified, then disposed
 
-		CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
+		CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
 
 		WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
 		WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
@@ -128,7 +127,7 @@ namespace Track
 		bool WriteDataFm(Event::TData &peData,TFdcStatus sr);
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
 	public:
-		CReaderWriter(Time::N nBufferCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
+		CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 		CReaderWriter(const CReader &tr,bool shareTimes=true);
 		CReaderWriter(CReaderWriter &&trw);
@@ -151,7 +150,6 @@ namespace Track
 		TStdWinError Normalize();
 		TStdWinError Apply(const TCorrections &c);
 		CReaderWriter &Reverse();
-		CReaderWriter &Offset(TLogTime dt);
 	};
 
 	extern const CReaderWriter Invalid;

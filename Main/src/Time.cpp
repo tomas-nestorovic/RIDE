@@ -4,6 +4,29 @@ namespace Time
 {
 	const TInterval TInterval::Invalid( Infinity, Invalid );
 
+	CSharedArrayEx::CSharedArrayEx(N capacity)
+		// ctor
+		: CSharedArray( capacity, true )
+		, iNext(0) {
+	}
+
+	N CSharedArrayEx::GetNext(T t) const{
+		return LowerBound( t+1, std::less<T>() )-begin();
+	}
+
+	void CSharedArrayEx::SetNext(T t){
+		iNext=GetNext(t);
+	}
+
+	void CSharedArrayEx::Offset(T dt){
+		for each( T &t in *this )
+			t+=dt;
+	}
+
+
+
+
+
 	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ){
 		// in-place interpolation
 		ASSERT( tSrcA<tSrcZ );
@@ -174,11 +197,12 @@ namespace Time
 
 
 
-		CBase::CBase(TMethod defaultMethod,const CSharedArray &logTimes)
+
+		CBase::CBase(TMethod defaultMethod,N nLogTimesInitCapacity)
 			// ctor
 			: defaultMethod(defaultMethod) , profile(defaultMethod)
-			, logTimes(logTimes)
-			, iNextTime(0) , currentTime(0) , lastReadBits(0)
+			, logTimes(nLogTimesInitCapacity)
+			, currentTime(0) , lastReadBits(0)
 			, itCurrMetaData(pMetaData->cbegin()) {
 		}
 
@@ -226,33 +250,14 @@ namespace Time
 			return ApplyCurrentTimeMetaData();
 		}
 
-		N CBase::GetNextTimeIndex(T t) const{
-			N L=0, R=logTimes.length;
-			do{
-				const N M=(L+R)/2;
-				if (logTimes[L]<=t && t<logTimes[M])
-					R=M;
-				else
-					L=M;
-			}while (R-L>1);
-			return R;
-		}
-
 		void CBase::SetCurrentTime(T logTime){
 			// seeks to the specified LogicalTime
 			if (!logTimes)
 				return;
 			if (IsInvalid(logTime))
 				logTime=0;
-			if (logTime<*logTimes.begin()){
-				iNextTime=0;
-				currentTime=logTime;
-			}else{
-				//TODO: logTimes.FindNextGreater( time, arrayLength=0 )
-				//TODO: logTimes.FindNextGreaterIndex( time, arrayLength=0 )
-				iNextTime=GetNextTimeIndex( logTime );
-				currentTime= iNextTime<logTimes.length ? logTime : GetLastTime();
-			}
+			logTimes.SetNext( logTime );
+			currentTime= logTimes.iNext<logTimes.length ? logTime : GetLastTime();
 			lastReadBits=0;
 			if (const PCMetaDataItem pmdi=FindMetaDataIteratorAndApply()){
 				profile.method=TMethod::METADATA;
@@ -272,10 +277,10 @@ namespace Time
 
 		T CBase::TruncateCurrentTime(){
 			// truncates CurrentTime to the nearest lower LogicalTime, and returns it
-			if (!iNextTime)
+			if (!logTimes.iNext)
 				currentTime=0;
-			else if (iNextTime<logTimes.length)
-				currentTime=logTimes[iNextTime-1];
+			else if (logTimes.iNext<logTimes.length)
+				currentTime=logTimes[logTimes.iNext-1];
 			else
 				currentTime=GetLastTime();
 			FindMetaDataIteratorAndApply();
@@ -290,7 +295,7 @@ namespace Time
 		T CBase::ReadTime(){
 			// returns the next LogicalTime (or zero if all time information already read)
 			if (*this){
-				currentTime=logTimes[iNextTime++];
+				currentTime=logTimes[logTimes.iNext++];
 				IncrMetaDataIteratorAndApply();
 				return currentTime;
 			}else
@@ -323,11 +328,11 @@ namespace Time
 					profile.iwTime = profile.iwTimeDefault = pmdi->GetBitTimeAvg();
 					const auto &&ti=pmdi->GetIw(r.iCurrBit);
 					ASSERT( ti.Contains(currentTime) ); // just to be sure
-					const bool result =	ti.Contains( rtOutOne=logTimes[iNextTime] ) // // is there a Time in the second half of the InspectionWindow?
+					const bool result =	ti.Contains( rtOutOne=logTimes[logTimes.iNext] ) // is there a Time in the second half of the InspectionWindow?
 										||
-										iNextTime>0 && ti.Contains( rtOutOne=logTimes[iNextTime-1] ); // is there a Time in the first half of the InspectionWindow?
-					while (*this && logTimes[iNextTime]<=ti.tEnd)
-						iNextTime++;
+										logTimes.iNext>0 && ti.Contains( rtOutOne=logTimes[logTimes.iNext-1] ); // is there a Time in the first half of the InspectionWindow?
+					while (*this && logTimes[logTimes.iNext]<=ti.tEnd)
+						logTimes.iNext++;
 					lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 					lastReadBits<<=1, lastReadBits|=(BYTE)result;
 					return result;
@@ -339,8 +344,8 @@ namespace Time
 				if (!*this){
 					currentTime=profile.PeekNextIwTime(currentTime);
 					return 0;
-				}else if (logTimes[iNextTime]<tCurrIwEnd)
-					iNextTime++;
+				}else if (logTimes[logTimes.iNext]<tCurrIwEnd)
+					logTimes.iNext++;
 				else
 					break;
 			}while (true);
@@ -356,7 +361,7 @@ namespace Time
 					// FDC-like flux reversal decoding from Keir Fraser's GreaseWeazle
 					auto &r=profile.methodState.fraser;
 					// . detect zero (longer than 1/2 of an InspectionWindow size)
-					const T diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
+					const T diff=( rtOutOne=logTimes[logTimes.iNext] )-currentTime;
 					//iNextTime+=logTimes[iNextTime]<=currentTime; // eventual correction of the pointer to the next time
 					lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 					lastReadBits<<=1;
@@ -382,7 +387,7 @@ namespace Time
 					// FDC-like flux reversal decoding from Mark Ogdens's DiskTools/flux2track
 					auto &r=profile.methodState.ogden;
 					// . detect zero (longer than 1/2 of an InspectionWindow size)
-					const T diff=( rtOutOne=logTimes[iNextTime] )-currentTime;
+					const T diff=( rtOutOne=logTimes[logTimes.iNext] )-currentTime;
 					lastReadBits<<=1, lastReadBits|=1; // 'valid' flag
 					lastReadBits<<=1;
 					if (diff>=iwTimeHalf)
@@ -414,11 +419,11 @@ namespace Time
 					if (const T dt= (PhaseAdjustments[cState][iSlot]*profile.iwTime>>4) - profile.iwTime){
 						currentTime+=dt;
 						if (dt>0)
-							while (iNextTime<logTimes.length && logTimes[iNextTime]<=currentTime)
-								iNextTime++;
+							while (logTimes.iNext<logTimes.length && logTimes[logTimes.iNext]<=currentTime)
+								logTimes.iNext++;
 						else
-							while (iNextTime>0 && currentTime<logTimes[iNextTime-1])
-								iNextTime--;
+							while (logTimes.iNext>0 && currentTime<logTimes[logTimes.iNext-1])
+								logTimes.iNext--;
 					}
 					// . a "1" recognized
 					lastReadBits|=1;

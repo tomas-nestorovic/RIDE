@@ -152,6 +152,12 @@ namespace Memory
 			return std::lower_bound( begin(), end(), v, p );
 		}
 
+		void Reverse(){
+			T *const p=*this;
+			for( N i=length/2,Lm1=length-1; i-->0; )
+				std::swap( p[i], p[Lm1-i] );
+		}
+
 		// 'for each' support
 		inline T *begin() const{ return operator T *(); }
 		inline T *end() const{ return begin()+length; }

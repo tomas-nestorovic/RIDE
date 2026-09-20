@@ -16,6 +16,17 @@ namespace Time
 	extern const TCHAR Prefixes[];
 	extern T Ignore;
 
+	class CSharedArrayEx:public CSharedArray{
+	public:
+		N iNext;
+
+		CSharedArrayEx(N capacity);
+
+		N GetNext(T t) const;
+		void SetNext(T t);
+		void Offset(T dt);
+	};
+
 	struct TInterval{
 		union{
 			struct{
@@ -149,15 +160,13 @@ namespace Time
 			CMetaData::const_iterator itCurrMetaData;
 		protected:
 			TProfile profile;
-			CSharedArray logTimes; // buffer and its capacity; absolute Times expected, no deltas!
-			N iNextTime;
+			CSharedArrayEx logTimes; // buffer and its capacity; absolute Times expected, no deltas!
 			T currentTime;
 			BYTE nConsecutiveZerosMax; // # of consecutive zeroes to lose synchronization; e.g. 3 for MFM code
 			Bit::TPattern lastReadBits; // validity flag and bit, e.g. 10b = valid bit '0', 11b = valid bit '1', 0Xb = invalid bit 'X'
 
-			CBase(TMethod defaultMethod,const CSharedArray &logTimes);
+			CBase(TMethod defaultMethod,N nLogTimesInitCapacity);
 
-			N GetNextTimeIndex(T t) const;
 			PCMetaDataItem GetCurrentTimeMetaData() const;
 			PCMetaDataItem ApplyCurrentTimeMetaData();
 			PCMetaDataItem IncrMetaDataIteratorAndApply();
@@ -177,7 +186,7 @@ namespace Time
 			}
 
 			inline N GetTimesCount() const{ return logTimes.length; }
-			inline operator bool() const{ return iNextTime<logTimes.length; } // still some LogicalTimes to read ?
+			inline operator bool() const{ return logTimes.iNext<logTimes.length; } // still some LogicalTimes to read ?
 			inline T GetCurrentTime() const{ return currentTime; }
 			inline const TProfile &GetCurrentProfile() const{ return profile; }
 			inline const CMetaData &GetMetaData() const{ return *pMetaData; }

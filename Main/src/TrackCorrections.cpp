@@ -97,12 +97,12 @@ return ERROR_SUCCESS; // temporarily suspended
 			TLogTime dt=TIME_MICRO(c.indexOffsetMicroseconds);
 			if (dt<0)
 				dt=std::max( *indexPulses+dt, 0 )-*indexPulses; // mustn't run into negative timing
-			for( TRev i=indexPulses.length; i; indexPulses[--i]+=dt );
+			indexPulses.Offset(dt);
 		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
 		// - normalization
-		const Time::N iModifStart=iNextTime;
+		const Time::N iModifStart=logTimes.iNext;
 		Time::N iTime=iModifStart;
 		const Time::CSharedArray buffer( logTimes.GetCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
 		const PLogTime ptModified=buffer;
@@ -115,12 +115,12 @@ return ERROR_SUCCESS; // temporarily suspended
 			Time::N nAlignedCells=0;
 			if (c.fitTimesIntoIwMiddles){
 				// alignment wanted
-				for( ; *this&&logTimes[iNextTime]<tNextIndexOrg; nAlignedCells++ )
+				for( ; *this&&logTimes[logTimes.iNext]<tNextIndexOrg; nAlignedCells++ )
 					if (ReadBit())
 							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
 			}else
 				// alignment not wanted - just copying the Times in current Revolution
-				while (*this && logTimes[iNextTime]<tNextIndexOrg)
+				while (*this && logTimes[logTimes.iNext]<tNextIndexOrg)
 					ptModified[iTime++]=ReadTime();
 			Time::N iModifRevEnd=iTime;
 			// . shortening/prolonging this revolution to correct number of cells
@@ -153,10 +153,10 @@ return ERROR_SUCCESS; // temporarily suspended
 		}
 		// - copying Modified LogicalTimes to the Track
 		const TLogTime dtLast=GetLastIndexTime()-tLastIndexOrg;
-		for( auto i=iNextTime; i<logTimes.length; logTimes[i++]+=dtLast );
-		::memmove( logTimes+iTime, logTimes+iNextTime, (logTimes.length-iNextTime)*sizeof(TLogTime) ); // Times after last Index
+		for( auto i=logTimes.iNext; i<logTimes.length; logTimes[i++]+=dtLast );
+		::memmove( logTimes+iTime, logTimes+logTimes.iNext, (logTimes.length-logTimes.iNext)*sizeof(TLogTime) ); // Times after last Index
 		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
-		logTimes.length+=iTime-iNextTime;
+		logTimes.length+=iTime-logTimes.iNext;
 		SetCurrentTime(0); // setting valid state
 		// - successfully normalized
 		#ifdef _DEBUG

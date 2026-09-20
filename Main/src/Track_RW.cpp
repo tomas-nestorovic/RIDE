@@ -8,7 +8,7 @@ namespace Track
 		// ctor
 		: CDecoder(decoder)
 		, pLogTimesInfo(pLti)
-		, indexPulses( Revolution::MAX+2, true ) { // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
+		, indexPulses( Revolution::MAX+2 ) { // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
 
@@ -28,13 +28,12 @@ namespace Track
 
 
 
-	CReader::CReader(const Time::CSharedArray &logTimes,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
+	CReader::CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
 		// ctor
 		: CReaderBuffers(
-			CDecoder( method, logTimes ),
+			CDecoder( method, nLogTimesInitCapacity ),
 			pLti
-		)
-		, iNextIndexPulse(0) {
+		) {
 		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(pLti->codec); // init values associated with the specified Codec
 	}
@@ -48,11 +47,7 @@ namespace Track
 		// seeks to the specified LogicalTime
 		__super::SetCurrentTime(logTime);
 		FindMetaDataIteratorAndApply();
-		//TODO: indexPulses.FindNextGreater( time, arrayLength=0 )
-		//TODO: indexPulses.FindNextGreaterIndex( time, arrayLength=0 )
-		for( iNextIndexPulse=0; iNextIndexPulse<indexPulses.length; iNextIndexPulse++ )
-			if (logTime<indexPulses[iNextIndexPulse])
-				break;
+		indexPulses.SetNext( logTime );
 	}
 
 	void CReader::SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile){
@@ -124,9 +119,9 @@ namespace Track
 		// returns first bit not yet read
 		const bool value=__super::ReadBit(rtOutOne);
 		if (profile.method!=TDecoderMethod::METADATA)
-			if (currentTime>=indexPulses[iNextIndexPulse]){
+			if (currentTime>=indexPulses[indexPulses.iNext]){
 				if (pLogTimesInfo->resetDecoderOnIndex)
-					RewindToIndexAndResetProfile(iNextIndexPulse);
+					RewindToIndexAndResetProfile(indexPulses.iNext);
 			}
 		return value;
 	}
@@ -718,7 +713,7 @@ namespace Track
 			//nop (see 'ReadBit' below)
 		ReadBit(); // this read Bit will be reset
 		// - dump the temporary storage to this Track
-		tmp.Offset(tIwSynced); // Timing thus far offset backwards by one InspectionWindow to comply with DataParseEvent (and Decoders), hence correcting it forwards
+		tmp.logTimes.Offset(tIwSynced); // Timing thus far offset backwards by one InspectionWindow to comply with DataParseEvent (and Decoders), hence correcting it forwards
 		tiClear.tEnd=tIwSynced+currentTime+profile.iwTime/2;
 		return	ReplaceTimes( tiClear, tmp );
 	}
@@ -801,10 +796,10 @@ namespace Track
 
 	const CReaderWriter Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
 
-	CReaderWriter::CReaderWriter(Time::N nBufferCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
+	CReaderWriter::CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
 		: CReader(
-			Time::CSharedArray( nBufferCapacity+LogTimesCountExtra, true ),
+			nLogTimesInitCapacity+LogTimesCountExtra,
 			method,
 			TLogTimesInfo( resetDecoderOnIndex )
 		){
@@ -826,7 +821,7 @@ namespace Track
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CReader(
-			Time::CSharedArray( nLogTimes+LogTimesCountExtra, true ),
+			nLogTimes+LogTimesCountExtra,
 			TDecoderMethod::KEIR_FRASER,
 			TLogTimesInfo(true)
 		){
@@ -990,17 +985,17 @@ namespace Track
 		ASSERT( !writeTimes || writeTimes.GetTimesCount()>0 );
 		ASSERT( !writeTimes || clearTimes.tStart<=*writeTimes.GetBuffer() && writeTimes.GetLastTime()<clearTimes.tEnd ); // must only write into region that has been cleared
 		// - determining the number of LogicalTimes in the interval to clear
-		const auto iLogTimeToClearA=GetNextTimeIndex( clearTimes.tStart-1 );
+		const auto iLogTimeToClearA=logTimes.GetNext( clearTimes.tStart-1 );
 		SetCurrentTime(clearTimes.tEnd);
-		const auto nLogTimesToClear=iNextTime-iLogTimeToClearA;
+		const auto nLogTimesToClear=logTimes.iNext-iLogTimeToClearA;
 		// - replacing the LogicalTimes
 		const Time::N dn=writeTimes.GetTimesCount()-nLogTimesToClear;
 		if (dn>0)
 			logTimes.ReserveAnother( dn+LogTimesCountExtra );
 		::memmove(
 			logTimes+iLogTimeToClearA+writeTimes.GetTimesCount(),
-			logTimes+iNextTime,
-			(logTimes.length-iNextTime)*sizeof(TLogTime)
+			logTimes+logTimes.iNext,
+			(logTimes.length-logTimes.iNext)*sizeof(TLogTime)
 		);
 		logTimes.length+=dn;
 		::memcpy(
@@ -1042,15 +1037,13 @@ namespace Track
 
 	CReaderWriter &CReaderWriter::Reverse(){
 		// reverses timing of this Track
-		// - reversing Indices
 		const auto tTotal=GetTotalTime();
-		for( TRev i=0; i<GetIndexCount()/2; i++ )
-			std::swap( indexPulses[i], indexPulses[GetIndexCount()-1-i] );
+		// - reversing Indices
+		indexPulses.Reverse();
 		for( TRev i=0; i<GetIndexCount(); i++ )
 			indexPulses[i]=tTotal-indexPulses[i];
 		// - reversing Times
-		for( Time::N i=0; i<logTimes.length/2; i++ )
-			std::swap( logTimes[i], logTimes[logTimes.length-1-i] );
+		logTimes.Reverse();
 		for each( Time::T &t in logTimes )
 			t=tTotal-t;
 		// - reversing MetaData
@@ -1066,10 +1059,4 @@ namespace Track
 		return *this;
 	}
 
-	CReaderWriter &CReaderWriter::Offset(TLogTime dt){
-		// offsets timing in this Track
-		for each( Time::T &t in logTimes )
-			t+=dt;
-		return *this;
-	}
 }
