@@ -74,6 +74,7 @@ namespace Track
 	TStdWinError CReaderWriter::Apply(const Medium::TProperties &mp,const TCorrections &c){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
 return ERROR_SUCCESS; // temporarily suspended
+		SetMedium(mp); // assert everything correctly set up
 		// - do nothing if Corrections disabled
 		if (!c.use)
 			return ERROR_SUCCESS;

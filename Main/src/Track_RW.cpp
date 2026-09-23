@@ -822,7 +822,6 @@ namespace Track
 			TDecoderMethod::KEIR_FRASER,
 			TLogTimesInfo(true)
 		){
-		SetMedium(mp);
 		AppendIndexTime(0);
 			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
 		AppendIndexTime( nLogTimes );
