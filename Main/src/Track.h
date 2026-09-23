@@ -30,7 +30,6 @@ namespace Track
 		typedef Time::Decoder::CBase CDecoder;
 
 		struct TLogTimesInfo sealed{
-			Medium::PCProperties mediumProps;
 			bool resetDecoderOnIndex;
 			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 			Codec::TType codec;
@@ -72,7 +71,7 @@ namespace Track
 		}
 
 		void SetCodec(Codec::TType codec);
-		void SetMediumType(Medium::TType mediumType);
+		void SetMedium(const Medium::TProperties &mp);
 		void SetCurrentTime(TLogTime logTime);
 		void SetCurrentTimeAndProfile(TLogTime logTime,const TProfile &profile);
 		TLogTime RewindToIndex(TRev index);
@@ -128,7 +127,7 @@ namespace Track
 		bool WriteDataMfm(Event::TData &peData,TFdcStatus sr);
 	public:
 		CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
-		CReaderWriter(Time::N nLogTimes,Medium::TType mediumType); // 'nLogTimes' uniformly distributed across a single-Revolution Track
+		CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 		CReaderWriter(const CReader &tr,bool shareTimes=true);
 		CReaderWriter(CReaderWriter &&trw);
 
@@ -147,8 +146,8 @@ namespace Track
 		void ClearMetaData(const TLogTimeInterval &ti);
 		void ClearAllMetaData();
 		bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,Event::TData &peData,TFdcStatus sr);
-		TStdWinError Normalize();
-		TStdWinError Apply(const TCorrections &c);
+		TStdWinError Normalize(const Medium::TProperties &mp);
+		TStdWinError Apply(const Medium::TProperties &mp,const TCorrections &c);
 		CReaderWriter &Reverse();
 	};
 

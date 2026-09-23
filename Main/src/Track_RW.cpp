@@ -19,7 +19,7 @@ namespace Track
 
 	CReaderBuffers::TLogTimesInfo::TLogTimesInfo(bool resetDecoderOnIndex)
 		// ctor
-		: mediumProps(nullptr) , codec(Codec::MFM)
+		: codec(Codec::MFM)
 		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
 	}
 
@@ -34,7 +34,7 @@ namespace Track
 			CDecoder( method, nLogTimesInitCapacity ),
 			pLti
 		) {
-		SetMediumType(Medium::FLOPPY_DD); // init values associated with the specified Medium
+		SetMedium(Medium::TProperties::FLOPPY_DD); // init values associated with the specified Medium
 		SetCodec(pLti->codec); // init values associated with the specified Codec
 	}
 
@@ -105,12 +105,9 @@ namespace Track
 			ASSERT(FALSE); // we shouldn't end up here!
 	}
 
-	void CReader::SetMediumType(Medium::TType mediumType){
+	void CReader::SetMedium(const Medium::TProperties &mp){
 		// changes the interpretation of recorded LogicalTimes according to the new MediumType
-		if ( pLogTimesInfo->mediumProps=Medium::GetProperties(mediumType) )
-			static_cast<Time::Decoder::TLimits &>(profile)=pLogTimesInfo->mediumProps->CreateTimeDecoderLimits();
-		else
-			ASSERT(FALSE); // we shouldn't end-up here, all Media Types applicable for general Track description should be covered
+		static_cast<Time::Decoder::TLimits &>(profile)=mp.CreateTimeDecoderLimits();
 		profile.Reset();
 		FindMetaDataIteratorAndApply();
 	}
@@ -818,18 +815,18 @@ namespace Track
 		}
 	}
 
-	CReaderWriter::CReaderWriter(Time::N nLogTimes,Medium::TType mediumType)
+	CReaderWriter::CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CReader(
 			nLogTimes+LogTimesCountExtra,
 			TDecoderMethod::KEIR_FRASER,
 			TLogTimesInfo(true)
 		){
-		SetMediumType(mediumType);
+		SetMedium(mp);
 		AppendIndexTime(0);
 			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
 		AppendIndexTime( nLogTimes );
-		Normalize();
+		Normalize(mp);
 	}
 	
 	CReaderWriter::CReaderWriter(CReaderWriter &&rTrackReaderWriter)
@@ -1025,14 +1022,14 @@ namespace Track
 		}
 	}
 
-	TStdWinError CReaderWriter::Normalize(){
+	TStdWinError CReaderWriter::Normalize(const Medium::TProperties &mp){
 		// True <=> asked and successfully normalized for a known MediumType, otherwise False
 		static const struct TCorrectRevolutionTime:public TCorrections{
 			inline TCorrectRevolutionTime(){
 				indexTiming=true;
 			}
 		} C;
-		return Apply(C);
+		return Apply( mp, C );
 	}
 
 	CReaderWriter &CReaderWriter::Reverse(){

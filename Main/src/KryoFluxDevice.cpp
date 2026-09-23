@@ -714,9 +714,9 @@
 			while (*pit && pit->GetCurrentTime()<tWritingEnd)
 				trw.AppendTime( pit->ReadTime()-tIndex0 );
 		trw.AppendIndexTime( tIndex1-tIndex0 );
-		if (floppyType!=Medium::UNKNOWN){
-			trw.SetMediumType( floppyType );
-			trw.Normalize();
+		if (const Medium::TProperties *mp=Medium::GetProperties(floppyType)){
+			trw.SetMedium(*mp);
+			trw.Normalize(*mp);
 		}
 		// - pre-compensation of the temporary Track
 		const bool canCompensate=precompensation.methodVersion!=CPrecompensation::None;

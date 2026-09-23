@@ -71,7 +71,7 @@ namespace Track
 
 
 
-	TStdWinError CReaderWriter::Apply(const TCorrections &c){
+	TStdWinError CReaderWriter::Apply(const Medium::TProperties &mp,const TCorrections &c){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
 return ERROR_SUCCESS; // temporarily suspended
 		// - do nothing if Corrections disabled
@@ -84,10 +84,6 @@ return ERROR_SUCCESS; // temporarily suspended
 		// - if the Track contains less than two Indices, we are successfully done
 		if (indexPulses.length<2)
 			return ERROR_SUCCESS;
-		// - MediumType must be supported
-		const Medium::PCProperties mp=pLogTimesInfo->mediumProps;
-		if (!mp)
-			return ERROR_UNRECOGNIZED_MEDIA;
 		ClearAllMetaData();
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		pLogTimesInfo->corrected=true;
@@ -128,16 +124,16 @@ return ERROR_SUCCESS; // temporarily suspended
 				ptModified[iModifRevEnd]=Time::Infinity; // stop-condition
 				if (nAlignedCells>0){ // are we working with time-corrected cells?
 					iModifRevEnd=iModifRevStart;
-					const TLogTime tRevEnd=tCurrIndexOrg+mp->revolutionTime;
+					const TLogTime tRevEnd=tCurrIndexOrg+mp.revolutionTime;
 					while (ptModified[iModifRevEnd]<tRevEnd)
 						iModifRevEnd++;
-					nAlignedCells=mp->nCells;
+					nAlignedCells=mp.nCells;
 				}//else
 					//nop (not applicable)
 			}
 			// . correction of index-to-index time distance
 			if (c.indexTiming) // index-to-index time correction enabled?
-				indexPulses[nextIndex]=indexPulses[nextIndex-1]+mp->revolutionTime;
+				indexPulses[nextIndex]=indexPulses[nextIndex-1]+mp.revolutionTime;
 			const TLogTime tNextIndexWork =	nAlignedCells>0 // are we working with time-corrected cells?
 											? tCurrIndexOrg+nAlignedCells*profile.iwTimeDefault
 											: tNextIndexOrg;

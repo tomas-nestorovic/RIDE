@@ -116,7 +116,7 @@
 			// . composition of test Track
 			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
 	{		CTrackReaderWriter trw( mediumProps.nCells, Time::Decoder::KEIR_FRASER, false );
-				trw.SetMediumType(rPrecomp.floppyType);
+				trw.SetMedium(mediumProps);
 				trw.AppendIndexTime(0);
 				trw.AppendIndexTime(mediumProps.revolutionTime);
 			for( BYTE n=200; n>0; n-- ) // MFM-like inspection window stabilisation

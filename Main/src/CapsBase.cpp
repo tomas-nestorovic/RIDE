@@ -151,17 +151,19 @@
 		CTrackReaderWriter trw( nBitsTotally*125/100, Time::Decoder::KEIR_FRASER, true ); // pessimistic estimation of # of fluxes; allowing for 25% of false "ones" introduced by "FDC-like" decoders
 			if (cb.floppyType!=Medium::UNKNOWN && !ctiRevs[0].timelen){
 				// Medium already known and the CAPS Track does NOT contain explicit timing information
-				trw.SetMediumType(cb.floppyType); // adopting the Medium
+				trw.SetMedium( *Medium::GetProperties(cb.floppyType) ); // adopting the Medium
 			}else{
 				// Medium not yet known; estimating it by the average # of Cells per Revolution
 				DWORD type=1;
 				for( const UDWORD nBitsPerTrackAvg=nBitsTotally/nRevs; type!=0; type<<=1 )
-					if (type&Medium::FLOPPY_ANY)
-						if (Medium::GetProperties( (Medium::TType)type )->IsAcceptableCountOfCells(nBitsPerTrackAvg)){
+					if (type&Medium::FLOPPY_ANY){
+						const Medium::TProperties &mp=*Medium::GetProperties( (Medium::TType)type );
+						if (mp.IsAcceptableCountOfCells(nBitsPerTrackAvg)){
 							// likely the correct Medium type
-							trw.SetMediumType( (Medium::TType)type );
+							trw.SetMedium(mp);
 							break;
 						}
+					}
 				if (!type){
 					ASSERT(FALSE); //TODO: 8" SD medium
 					return nullptr;
@@ -194,15 +196,16 @@
 		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
 			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
 		if (floppyType!=Medium::UNKNOWN){ // may be unknown if Medium is still being recognized
-			if (!Medium::GetProperties(floppyType)->IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
+			const Medium::TProperties &mp=*Medium::GetProperties(floppyType);
+			if (!mp.IsAcceptableRevolutionTime( trw.GetAvgIndexDistance() ))
 				return new CInternalTrack( trw, nullptr, 0 );
-			trw.SetMediumType(floppyType); // keeps timing intact, just presets codec parameters (codec itself determined below)
+			trw.SetMedium(mp); // keeps timing intact, just presets codec parameters (codec itself determined below)
 			if (cb.dos!=nullptr) // DOS already known (aka. creating final version of the Track)
 				if (!cb.preservationQuality && !cb.m_strPathName.IsEmpty() // normalization makes sense only for existing Images - it's useless for Images just created
 					&&
 					!trw.GetMetaData() // can't apply to Track with explicit timing
 				)
-					trw.Apply( cb.params.corrections );
+					trw.Apply( mp, cb.params.corrections );
 			//the following commented out as it brings little to no readability improvement and leaves Tracks influenced by the MediumType
 			//else if (params.corrections.indexTiming) // DOS still being recognized ...
 				//trw.Normalize(); // ... hence can only improve readability by adjusting index-to-index timing
@@ -1044,7 +1047,7 @@ invalidTrack:
 		if (!mp)
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - composition of test Track
-		CTrackReaderWriter trw( mp->nCells/2, floppyType );
+		CTrackReaderWriter trw( mp->nCells/2, *mp );
 		const TLogTime doubleCellTime=2*mp->cellTime;
 		// - evaluating Track magnetic reliability
 		const CTrackTempReset test(
@@ -1061,7 +1064,7 @@ invalidTrack:
 			ScanTrack( cyl, head );
 			if (rit==nullptr)
 				return ERROR_FUNCTION_FAILED;
-			//pit->SetMediumType( floppyType ); // commented out as unnecessary (no decoder used here)
+			//pit->SetMedium(mp); // commented out as unnecessary (no decoder used here)
 			// . evaluating what we read
 			CTrackReader tr=*rit;
 			TLogTime t=tr.GetIndexTime(0)+60*doubleCellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on

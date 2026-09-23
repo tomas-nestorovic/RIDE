@@ -194,7 +194,7 @@
 				return err;
 			// . creation of new empty Track
 			const Utils::CVarTempReset<Track::TCorrections> cor0( params.corrections, Track::TCorrections() ); // disable Corrections
-			CTrackReaderWriter trw( mp->nCells, floppyType );
+			CTrackReaderWriter trw( mp->nCells, *mp );
 			if ( const PInternalTrack pit = internalTracks[cyl][head] = CInternalTrack::CreateFrom(*this,std::move(trw)) ){
 				SetModifiedFlag( pit->modified=true );
 				return ERROR_SUCCESS;
