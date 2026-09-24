@@ -1048,7 +1048,7 @@ invalidTrack:
 			return ERROR_UNRECOGNIZED_MEDIA;
 		// - composition of test Track
 		CTrackReaderWriter trw( mp->nCells/2, *mp );
-		const TLogTime doubleCellTime=2*mp->cellTime;
+		const Time::T16 doubleCellTime=2*mp->cellTime;
 		// - evaluating Track magnetic reliability
 		const CTrackTempReset test(
 			internalTracks[cyl][head],
@@ -1069,10 +1069,10 @@ invalidTrack:
 			CTrackReader tr=*rit;
 			TLogTime t=tr.GetIndexTime(0)+60*doubleCellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on
 			tr.SetCurrentTime(t);
-			for( const TLogTime tOkA=doubleCellTime*80/100,tOkZ=doubleCellTime*120/100; t<mp->revolutionTime; ){ // allowing for 20% deviation from nominal Flux transition
+			for( const Time::Decoder::TLimits ok(doubleCellTime,20); t<mp->revolutionTime; ){ // allowing for 20% deviation from nominal Flux transition
 				const TLogTime t0=t;
 				const TLogTime flux=( t=tr.ReadTime() )-t0;
-				if (flux<tOkA || tOkZ<flux)
+				if (flux<ok.iwTimeMin || ok.iwTimeMax<flux)
 					break;
 			}
 			if (t>=mp->revolutionTime)

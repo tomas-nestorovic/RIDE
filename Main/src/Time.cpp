@@ -150,15 +150,14 @@ namespace Time
 
 	
 	
-		TLimits::TLimits(T iwTimeDefault,BYTE iwTimeTolerancePercent)
+		TLimits::TLimits(T16 iwTimeDefault,BYTE iwTimeTolerancePercent)
 			// ctor
 			: iwTimeDefault(iwTimeDefault)
-			, iwTime(iwTimeDefault)
 			, iwTimeMin( iwTimeDefault*(100-iwTimeTolerancePercent)/100 )
 			, iwTimeMax( iwTimeDefault*(100+iwTimeTolerancePercent)/100 ) {
 		}
 
-		void TLimits::ClampIwTime(){
+		void TProfile::ClampIwTime(){
 			// keep the InspectionWindow size within limits
 			if (iwTime<iwTimeMin)
 				iwTime=iwTimeMin;
@@ -172,6 +171,7 @@ namespace Time
 		TProfile::TProfile(TMethod method)
 			// ctor
 			: TLimits(0)
+			, iwTime(0)
 			, method(method) {
 			Reset();
 		}
@@ -179,6 +179,7 @@ namespace Time
 		TProfile::TProfile(const TMetaDataItem &mdi)
 			// ctor
 			: TLimits( mdi.GetBitTimeAvg() )
+			, iwTime(iwTimeDefault)
 			, method(TMethod::METADATA) {
 			methodState.metaData.iCurrBit=-1; // begin "before" the MetaDataItem
 		}
@@ -399,7 +400,7 @@ namespace Time
 						if (iSlot<7&&!r.up || iSlot>8&&r.up)
 							r.up=!r.up, r.pcCnt = r.fCnt = 0;
 						if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
-							const T iwDelta=profile.iwTimeDefault/100;
+							const Time::T16 iwDelta=profile.iwTimeDefault/100;
 							if (r.up){
 								if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
 									profile.iwTime=profile.iwTimeMin;

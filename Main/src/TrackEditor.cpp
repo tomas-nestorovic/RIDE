@@ -97,7 +97,7 @@ using namespace Charting;
 						Track::Event::TypeColors[11],
 						Track::Event::TypeColors[12]
 					};
-					const TLogTime iwTimeDefaultHalf=te.tr.GetCurrentProfile().iwTimeDefault/2;
+					const Time::T16 iwTimeDefaultHalf=te.tr.GetCurrentProfile().iwTimeDefault/2;
 					for( CTrackReader tr=te.tr; true; ){
 						// . waiting for next request to paint the Track
 						p.repaintEvent.Lock();
@@ -817,7 +817,7 @@ using namespace Charting;
 			// (5) So, we assume that all ParseEvents are 'tIwDefault' behind and would step 'tStart+tIwDefault' and 'tEnd+tIwDefault'
 			// (6) But at the same time, all InspectionWindows are shifted by '-tIwDefault/2' (because the first IW begins right with 'tIwDefault' size)
 			// (7) Hence, to compensate for (3) and (6), the ParseEvents are stepped 'tStart+tIwDefault-tIwDefault/2' and 'tEnd+tIwDefault-tIwDefault/2'
-			const TLogTime tIwOffset=tr.GetCurrentProfile().iwTimeDefault/2; // see (7)
+			const Time::T16 tIwOffset=tr.GetCurrentProfile().iwTimeDefault/2; // see (7)
 			Track::CBits analyzedBits;
 			const auto peList=std::move(tr.ScanAndAnalyze( *pAction, true, &analyzedBits ));
 			for each( const auto &pair in peList ){
@@ -845,7 +845,7 @@ using namespace Charting;
 			pAction->SetProgressTarget(tr.GetTotalTime());
 			const auto &iwList=te.timeEditor.GetInspectionWindows();
 			const auto &peList=te.timeEditor.GetParseEvents();
-			const TLogTime iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
+			const Time::T16 iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
 			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
 				const Bit::CSequence &iwRev=iwList.revs[i-1];
 				TInspectionWindow *iw=iwRev.begin();

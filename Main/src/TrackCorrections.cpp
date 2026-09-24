@@ -48,7 +48,7 @@ namespace Track
 				c.offsetIndices=tmp!=BST_UNCHECKED;
 				tmp=c.indexOffsetMicroseconds;
 					DDX_Text( pDX, ID_TIME, tmp );
-						DDV_MinMaxInt( pDX, tmp, SHRT_MIN, SHRT_MAX );
+						DDV_MinMaxInt( pDX, tmp, Time::Invalid16, Time::Infinity16 );
 				c.indexOffsetMicroseconds=tmp;
 			}
 		public:

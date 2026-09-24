@@ -5,12 +5,15 @@ namespace Time
 	typedef int N; // index or count
 
 	typedef TLogValue T,*P; // time in nanoseconds
+	typedef short T16; // short time in unspecified units
 	typedef const T *PC;
 	typedef Memory::CSharedPodArray<T,N,2048> CSharedArray;
 
 	enum{
+		Invalid16=SHRT_MIN,
 		Invalid=INT_MIN,
-		Infinity=LogValueMax
+		Infinity16=SHRT_MAX,
+		Infinity=LogValueMax,
 	};
 
 	extern const TCHAR Prefixes[];
@@ -111,14 +114,10 @@ namespace Time
 	{
 		#pragma pack(1)
 		struct TLimits{
-			T iwTimeDefault; // inspection window default size
-			T iwTime; // inspection window size; a "1" is expected in its centre
-			T iwTimeMin,iwTimeMax; // inspection window possible time range
+			T16 iwTimeDefault; // inspection window default size
+			T16 iwTimeMin,iwTimeMax; // inspection window possible time range
 
-			TLimits(T iwTimeDefault,BYTE iwTimeTolerancePercent=0);
-
-			void ClampIwTime();
-			inline T PeekNextIwTime(T tIwCurr) const{ return tIwCurr+iwTime; }
+			TLimits(T16 iwTimeDefault,BYTE iwTimeTolerancePercent=0);
 		};
 
 		enum TMethod:BYTE{
@@ -132,6 +131,7 @@ namespace Time
 		LPCTSTR GetDescription(TMethod m);
 
 		struct TProfile sealed:public TLimits{
+			T iwTime; // inspection window size; a "1" is expected in its centre
 			TMethod method;
 			union{
 				struct{
@@ -149,6 +149,8 @@ namespace Time
 			TProfile(TMethod method=TMethod::NONE);
 			TProfile(const TMetaDataItem &mdi);
 
+			inline T PeekNextIwTime(T tCurr) const{ return tCurr+iwTime; }
+			void ClampIwTime();
 			void Reset();
 		};
 

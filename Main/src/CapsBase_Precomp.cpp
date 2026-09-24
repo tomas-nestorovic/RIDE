@@ -114,7 +114,7 @@
 			if (pAction->Cancelled)
 				return ERROR_CANCELLED;
 			// . composition of test Track
-			TLogTime t=0, const doubleCellTime=2*mediumProps.cellTime;
+			TLogTime t=0; const Time::T16 doubleCellTime=2*mediumProps.cellTime;
 	{		CTrackReaderWriter trw( mediumProps.nCells, Time::Decoder::KEIR_FRASER, false );
 				trw.SetMedium(mediumProps);
 				trw.AppendIndexTime(0);
@@ -149,13 +149,14 @@
 			CTrackReader tr=*rit;
 			TLogTime t0=tr.GetIndexTime(0)+120*mediumProps.cellTime; // "+N" = ignoring the region immediatelly after index - may be invalid due to Write Gate signal still on
 			tr.SetCurrentTime(t0);
-			for( const TLogTime threshold=mediumProps.cellTime*3; ( t=tr.ReadTime() )-t0<threshold; t0=t ); // skipping initial stabilisation
+			for( const Time::T16 threshold=mediumProps.cellTime*3; ( t=tr.ReadTime() )-t0<threshold; t0=t ); // skipping initial stabilisation
 			for( BYTE n=0; ++n<10; t=tr.ReadTime() ); // skipping indication of test data begin
 			const TLogTime testBeginTime=tr.GetCurrentTime(); // this is where the test data begin
-			for( WORD n=0; n<sizeof(distances); n++ ){ // checking that the TestBeginTime has been determined correctly
+			const Time::Decoder::TLimits ok( mediumProps.cellTime, 30 ); // allow 30% tolerance
+			for each( auto d in distances ){ // checking that the TestBeginTime has been determined correctly
 				t0=t, t=tr.ReadTime();
 				const TLogTime dt=t-t0;
-				if (dt<mediumProps.cellTime*distances[n]*7/10 || mediumProps.cellTime*distances[n]*13/10<dt) // allowing 30% tolerance
+				if (dt<ok.iwTimeMin*d || ok.iwTimeMax*d<dt)
 					if (nFailures++==3) // found unexpected flux - TestBeginTime determined wronly or the Drive writes too badly for precompensation to be computed reliably
 						return pAction->TerminateWithError(ERROR_FUNCTION_FAILED);
 					else{

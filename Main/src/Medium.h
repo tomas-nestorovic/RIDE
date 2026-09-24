@@ -27,7 +27,7 @@ namespace Medium
 		THead nHeadsMax; // max. # of Heads
 		TRev rps; // Revolutions per second
 		TLogTime revolutionTime; // single revolution time [nanoseconds]
-		TLogTime cellTime; // single recorded data cell time [nanoseconds]
+		Time::T16 cellTime; // single recorded data cell time [nanoseconds]
 		Bit::N nCells; // RevolutionTime/CellTime
 
 		bool IsAcceptableRevolutionTime(TLogTime tRevolutionQueried) const;

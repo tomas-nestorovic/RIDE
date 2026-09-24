@@ -424,7 +424,7 @@ namespace Track
 
 	Bit::CSequence CReader::CreateBitSequence(TLogTime tFrom,const TProfile &profileFrom, TLogTime tTo,BYTE oneOkPercent) const{
 		// - count all Bits ("tr.GetTotalTime()/profileFrom.iwTimeMin" not used to account for decoder phase adjustment, allowing for returning back in time)
-		const TLogTime iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
+		const Time::T16 iwTimeDefaultHalf=profileFrom.iwTimeDefault/2;
 		CReader tr=*this;
 		tr.SetCurrentTimeAndProfile( tFrom, profileFrom );
 		tTo=std::min( tTo-iwTimeDefaultHalf, tr.GetTotalTime() );

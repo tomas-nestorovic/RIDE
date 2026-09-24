@@ -113,7 +113,7 @@ namespace Track
 			};
 			WORD w;
 		};
-		short indexOffsetMicroseconds;
+		Time::T16 indexOffsetMicroseconds;
 
 		TCorrections(); // no Corrections
 		TCorrections(LPCTSTR iniSection,LPCTSTR iniName=_T("crt")); // load
