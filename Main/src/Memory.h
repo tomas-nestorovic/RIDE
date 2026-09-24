@@ -40,7 +40,13 @@ namespace Memory
 			new(operator->()) T( std::forward<T>(obj) ); // see https://isocpp.org/wiki/faq/dtors#placement-new
 		}
 		~CSharedPtr(){
-			if (::_InterlockedOr( &GetData()->nRefs, 0 )==1)
+			auto *const data=
+				#ifdef RELEASE_MFC42
+					GetData();
+				#else
+					(CStringData *)operator LPCTSTR()-1; //TODO: depends on MFC internal layout, rework so that it doesn't
+				#endif
+			if (::_InterlockedOr( &data->nRefs, 0 )==1)
 				operator*().~T(); // explicitly called dtor
 		}
 	};
