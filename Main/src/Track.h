@@ -28,19 +28,13 @@ namespace Track
 		typedef Time::Decoder::TMethod TDecoderMethod;
 		typedef Time::Decoder::TProfile TProfile;
 		typedef Time::Decoder::CBase CDecoder;
-
-		struct TLogTimesInfo sealed{
-			bool resetDecoderOnIndex;
-			bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
-			Codec::TType codec;
-
-			TLogTimesInfo(bool resetDecoderOnIndex);
-		};
-
-		Memory::CSharedPodPtr<TLogTimesInfo> pLogTimesInfo;
+		
+		bool resetDecoderOnIndex;
+		bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
+		Codec::TType codec;
 		Time::CSharedArrayEx indexPulses; // buffer to contain 'Max' full Revolutions
 
-		CReaderBuffers(const CDecoder &decoder,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
+		CReaderBuffers(const CDecoder &decoder);
 	};
 
 
@@ -52,7 +46,7 @@ namespace Track
 			TTypeId id;
 		} rawDeviceData; // valid until Track modified, then disposed
 
-		CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti);
+		CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method);
 
 		WORD ScanFm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
 		WORD ScanMfm(PSectorId pOutFoundSectors,PLogTime pOutIdEnds,TProfile *pOutIdProfiles,TFdcStatus *pOutIdStatuses,Event::CList *pOutParseEvents);
@@ -61,7 +55,7 @@ namespace Track
 	public:
 		inline TRev GetIndexCount() const{ return indexPulses.length; }
 		inline PCLogTime GetBuffer() const{ return logTimes; }
-		inline Codec::TType GetCodec() const{ return pLogTimesInfo->codec; }
+		inline Codec::TType GetCodec() const{ return codec; }
 
 		inline
 		const TLogTimeInterval &GetFullRevolutionTimeInterval(TRev rev) const{

@@ -4,10 +4,11 @@ namespace MFM=Codec::Impl::MFM;
 
 namespace Track
 {
-	CReaderBuffers::CReaderBuffers(const CDecoder &decoder,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
+	CReaderBuffers::CReaderBuffers(const CDecoder &decoder)
 		// ctor
 		: CDecoder(decoder)
-		, pLogTimesInfo(pLti)
+		, resetDecoderOnIndex(true) , corrected(false)
+		, codec(Codec::UNKNOWN)
 		, indexPulses( Revolution::MAX+2 ) { // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
 		*indexPulses=Time::Infinity; // a virtual IndexPulse in infinity
 	}
@@ -17,25 +18,13 @@ namespace Track
 
 
 
-	CReaderBuffers::TLogTimesInfo::TLogTimesInfo(bool resetDecoderOnIndex)
-		// ctor
-		: codec(Codec::MFM)
-		, resetDecoderOnIndex(resetDecoderOnIndex) , corrected(false) {
-	}
-
-
-
-
-
-
-	CReader::CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method,const Memory::CSharedPodPtr<TLogTimesInfo> &pLti)
+	CReader::CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method)
 		// ctor
 		: CReaderBuffers(
-			CDecoder( method, nLogTimesInitCapacity ),
-			pLti
+			CDecoder( method, nLogTimesInitCapacity )
 		) {
 		SetMedium(Medium::TProperties::FLOPPY_DD); // init values associated with the specified Medium
-		SetCodec(pLti->codec); // init values associated with the specified Codec
+		SetCodec(Codec::MFM); // init values associated with the specified Codec
 	}
 
 
@@ -99,7 +88,7 @@ namespace Track
 	void CReader::SetCodec(Codec::TType codec){
 		// changes the interpretation of recorded LogicalTimes according to the new Codec
 		if (const Codec::PCProperties p=Codec::GetProperties(codec)){
-			pLogTimesInfo->codec=codec;
+			this->codec=codec;
 			nConsecutiveZerosMax=p->RLL.k;
 		}else
 			ASSERT(FALSE); // we shouldn't end up here!
@@ -117,7 +106,7 @@ namespace Track
 		const bool value=__super::ReadBit(rtOutOne);
 		if (profile.method!=TDecoderMethod::METADATA)
 			if (currentTime>=indexPulses[indexPulses.iNext]){
-				if (pLogTimesInfo->resetDecoderOnIndex)
+				if (resetDecoderOnIndex)
 					RewindToIndexAndResetProfile(indexPulses.iNext);
 			}
 		return value;
@@ -127,7 +116,7 @@ namespace Track
 		// returns the number of Sectors recognized and decoded from underlying Track bits over all complete revolutions
 		profile.Reset();
 		WORD nSectorsFound;
-		switch (pLogTimesInfo->codec){
+		switch (codec){
 			case Codec::FM:
 				nSectorsFound=ScanFm( pOutFoundSectors, pOutIdEnds, pOutIdProfiles, pOutIdStatuses, pOutParseEvents );
 				break;
@@ -344,7 +333,7 @@ namespace Track
 							bit++;
 					if (bit==lastBit) // no more Fuzzy bits?
 						break;
-					const TLogTime tPrevBit= bit==rev.begin()&&pLogTimesInfo->resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
+					const TLogTime tPrevBit= bit==rev.begin()&&resetDecoderOnIndex ? bit->time-profile.iwTimeDefault : bit[-1].time;
 					TParseEvent peFuzzy( Event::NONE, tPrevBit, 0, 0 ); // "tPrevBit" = all ParseEvents must be one InspectionWindow behind to comply with rest of the app
 					while (bit<lastBit && bit->IsFuzzy()) // discovering consecutive Fuzzy Bits
 						if (ap.Cancelled)
@@ -400,8 +389,8 @@ namespace Track
 	TFdcStatus CReader::ReadData(const TSectorId &id,TLogTime idEndTime,const TProfile &idEndProfile,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
-		switch (pLogTimesInfo->codec){
+		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
+		switch (codec){
 			case Codec::FM:
 				return	ReadDataFm( id, nBytesToRead, pOutDataPe, pOutParseEvents );
 			case Codec::MFM:
@@ -456,14 +445,14 @@ namespace Track
 
 	TFdcStatus CReader::ReadDataFm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at current position; returns the amount of Bytes actually read
-		ASSERT( pLogTimesInfo->codec==Codec::FM );
+		ASSERT( codec==Codec::FM );
 		//TODO
 		return TFdcStatus::SectorNotFound;
 	}
 
 	bool CReaderWriter::WriteDataFm(TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
-		ASSERT( pLogTimesInfo->codec==Codec::FM );
+		ASSERT( codec==Codec::FM );
 		//TODO
 		return false;
 	}
@@ -556,7 +545,7 @@ namespace Track
 
 	TFdcStatus CReader::ReadDataMfm(const TSectorId &sectorId,WORD nBytesToRead,CSharedParseEventPtr *pOutDataPe,CParseEventList *pOutParseEvents){
 		// attempts to read specified amount of Bytes into the Buffer, starting at position pointed to by the BitReader; returns the amount of Bytes actually read
-		ASSERT( pLogTimesInfo->codec==Codec::MFM );
+		ASSERT( codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		TLogTime tSyncStarts[64]; BYTE iSyncStart=0;
 		WORD w, sync1=0; DWORD sync23=0;
@@ -636,7 +625,7 @@ namespace Track
 
 	bool CReaderWriter::WriteDataMfm(TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting at CurrentTime, otherwise False
-		ASSERT( pLogTimesInfo->codec==Codec::MFM );
+		ASSERT( codec==Codec::MFM );
 		// - searching for the nearest three consecutive 0xA1 distorted synchronization Bytes
 		WORD w, sync1=0; DWORD sync23=0;
 		while (*this){
@@ -717,7 +706,7 @@ namespace Track
 
 	char CReader::ReadByte(Bit::TPattern &rOutBits,PBYTE pOutValue){
 		// reads number of bits corresponding to one Byte; if all such bits successfully read, returns their count, or -1 otherwise
-		switch (pLogTimesInfo->codec){
+		switch (codec){
 			case Codec::FM:
 				ASSERT(FALSE); //TODO
 				return -1;
@@ -736,7 +725,7 @@ namespace Track
 
 	bool CReader::IsLastReadBitHealthy() const{
 		// True <=> the bit read last by ReadBit* methods is well encoded, otherwise False (first bits on a Track or right after Index may be evaluated unreliably!)
-		switch (pLogTimesInfo->codec){
+		switch (codec){
 			case Codec::FM:
 				return true;
 			case Codec::MFM:
@@ -795,33 +784,25 @@ namespace Track
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CReader(
-			nLogTimesInitCapacity+LogTimesCountExtra,
-			method,
-			TLogTimesInfo( resetDecoderOnIndex )
-		){
+		: CReader( nLogTimesInitCapacity+LogTimesCountExtra, method ){
 		rawDeviceData.id=Track::InvalidTypeId;
+		this->resetDecoderOnIndex=resetDecoderOnIndex;
 	}
 
 	CReaderWriter::CReaderWriter(const CReader &tr,bool shareTimes)
 		// copy ctor
 		: CReader( tr ) {
 		if (!shareTimes){
-			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, pLogTimesInfo->resetDecoderOnIndex );
+			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, resetDecoderOnIndex );
 			tmp.logTimes.Append( logTimes, logTimes.length );
 			tmp.indexPulses=indexPulses;
-			tmp.pLogTimesInfo=pLogTimesInfo;
 			std::swap<CReaderBuffers>( tmp, *this );
 		}
 	}
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
-		: CReader(
-			nLogTimes+LogTimesCountExtra,
-			TDecoderMethod::KEIR_FRASER,
-			TLogTimesInfo(true)
-		){
+		: CReader( nLogTimes+LogTimesCountExtra, TDecoderMethod::KEIR_FRASER ){
 		AppendIndexTime(0);
 			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
 		AppendIndexTime( nLogTimes );
@@ -1009,8 +990,8 @@ namespace Track
 	bool CReaderWriter::WriteData(TLogTime idEndTime,const TProfile &idEndProfile,TDataParseEvent &peData,TFdcStatus sr){
 		// True <=> the whole DataParseEvent was written to the Track, starting after specified IdEndTime, otherwise False
 		SetCurrentTimeAndProfile( idEndTime, idEndProfile );
-		const Utils::CVarTempReset<bool> rdoi0( pLogTimesInfo->resetDecoderOnIndex, false ); // never reset when reading data
-		switch (pLogTimesInfo->codec){
+		const Utils::CVarTempReset<bool> rdoi0( resetDecoderOnIndex, false ); // never reset when reading data
+		switch (codec){
 			case Codec::FM:
 				return	WriteDataFm( peData, sr );
 			case Codec::MFM:
@@ -1051,7 +1032,7 @@ namespace Track
 			metaData.insert(mdi);
 		}
 		*pMetaData=metaData;
-		//pLogTimesInfo->rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
+		//rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
 		return *this;
 	}
 
