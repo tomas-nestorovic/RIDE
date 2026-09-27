@@ -79,7 +79,7 @@ return ERROR_SUCCESS; // temporarily suspended
 		if (!c.use)
 			return ERROR_SUCCESS;
 		// - mustn't apply corrections twice
-		if (pLogTimesInfo->corrected)
+		if (corrected)
 			return ERROR_SUCCESS;
 		//ASSERT( pLogTimesInfo.GetData()->nRefs==1 ); // normalization of a TrackReaderWriter that is used more than once always needs an attention
 		// - if the Track contains less than two Indices, we are successfully done
@@ -87,7 +87,7 @@ return ERROR_SUCCESS; // temporarily suspended
 			return ERROR_SUCCESS;
 		ClearAllMetaData();
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
-		pLogTimesInfo->corrected=true;
+		corrected=true;
 		// - shifting Indices by shifting all Times in oposite direction
 		const TLogTime tLastIndexOrg=GetLastIndexTime();
 		if (c.offsetIndices){
