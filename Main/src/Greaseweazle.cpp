@@ -523,7 +523,7 @@
 			if (rit) // if a Track already emerged between the Image and Device locks, using it
 				ASSERT(FALSE); // but this shouldn't happen!
 			else
-				rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
+				rit=CInternalTrack::CreateFrom( *this, trw );
 			return *rit;
 		}
 		return Track::Invalid;

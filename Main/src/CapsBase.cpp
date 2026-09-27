@@ -188,10 +188,10 @@
 		}
 		trw.AppendTimes( trw.GetBuffer(), pFluxTime-trw.GetBuffer() );
 		// - creating a Track from above reconstructed flux information
-		return CreateFrom( cb, std::move(trw) );
+		return CreateFrom( cb, trw );
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter &&trw,Medium::TType floppyType){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter &trw,Medium::TType floppyType){
 		// creates and returns a Track decoded from underlying flux representation
 		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
 			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
@@ -753,7 +753,7 @@ invalidTrack:
 			if (type&Medium::FLOPPY_ANY)
 				if (const CTrackTempReset &&rit=CTrackTempReset(
 						internalTracks[cyl][0],
-						CInternalTrack::CreateFrom( *this, std::move(CTrackReaderWriter(*ritInserted,false)), rOutMediumType=(Medium::TType)type )
+						CInternalTrack::CreateFrom( *this, CTrackReaderWriter(*ritInserted,false), rOutMediumType=(Medium::TType)type )
 					)
 				){
 					const TSector nRecognizedSectors=rit->sectors.length;
@@ -828,7 +828,7 @@ invalidTrack:
 						if (auto &rit=internalTracks[cyl][head]){
 							CTrackReaderWriter trw=*rit; // extract fluxes
 							delete rit;
-							rit=CInternalTrack::CreateFrom( *this, std::move(trw), format.mediumType );
+							rit=CInternalTrack::CreateFrom( *this, trw, format.mediumType );
 						}
 			// . seeing if some Sectors can be recognized in any of Tracks that usually contain the Boot Sector of implemented DOSes
 			if (params.userForcedMedium)
@@ -1052,7 +1052,7 @@ invalidTrack:
 		// - evaluating Track magnetic reliability
 		const CTrackTempReset test(
 			internalTracks[cyl][head],
-			CInternalTrack::CreateFrom( *this, std::move(trw), floppyType )
+			CInternalTrack::CreateFrom( *this, trw, floppyType )
 		);
 		test->modified=true; // to pass the save conditions
 		for( BYTE nTrials=3; nTrials>0; nTrials-- ){
@@ -1118,7 +1118,7 @@ invalidTrack:
 		if (const PInternalTrack tmp=CInternalTrack::CreateFrom( *this, cti, nRevs, lockFlags )){
 			CTrackReaderWriter trw=*tmp; // extracting raw flux data ...
 			delete tmp;
-			rit=CInternalTrack::CreateFrom( *this, std::move(trw) ); // ... and rescanning the Track using current FloppyType Profile
+			rit=CInternalTrack::CreateFrom( *this, trw ); // ... and rescanning the Track using current FloppyType Profile
 		}
 		while (--nRevs>0){
 			const CapsTrackInfoT2 &r=cti[nRevs];

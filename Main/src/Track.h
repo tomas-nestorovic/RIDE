@@ -123,7 +123,6 @@ namespace Track
 		CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp); // 'nLogTimes' uniformly distributed across a single-Revolution Track
 		CReaderWriter(const CReader &tr,bool shareTimes=true);
-		CReaderWriter(CReaderWriter &&trw);
 
 		inline PLogTime GetBuffer() const{ return logTimes; }
 

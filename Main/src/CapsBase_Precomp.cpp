@@ -133,7 +133,7 @@
 			// . saving the test Track
 			const CTrackTempReset rit(
 				ptp.cb.internalTracks[cyl][ptp.head],
-				CInternalTrack::CreateFrom( ptp.cb, std::move(trw), rPrecomp.floppyType )
+				CInternalTrack::CreateFrom( ptp.cb, trw, rPrecomp.floppyType )
 			);
 			rit->modified=true; // to pass the save conditions
 			const Utils::CVarTempReset<TMethodVersion> pm0( ptp.cb.precompensation.methodVersion, CPrecompensation::Identity );

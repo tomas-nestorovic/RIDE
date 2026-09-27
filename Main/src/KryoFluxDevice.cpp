@@ -764,7 +764,7 @@
 				switch (err=VerifyTrack( cyl, head, trw, nSilentRetrials<0, &pVerifiedTrack, cancelled )){
 					case ERROR_CONTINUE:// validation failed but ignore the failure and continue
 						delete internalTracks[cyl][head];
-						internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, std::move(*pVerifiedTrack.release()) );
+						internalTracks[cyl][head]=CInternalTrack::CreateFrom( *this, *pVerifiedTrack );
 						//fallthrough
 					case ERROR_SUCCESS:	// validation was successfull
 						break;
@@ -819,7 +819,7 @@
 			if (rit) // if a Track already emerged between the Image and Device locks, using it
 				ASSERT(FALSE); // but this shouldn't happen!
 			else
-				rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
+				rit=CInternalTrack::CreateFrom( *this, trw );
 			return *rit;
 		}
 		return Track::Invalid;

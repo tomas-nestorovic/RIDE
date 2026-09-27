@@ -162,7 +162,7 @@
 			// it's a KryoFlux Stream whose data make sense
 			if (head && params.flippyDisk)
 				trw.Reverse();
-			rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
+			rit=CInternalTrack::CreateFrom( *this, trw );
 			return *rit;
 		}
 		return Track::Invalid;

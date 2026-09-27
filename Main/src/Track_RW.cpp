@@ -793,10 +793,8 @@ namespace Track
 		// copy ctor
 		: CReader( tr ) {
 		if (!shareTimes){
-			CReaderWriter tmp( logTimes.GetCapacity()-LogTimesCountExtra, profile.method, resetDecoderOnIndex );
-			tmp.logTimes.Append( logTimes, logTimes.length );
-			tmp.indexPulses=indexPulses;
-			std::swap<CReaderBuffers>( tmp, *this );
+			logTimes.reset();
+			logTimes.Append( tr.logTimes, tr.logTimes.length );
 		}
 	}
 
@@ -808,12 +806,7 @@ namespace Track
 		AppendIndexTime( nLogTimes );
 		Normalize(mp);
 	}
-	
-	CReaderWriter::CReaderWriter(CReaderWriter &&rTrackReaderWriter)
-		// move ctor
-		: CReader( std::move(rTrackReaderWriter) ) {
-	}
-	
+
 	void CReaderWriter::AppendTime(TLogTime logTime){
 		// appends LogicalTime at the end of the Track
 		ASSERT( logTime>=0 );

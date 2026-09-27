@@ -396,7 +396,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				trw.AppendIndexTime(0);
 			if (trw.GetIndexCount()<2)
 				trw.AppendIndexTime(tCurr);
-			return CInternalTrack::CreateFrom( *this, std::move(trw), floppyType );
+			return CInternalTrack::CreateFrom( *this, trw, floppyType );
 		}else{
 			CapsTrackInfoT2 cti={};
 				cti.trackbuf=bytes;

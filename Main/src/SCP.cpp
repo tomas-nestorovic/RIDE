@@ -108,11 +108,11 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			return Track::Invalid;
 		PInternalTrack &rit=internalTracks[cyl][head];
 		f.Seek( tdhOffsets[cylFile][head], CFile::begin );
-		if (CTrackReaderWriter trw=StreamToTrack( f, cylFile, head )){
+		if (CTrackReaderWriter &&trw=StreamToTrack( f, cylFile, head )){
 			// it's a SuperCardPro Track
 			if (head && params.flippyDisk)
 				trw.Reverse();
-			rit=CInternalTrack::CreateFrom( *this, std::move(trw) );
+			rit=CInternalTrack::CreateFrom( *this, trw );
 			return *rit;
 		}
 		return Track::Invalid;
