@@ -210,8 +210,9 @@
 			return err;
 		if (const int endLength=::lstrlenA(end)){
 			const Memory::CSharedBytes::TView cond={ (PCBYTE)end, endLength };
-			Read( Memory::CSharedBytes(0), cond ); // throw away the response
+			return Read( Memory::CSharedBytes(0), cond ); // throw away the response
 		}
+		return ERROR_SUCCESS;
 	}
 
 	LPCSTR CKryoFluxDevice::GetProductName() const{
