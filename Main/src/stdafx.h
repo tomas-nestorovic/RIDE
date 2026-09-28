@@ -144,7 +144,8 @@ namespace Bit
 namespace Track
 {
 	typedef int N; // index or count
-	class CReader; // forward
+	class CReaderWriter; // forward
+	typedef CReaderWriter CReader; // an alias for historical reasons
 }
 namespace Cylinder
 {

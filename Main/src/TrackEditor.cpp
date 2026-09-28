@@ -1739,7 +1739,7 @@ using namespace Charting;
 
 namespace Track
 {
-	BYTE __cdecl CReader::ShowModal(const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
+	BYTE __cdecl CReaderWriter::ShowModal(const CRegionArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
 			const BYTE result=CTrackEditor( *this, regions, messageBoxButtons, initAllFeaturesOn, tScrollTo, format, argList ).DoModal();
@@ -1747,7 +1747,7 @@ namespace Track
 		return result;
 	}
 
-	void __cdecl CReader::ShowModal(LPCTSTR format,...) const{
+	void __cdecl CReaderWriter::ShowModal(LPCTSTR format,...) const{
 		va_list argList;
 		va_start( argList, format );
 			CTrackEditor( *this, CRegionArray::GetEmpty(), MB_OK, false, 0, format, argList ).DoModal();

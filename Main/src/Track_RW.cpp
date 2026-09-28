@@ -18,18 +18,6 @@ namespace Track
 
 
 
-	CReader::CReader(Time::N nLogTimesInitCapacity,TDecoderMethod method)
-		// ctor
-		: CReaderBuffers(
-			CDecoder( method, nLogTimesInitCapacity )
-		) {
-		SetMedium(Medium::TProperties::FLOPPY_DD); // init values associated with the specified Medium
-		SetCodec(Codec::MFM); // init values associated with the specified Codec
-	}
-
-
-
-
 	constexpr TLogTime TimelyFromPrevious=Event::TimelyFromPrevious;
 
 	void CReader::SetCurrentTime(TLogTime logTime){
@@ -784,14 +772,18 @@ namespace Track
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CReader( nLogTimesInitCapacity+LogTimesCountExtra, method ){
+		: CReaderBuffers(
+			CDecoder( method, nLogTimesInitCapacity+LogTimesCountExtra )
+		) {
 		rawDeviceData.id=Track::InvalidTypeId;
 		this->resetDecoderOnIndex=resetDecoderOnIndex;
+		SetMedium(Medium::TProperties::FLOPPY_DD); // init values associated with the specified Medium
+		SetCodec(Codec::MFM); // init values associated with the specified Codec
 	}
 
-	CReaderWriter::CReaderWriter(const CReader &tr,bool shareTimes)
+	CReaderWriter::CReaderWriter(const CReaderWriter &tr,bool shareTimes)
 		// copy ctor
-		: CReader( tr ) {
+		: CReaderBuffers( tr ) {
 		if (!shareTimes){
 			logTimes.reset();
 			logTimes.Append( tr.logTimes, tr.logTimes.length );
@@ -800,7 +792,9 @@ namespace Track
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
-		: CReader( nLogTimes+LogTimesCountExtra, TDecoderMethod::KEIR_FRASER ){
+		: CReaderBuffers(
+			CDecoder( TDecoderMethod::KEIR_FRASER, nLogTimes+LogTimesCountExtra )
+		) {
 		AppendIndexTime(0);
 			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
 		AppendIndexTime( nLogTimes );
