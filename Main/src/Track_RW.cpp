@@ -4,9 +4,11 @@ namespace MFM=Codec::Impl::MFM;
 
 namespace Track
 {
-	CReaderBuffers::CReaderBuffers(const CDecoder &decoder)
+	constexpr Time::N LogTimesCountExtra=1;
+
+	CReaderBuffers::CReaderBuffers(Time::N nLogTimesInitCapacity,TDecoderMethod method)
 		// ctor
-		: CDecoder(decoder)
+		: Time::Decoder::CBase( method, nLogTimesInitCapacity+LogTimesCountExtra )
 		, resetDecoderOnIndex(true) , corrected(false)
 		, codec(Codec::UNKNOWN)
 		, indexPulses( Revolution::MAX+2 ) { // "+2" = "+1+1" = "+A+B", A = tail IndexPulse of last possible Revolution, B = terminator
@@ -766,15 +768,11 @@ namespace Track
 
 	typedef Time::TMetaDataItem TMetaDataItem;
 
-	constexpr Time::N LogTimesCountExtra=1;
-
 	const CReaderWriter Invalid( 0, Time::Decoder::NONE, false ); // TrackReader invalid right from its creation
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex)
 		// ctor
-		: CReaderBuffers(
-			CDecoder( method, nLogTimesInitCapacity+LogTimesCountExtra )
-		) {
+		: CReaderBuffers( nLogTimesInitCapacity, method ) {
 		rawDeviceData.id=Track::InvalidTypeId;
 		this->resetDecoderOnIndex=resetDecoderOnIndex;
 		SetMedium(Medium::TProperties::FLOPPY_DD); // init values associated with the specified Medium
@@ -792,9 +790,7 @@ namespace Track
 
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
-		: CReaderBuffers(
-			CDecoder( TDecoderMethod::KEIR_FRASER, nLogTimes+LogTimesCountExtra )
-		) {
+		: CReaderBuffers( nLogTimes, TDecoderMethod::KEIR_FRASER ) {
 		AppendIndexTime(0);
 			for( TLogTime t=0; t<nLogTimes; AppendTime(++t) );
 		AppendIndexTime( nLogTimes );

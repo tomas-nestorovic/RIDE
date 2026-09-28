@@ -27,14 +27,13 @@ namespace Track
 	protected:
 		typedef Time::Decoder::TMethod TDecoderMethod;
 		typedef Time::Decoder::TProfile TProfile;
-		typedef Time::Decoder::CBase CDecoder;
 		
 		bool resetDecoderOnIndex;
 		bool corrected; // True <=> corrections (e.g. jitter) applied, otherwise False
 		Codec::TType codec;
 		Time::CSharedArrayEx indexPulses; // buffer to contain 'Max' full Revolutions
 
-		CReaderBuffers(const CDecoder &decoder);
+		CReaderBuffers(Time::N nLogTimesInitCapacity,TDecoderMethod method);
 	};
 
 
