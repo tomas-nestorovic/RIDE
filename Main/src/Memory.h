@@ -27,7 +27,9 @@ namespace Memory
 
 	template<typename T>
 	class CSharedPtr:public CSharedPodPtr<T>{
+	#ifdef RELEASE_MFC42
 		CSharedPtr(CSharedPtr &&obj); // delete
+	#endif
 	public:
 		CSharedPtr()
 			: CSharedPodPtr( _T('\0') ) {
@@ -118,8 +120,14 @@ namespace Memory
 		inline N GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
 		inline T &Second() const{ return operator[](N(1)); } // 'ASSERT(length>=2)' not included for MDOS2 to not complain
 		inline T &Last() const{ ASSERT(length>0); return operator[](N(length-1)); }
+	#ifdef RELEASE_MFC42
 		inline void Fork(){ return CopyBeforeWrite(); }
-
+	#else
+		void Fork(){
+			CSharedPodArray tmp( length, (const T *)operator LPCTSTR() );
+			*this=tmp;
+		}
+	#endif
 		void Move(N iDst,N iSrc,N nItems) const{
 			T *const p=*this;
 			::memmove( p+iDst, p+iSrc, nItems*sizeof(T) );
