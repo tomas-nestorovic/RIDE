@@ -124,7 +124,8 @@ namespace Memory
 		inline void Fork(){ return CopyBeforeWrite(); }
 	#else
 		void Fork(){
-			CSharedPodArray tmp( length, (const T *)operator LPCTSTR() );
+			CSharedPodArray tmp( GetCapacity(), (const T *)operator LPCTSTR() );
+			tmp.length=length;
 			*this=tmp;
 		}
 	#endif
