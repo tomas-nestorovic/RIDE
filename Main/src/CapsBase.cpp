@@ -191,7 +191,7 @@
 		return CreateFrom( cb, trw );
 	}
 
-	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter &trw,Medium::TType floppyType){
+	CCapsBase::CInternalTrack *CCapsBase::CInternalTrack::CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType){
 		// creates and returns a Track decoded from underlying flux representation
 		if (floppyType==Medium::UNKNOWN) // if type not explicitly overridden ...
 			floppyType=cb.floppyType; // ... adopt what the CapsBase contains
@@ -753,7 +753,7 @@ invalidTrack:
 			if (type&Medium::FLOPPY_ANY)
 				if (const CTrackTempReset &&rit=CTrackTempReset(
 						internalTracks[cyl][0],
-						CInternalTrack::CreateFrom( *this, CTrackReaderWriter(*ritInserted,false), rOutMediumType=(Medium::TType)type )
+						CInternalTrack::CreateFrom( *this, *ritInserted, rOutMediumType=(Medium::TType)type )
 					)
 				){
 					const TSector nRecognizedSectors=rit->sectors.length;

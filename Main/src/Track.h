@@ -74,11 +74,11 @@ namespace Track
 	public:
 		CReaderWriter(Time::N nLogTimesInitCapacity,TDecoderMethod method,bool resetDecoderOnIndex);
 		CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp); // 'nLogTimes' uniformly distributed across a single-Revolution Track
-		CReaderWriter(const CReaderWriter &tr,bool shareTimes=true);
 
 		inline PLogTime GetBuffer() const{ return logTimes; }
 		inline TRev GetIndexCount() const{ return indexPulses.length; }
 		inline Codec::TType GetCodec() const{ return codec; }
+		inline void ForkTimes(){ logTimes.Fork(); }
 
 		inline
 		const TLogTimeInterval &GetFullRevolutionTimeInterval(TRev rev) const{

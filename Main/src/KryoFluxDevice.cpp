@@ -719,7 +719,7 @@
 			trw.Normalize(*mp);
 		// - pre-compensation of the temporary Track
 		const bool canCompensate=precompensation.methodVersion!=CPrecompensation::None;
-		const CTrackReaderWriter trwCompensated( trw, !canCompensate );
+		CTrackReaderWriter trwCompensated=trw;
 		if (canCompensate)
 			if (const TStdWinError err=precompensation.ApplyTo( *this, cyl, head, trwCompensated ))
 				return err;

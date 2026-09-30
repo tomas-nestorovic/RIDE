@@ -365,7 +365,7 @@ nextTrial:	;
 		d.DoModal();
 	}
 
-	TStdWinError CCapsBase::CPrecompensation::ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter trw) const{
+	TStdWinError CCapsBase::CPrecompensation::ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter &trw) const{
 		// applies current Precompensation parameters (if any) to the Track - it's up to the caller to Load them!; returns Windows standard i/o error
 		// - precompensation must be determined (it's up to the caller to Load the parameters!)
 		switch (const TStdWinError err=const_cast<CPrecompensation *>(this)->DetermineUsingLatestMethod(cb,0)){
@@ -384,6 +384,7 @@ nextTrial:	;
 		if (nTimes<nOrigTimes) // a Track must consist of at least N fluxes
 			return ERROR_INVALID_DATA;
 		TLogTime origFluxes[nOrigTimes]; // non-compensated flux timing
+		trw.ForkTimes();
 		PLogTime pt=trw.GetBuffer();
 		*origFluxes=*pt;
 		for( BYTE i=1; i<nOrigTimes; i++ )

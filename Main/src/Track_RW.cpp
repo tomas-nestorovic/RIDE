@@ -779,15 +779,6 @@ namespace Track
 		SetCodec(Codec::MFM); // init values associated with the specified Codec
 	}
 
-	CReaderWriter::CReaderWriter(const CReaderWriter &tr,bool shareTimes)
-		// copy ctor
-		: CReaderBuffers( tr ) {
-		if (!shareTimes){
-			logTimes.reset();
-			logTimes.Append( tr.logTimes, tr.logTimes.length );
-		}
-	}
-
 	CReaderWriter::CReaderWriter(Time::N nLogTimes,const Medium::TProperties &mp)
 		// ctor ('nLogTimes' uniformly distributed across a single-Revolution Track)
 		: CReaderBuffers( nLogTimes, TDecoderMethod::KEIR_FRASER ) {

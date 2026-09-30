@@ -52,7 +52,7 @@
 			CInternalTrack(const CTrackReaderWriter &trw,PInternalSector sectors,TSector nSectors);
 		public:
 			static CInternalTrack *CreateFrom(const CCapsBase &cb,const CapsTrackInfoT2 *ctiRevs,TRev nRevs,UDWORD lockFlags);
-			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter &trw,Medium::TType floppyType=Medium::UNKNOWN);
+			static CInternalTrack *CreateFrom(const CCapsBase &cb,CTrackReaderWriter trw,Medium::TType floppyType=Medium::UNKNOWN);
 
 			const Memory::CSharedPodArray<TInternalSector,TSector> sectors;
 			bool modified;
@@ -99,7 +99,7 @@
 			void Save() const;
 			TStdWinError DetermineUsingLatestMethod(const CCapsBase &cb,BYTE nTrials=4);
 			void ShowOrDetermineModal(const CCapsBase &cb);
-			TStdWinError ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter trw) const;
+			TStdWinError ApplyTo(const CCapsBase &cb,TCylinder cyl,THead head,CTrackReaderWriter &trw) const;
 		} precompensation;
 
 		struct TParams{
