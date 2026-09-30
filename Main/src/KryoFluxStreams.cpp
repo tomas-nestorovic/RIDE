@@ -130,7 +130,7 @@
 			if (!data) // Track has been really modified and original KF Stream disposed ...
 				data=TrackToStream( // ... must reconstruct it from current state of the Track
 					head && params.flippyDisk
-						? CTrackReaderWriter(*pit,false).Reverse()
+						? pit->Reverse()
 						: *pit
 				);
 			if (GetCurrentDiskFreeSpace()<data.length)

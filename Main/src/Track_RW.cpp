@@ -931,7 +931,7 @@ namespace Track
 
 	void CReaderWriter::ClearAllMetaData(){
 		// removes all MetaDataItems
-		pMetaData->clear();
+		pMetaData=Memory::CSharedPtr<Time::CMetaData>();
 		FindMetaDataIteratorAndApply();
 	}
 
@@ -952,10 +952,10 @@ namespace Track
 		const Time::N dn=writeTimes.GetTimesCount()-nLogTimesToClear;
 		if (dn>0)
 			logTimes.ReserveAnother( dn+LogTimesCountExtra );
-		::memmove(
-			logTimes+iLogTimeToClearA+writeTimes.GetTimesCount(),
-			logTimes+logTimes.iNext,
-			(logTimes.length-logTimes.iNext)*sizeof(TLogTime)
+		logTimes.Move(
+			iLogTimeToClearA+writeTimes.GetTimesCount(),
+			logTimes.iNext,
+			logTimes.length-logTimes.iNext
 		);
 		logTimes.length+=dn;
 		::memcpy(
@@ -999,22 +999,24 @@ namespace Track
 		// reverses timing of this Track
 		const auto tTotal=GetTotalTime();
 		// - reversing Indices
+		indexPulses.Fork();
 		indexPulses.Reverse();
-		for( TRev i=0; i<GetIndexCount(); i++ )
-			indexPulses[i]=tTotal-indexPulses[i];
+		for each( Time::T &t in indexPulses )
+			t=tTotal-t;
 		// - reversing Times
+		logTimes.Fork();
 		logTimes.Reverse();
 		for each( Time::T &t in logTimes )
 			t=tTotal-t;
 		// - reversing MetaData
-		Time::CMetaData metaData;
-		for each( auto mdi in GetMetaData() ){
+		const auto pMetaDataOrg=pMetaData;
+		ClearAllMetaData();
+		for each( auto mdi in *pMetaDataOrg ){
 			std::swap( mdi.tStart, mdi.tEnd );
 			mdi.tStart=tTotal-mdi.tStart;
 			mdi.tEnd=tTotal-mdi.tEnd;
-			metaData.insert(mdi);
+			pMetaData->insert(mdi);
 		}
-		*pMetaData=metaData;
 		//rawDeviceData.reset(); // commented out as reversal occurs only for purposes of this application
 		return *this;
 	}

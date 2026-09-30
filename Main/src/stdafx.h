@@ -43,7 +43,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <afxmt.h>
 //#include <afxrich.h>
 //#include <afxcmn.h>
-#include <afxpriv.h>
 //#include <afxtempl.h>
 #ifdef RELEASE_MFC42
 	#include <crtnew.h>

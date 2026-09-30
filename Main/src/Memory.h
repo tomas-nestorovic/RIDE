@@ -118,6 +118,12 @@ namespace Memory
 		inline N GetCapacity() const{ return GetLength()*sizeof(TCHAR)/sizeof(T); }
 		inline T &Second() const{ return operator[](N(1)); } // 'ASSERT(length>=2)' not included for MDOS2 to not complain
 		inline T &Last() const{ ASSERT(length>0); return operator[](N(length-1)); }
+		inline void Fork(){ return CopyBeforeWrite(); }
+
+		void Move(N iDst,N iSrc,N nItems) const{
+			T *const p=*this;
+			::memmove( p+iDst, p+iSrc, nItems*sizeof(T) );
+		}
 
 		T *ReserveAnother(N nItems){
 			nItems+=length; // now min capacity required
