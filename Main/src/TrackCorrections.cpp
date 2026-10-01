@@ -88,13 +88,15 @@ return ERROR_SUCCESS; // temporarily suspended
 		ClearAllMetaData();
 		rawDeviceData.reset(); // modified Track is no longer as we received it from the Device
 		corrected=true;
-		// - shifting Indices by shifting all Times in oposite direction
-		const TLogTime tLastIndexOrg=GetLastIndexTime();
+		// - shifting Indices
+		const TLogTime tLastIndexOrg=indexPulses.Last();
 		if (c.offsetIndices){
-			TLogTime dt=TIME_MICRO(c.indexOffsetMicroseconds);
-			if (dt<0)
-				dt=std::max( *indexPulses+dt, 0 )-*indexPulses; // mustn't run into negative timing
-			indexPulses.Offset(dt);
+			const TLogTime dt=TIME_MICRO(c.indexOffsetMicroseconds);
+			const TLogTime dtMin= -*indexPulses; // notice the minus sign!
+			indexPulses.Fork();
+			indexPulses.Offset(
+				std::max( dt, dtMin ) // avoid running into negative Times
+			);
 		}
 		// - ignoring what's before the first Index
 		TLogTime tCurrIndexOrg=RewindToIndex(0);
