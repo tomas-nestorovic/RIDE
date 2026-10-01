@@ -121,12 +121,12 @@ namespace Memory
 		inline T &Second() const{ return operator[](N(1)); } // 'ASSERT(length>=2)' not included for MDOS2 to not complain
 		inline T &Last() const{ ASSERT(length>0); return operator[](N(length-1)); }
 	#ifdef RELEASE_MFC42
-		inline void Fork(){ return CopyBeforeWrite(); }
+		inline CSharedPodArray &Fork(){ return CopyBeforeWrite(); return *this; }
 	#else
-		void Fork(){
+		CSharedPodArray &Fork(){
 			CSharedPodArray tmp( GetCapacity(), (const T *)operator LPCTSTR() );
 			tmp.length=length;
-			*this=tmp;
+			return *this=tmp;
 		}
 	#endif
 		void Move(N iDst,N iSrc,N nItems) const{
@@ -173,10 +173,11 @@ namespace Memory
 			return std::lower_bound( begin(), end(), v, p );
 		}
 
-		void Reverse(){
-			T *const p=*this;
+		CSharedPodArray &Reverse(){
+			T *const p=Fork();
 			for( N i=length/2,Lm1=length-1; i-->0; )
 				std::swap( p[i], p[Lm1-i] );
+			return *this;
 		}
 
 		// 'for each' support

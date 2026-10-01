@@ -928,7 +928,7 @@ namespace Track
 
 	TLogTime CReader::GetLastIndexTime() const{
 		// returns the LogicalTime of the last added Index (or 0)
-		return	indexPulses.length ? indexPulses[indexPulses.length-1] : 0;
+		return	indexPulses.length ? indexPulses.Last() : 0;
 	}
 
 	bool CReaderWriter::ReplaceTimes(const TLogTimeInterval &clearTimes,const CReader &writeTimes){
@@ -990,14 +990,10 @@ namespace Track
 		// reverses timing of this Track
 		const auto tTotal=GetTotalTime();
 		// - reversing Indices
-		indexPulses.Fork();
-		indexPulses.Reverse();
-		for each( Time::T &t in indexPulses )
+		for each( Time::T &t in indexPulses.Reverse() )
 			t=tTotal-t;
 		// - reversing Times
-		logTimes.Fork();
-		logTimes.Reverse();
-		for each( Time::T &t in logTimes )
+		for each( Time::T &t in logTimes.Reverse() )
 			t=tTotal-t;
 		// - reversing MetaData
 		const auto pMetaDataOrg=pMetaData;

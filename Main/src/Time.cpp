@@ -19,7 +19,7 @@ namespace Time
 	}
 
 	void CSharedArrayEx::Offset(T dt){
-		for each( T &t in *this )
+		for each( T &t in Fork() )
 			t+=dt;
 	}
 

@@ -93,7 +93,6 @@ return ERROR_SUCCESS; // temporarily suspended
 		if (c.offsetIndices){
 			const TLogTime dt=TIME_MICRO(c.indexOffsetMicroseconds);
 			const TLogTime dtMin= -*indexPulses; // notice the minus sign!
-			indexPulses.Fork();
 			indexPulses.Offset(
 				std::max( dt, dtMin ) // avoid running into negative Times
 			);
