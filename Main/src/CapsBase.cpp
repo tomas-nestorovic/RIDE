@@ -177,7 +177,7 @@
 			for( UDWORD byteTime; rev; ){
 				const bool bit=rev.ReadBit(byteTime);
 				if (byteTime) // timing available?
-					currentTime+= ::MulDiv( trw.GetCurrentProfile().iwTimeDefault, byteTime, 1000 );
+					currentTime+= Time::MulDiv( trw.GetCurrentProfile().iwTimeDefault, byteTime, 1000 );
 				else
 					currentTime+= trw.GetCurrentProfile().iwTimeDefault;
 				if (bit)

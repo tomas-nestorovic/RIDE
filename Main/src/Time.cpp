@@ -32,7 +32,7 @@ namespace Time
 		ASSERT( tSrcA<tSrcZ );
 		ASSERT( tDstA<tDstZ );
 		for( const T dtSrc=tSrcZ-tSrcA,dtDst=tDstZ-tDstA; n-->0; p++ )
-			*p= tDstA + (LONGLONG)(*p-tSrcA)*dtDst/dtSrc;
+			*p= tDstA + MulDiv( *p-tSrcA, dtDst, dtSrc );
 	}
 
 
@@ -69,13 +69,13 @@ namespace Time
 	T TMetaDataItem::GetBitTime(Bit::N iBit) const{
 		// computes and returns the LogicalTime of I-th bit (aka. the center of I-th InspectionWindow)
 		ASSERT( 0<=iBit && iBit<nBits );
-		return	tStart + ::MulDiv( GetLength(), iBit, nBits ); // mathematic rounding
+		return	tStart + MulDiv( GetLength(), iBit, nBits ); // mathematic rounding
 	}
 
 	Bit::N TMetaDataItem::GetBitIndex(T t) const{
 		//
 		ASSERT( Contains(t) );
-		return ::MulDiv( t-tStart, nBits, GetLength() ); // mathematic rounding
+		return MulDiv( t-tStart, nBits, GetLength() ); // mathematic rounding
 	}
 
 	TInterval TMetaDataItem::GetIw(Bit::N iBit) const{
@@ -400,7 +400,7 @@ namespace Time
 						if (iSlot<7&&!r.up || iSlot>8&&r.up)
 							r.up=!r.up, r.pcCnt = r.fCnt = 0;
 						if (++r.fCnt>=3 || iSlot<3&&++r.aifCnt>=3 || iSlot>12&&++r.adfCnt>=3){
-							const Time::T16 iwDelta=profile.iwTimeDefault/100;
+							const T16 iwDelta=profile.iwTimeDefault/100;
 							if (r.up){
 								if (( profile.iwTime-=iwDelta )<profile.iwTimeMin)
 									profile.iwTime=profile.iwTimeMin;

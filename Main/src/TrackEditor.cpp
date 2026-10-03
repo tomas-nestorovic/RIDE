@@ -1272,14 +1272,14 @@ using namespace Charting;
 									}
 									const TLogTime tIwCursorStart=piwCursor->time, tIwCursorLength=piwCursor->GetLength();
 									const TLogTime tIwStart=piw->time, tIwLength=piw->GetLength();
-									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
+									const TLogTime t= tIwStart + Time::MulDiv( tCursor-tIwCursorStart, tIwLength, tIwCursorLength );
 									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 									return TRUE;
 								}
 							// . navigate to proportionally corresponding Time in the previous Revolution
 							const TLogTime tCurrRevLength=tr.GetIndexTime(r)-tr.GetIndexTime(r-1);
 							const TLogTime tPrevRevLength=tr.GetIndexTime(r-1)-tr.GetIndexTime(r-2);
-							const TLogTime t= tr.GetIndexTime(r-2) + (LONGLONG)(tCursor-tr.GetIndexTime(r-1))*tPrevRevLength/tCurrRevLength;
+							const TLogTime t= tr.GetIndexTime(r-2) + Time::MulDiv( tCursor-tr.GetIndexTime(r-1), tPrevRevLength, tCurrRevLength );
 							timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 							return TRUE;
 						}
@@ -1301,14 +1301,14 @@ using namespace Charting;
 									}
 									const TLogTime tIwCursorStart=piwCursor->time, tIwCursorLength=piwCursor->GetLength();
 									const TLogTime tIwStart=piw->time, tIwLength=piw->GetLength();
-									const TLogTime t= tIwStart + (LONGLONG)(tCursor-tIwCursorStart)*tIwLength/tIwCursorLength;
+									const TLogTime t= tIwStart + Time::MulDiv( tCursor-tIwCursorStart, tIwLength, tIwCursorLength );
 									timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 									return TRUE;
 								}
 							// . navigate to proportionally corresponding Time in the next Revolution
 							const TLogTime tCurrRevLength=tr.GetIndexTime(r+1)-tr.GetIndexTime(r);
 							const TLogTime tNextRevLength=tr.GetIndexTime(r+2)-tr.GetIndexTime(r+1);
-							const TLogTime t= tr.GetIndexTime(r+1) + (LONGLONG)(tCursor-tr.GetIndexTime(r))*tNextRevLength/tCurrRevLength;
+							const TLogTime t= tr.GetIndexTime(r+1) + Time::MulDiv( tCursor-tr.GetIndexTime(r), tNextRevLength, tCurrRevLength );
 							timeEditor.SetScrollTime( t - (tCursor-timeEditor.GetScrollTime()) );
 							return TRUE;
 						}
