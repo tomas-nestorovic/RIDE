@@ -846,8 +846,7 @@ using namespace Charting;
 			const auto &iwList=te.timeEditor.GetInspectionWindows();
 			const auto &peList=te.timeEditor.GetParseEvents();
 			const Time::T16 iwTimeTolerance=tr.GetCurrentProfile().iwTimeMin/4;
-			for( TRev i=1; i<tr.GetIndexCount(); i++ ){
-				const Bit::CSequence &iwRev=iwList.revs[i-1];
+			for each( const auto &iwRev in iwList.revs ){
 				TInspectionWindow *iw=iwRev.begin();
 				const PCInspectionWindow iwRevEnd=iwRev.end();
 				int uid=1;

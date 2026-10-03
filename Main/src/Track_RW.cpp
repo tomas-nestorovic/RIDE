@@ -310,8 +310,7 @@ namespace Track
 			// . merging consecutive fuzzy bits into FuzzyEvents
 			CActionProgress apMerge=ap.CreateSubactionProgress( StepGranularity, StepGranularity );
 			auto peIt=rOutParseEvents.GetIterator();
-			for( TRev r=0; r<nFullRevolutions; apMerge.UpdateProgress(++r) ){
-				const Bit::CSequence &rev=bits.revs[r];
+			for each( const auto &rev in bits.revs ){
 				CActionProgress apRev=apMerge.CreateSubactionProgress( StepGranularity/nFullRevolutions, rev.GetBitCount() );
 				Bit::CSequence::PCBit bit=rev.begin(), lastBit=rev.end();
 				do{
@@ -337,6 +336,7 @@ namespace Track
 					rOutParseEvents.Add( peFuzzy );
 					apRev.UpdateProgress( bit-rev.begin() );
 				} while (bit<lastBit);
+				apMerge.IncrementProgress();
 			}
 		}
 		auto peIt=rOutParseEvents.GetIterator();
@@ -743,9 +743,10 @@ namespace Track
 
 	CBits CReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
 		CBits result;
-		static_cast<Bit::CSequence &>(result)=CreateBitSequence(oneOkPercent);
+			static_cast<Bit::CSequence &>(result)=CreateBitSequence(oneOkPercent);
+			result.revs.n=indexPulses.length;
 		for( TRev i=1; i<indexPulses.length; i++ )
-			result.revs[i-1]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i-1) );
+			result.revs.list[i]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i-1) );
 		return result;
 	}
 

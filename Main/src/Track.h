@@ -15,7 +15,16 @@ namespace Track
 
 	class CBits:public Bit::CSequence{ // 'base' factors in Decoder reset upon Index pulse
 	public:
-		Bit::CSequence revs[Revolution::MAX];
+		struct{
+			TRev n;
+			Bit::CSequence list[1+Revolution::MAX]; // '1+' = reserved for pre-first-Index Revolution
+
+			inline const Bit::CSequence &operator[](TRev i) const{ return list[i]; }
+
+			// 'for each' support for --FULL-- Revolutions
+			inline const Bit::CSequence *begin() const{ return list+1; }
+			inline const Bit::CSequence *end() const{ return list+n; }
+		} revs;
 
 		void ConvertToInspectionWindows(const Time::Decoder::TLimits &limits) const;
 	};
