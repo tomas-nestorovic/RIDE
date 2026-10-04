@@ -336,7 +336,6 @@ namespace Track
 					rOutParseEvents.Add( peFuzzy );
 					apRev.UpdateProgress( bit-rev.begin() );
 				} while (bit<lastBit);
-				apMerge.IncrementProgress();
 			}
 		}
 		auto peIt=rOutParseEvents.GetIterator();
@@ -744,10 +743,16 @@ namespace Track
 	CBits CReader::CreateFullRevBitSequences(BYTE oneOkPercent) const{
 		CBits result;
 			static_cast<Bit::CSequence &>(result)=CreateBitSequence(oneOkPercent);
-			result.revs.n=indexPulses.length;
-		for( TRev i=1; i<indexPulses.length; i++ )
-			result.revs.list[i]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i-1) );
+		if (indexPulses) // assert 'N-1>=0'
+			result.revs.nFull=indexPulses.length-1;
+		for( TRev i=0; i<result.revs.nFull; i++ )
+			result.revs.list[i]=Bit::CSequence( result, GetFullRevolutionTimeInterval(i) );
 		return result;
+	}
+
+	CBits::CBits(){
+		// ctor
+		revs.nFull=0;
 	}
 
 	void CBits::ConvertToInspectionWindows(const Time::Decoder::TLimits &limits) const{
