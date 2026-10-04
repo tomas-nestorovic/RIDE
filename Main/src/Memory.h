@@ -169,8 +169,13 @@ namespace Memory
 		}
 
 		template<typename V,class Predicate>
-		T *LowerBound(const V &v,Predicate p) const{
+		T *LowerBound(T *pFrom,T *pTo,const V &v,Predicate p) const{
 			return std::lower_bound( begin(), end(), v, p );
+		}
+
+		template<typename V,class Predicate>
+		T *LowerBound(const V &v,Predicate p) const{
+			return LowerBound( begin(), end(), v, p );
 		}
 
 		CSharedPodArray &Reverse(){

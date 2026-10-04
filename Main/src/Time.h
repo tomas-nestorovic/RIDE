@@ -73,7 +73,8 @@ namespace Time
 	};
 
 	inline bool IsInvalid(T t){ return t<0; }
-	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ);
+	void Offset(P pA,PC pZ,T dt);
+	void Interpolate(P pA,PC pZ,T tSrcA,T tSrcZ,T tDstA,T tDstZ);
 	
 	inline T MulDiv(T t,T tMul,T tDiv){
 		static_assert( sizeof(T)==sizeof(int), "see 'MulDiv' below" );

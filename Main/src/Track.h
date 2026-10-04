@@ -56,8 +56,8 @@ namespace Track
 				WORD reserved:1;
 				WORD use:1;
 				WORD indexTiming:1;
-				WORD cellCountPerRevolution:1;
-				WORD fitTimesIntoIwMiddles:1;
+				WORD nominalIwSize:1;
+				WORD jitter:1;
 				WORD offsetIndices:1;
 			};
 			WORD w;

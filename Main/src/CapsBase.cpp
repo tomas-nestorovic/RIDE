@@ -1630,9 +1630,9 @@ EnableDlgItem(ID_TRACK,false);
 		if (c.use){
 			if (c.indexTiming)
 				p+=::wsprintf( p, _T("revolution time, ") );
-			if (c.cellCountPerRevolution)
+			if (c.nominalIwSize)
 				p+=::wsprintf( p, _T("bit count, ") );
-			if (c.fitTimesIntoIwMiddles)
+			if (c.jitter)
 				p+=::wsprintf( p, _T("bit positions, ") );
 			if (c.offsetIndices)
 				p+=::wsprintf( p, _T("indices offset %d us, "), c.indexOffsetMicroseconds );

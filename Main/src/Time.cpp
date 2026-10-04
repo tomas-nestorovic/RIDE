@@ -27,12 +27,19 @@ namespace Time
 
 
 
-	void Interpolate(P p,N n,T tSrcA,T tSrcZ,T tDstA,T tDstZ){
+	void Offset(P pA,PC pZ,T dt){
+		// in-place offset
+		ASSERT( pA<=pZ );
+		while (pA<pZ)
+			*pA+++=dt;
+	}
+
+	void Interpolate(P pA,PC pZ,T tSrcA,T tSrcZ,T tDstA,T tDstZ){
 		// in-place interpolation
 		ASSERT( tSrcA<tSrcZ );
 		ASSERT( tDstA<tDstZ );
-		for( const T dtSrc=tSrcZ-tSrcA,dtDst=tDstZ-tDstA; n-->0; p++ )
-			*p= tDstA + MulDiv( *p-tSrcA, dtDst, dtSrc );
+		for( const T dtSrc=tSrcZ-tSrcA,dtDst=tDstZ-tDstA; pA<pZ; pA++ )
+			*pA= tDstA + MulDiv( *pA-tSrcA, dtDst, dtSrc );
 	}
 
 

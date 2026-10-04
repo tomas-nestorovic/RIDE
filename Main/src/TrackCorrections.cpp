@@ -12,8 +12,8 @@ namespace Track
 		// - the defaults
 		: use(false)
 		, indexTiming(true)
-		, cellCountPerRevolution(true)
-		, fitTimesIntoIwMiddles(true)
+		, nominalIwSize(true)
+		, jitter(true)
 		, offsetIndices(false)
 		, indexOffsetMicroseconds(1500) {
 		// - attempting to load existing values from last session
@@ -37,12 +37,12 @@ namespace Track
 				int tmp=c.indexTiming;
 					DDX_Check( pDX, ID_ALIGN,	tmp );
 				c.indexTiming=tmp!=BST_UNCHECKED;
-				tmp=c.cellCountPerRevolution;
+				tmp=c.nominalIwSize;
 					DDX_Check( pDX, ID_NUMBER, tmp );
-				c.cellCountPerRevolution=tmp!=BST_UNCHECKED;
-				tmp=c.fitTimesIntoIwMiddles;
+				c.nominalIwSize=tmp!=BST_UNCHECKED;
+				tmp=c.jitter;
 					DDX_Check( pDX, ID_ACCURACY, tmp );
-				c.fitTimesIntoIwMiddles=tmp!=BST_UNCHECKED;
+				c.jitter=tmp!=BST_UNCHECKED;
 				tmp=c.offsetIndices;
 					DDX_Check( pDX, ID_ADDRESS, tmp );
 				c.offsetIndices=tmp!=BST_UNCHECKED;
@@ -98,68 +98,67 @@ return ERROR_SUCCESS; // temporarily suspended
 			);
 		}
 		// - ignoring what's before the first Index
-		TLogTime tCurrIndexOrg=RewindToIndex(0);
+		PLogTime ptCorrected=logTimes
+			.Fork() // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller), thus can avoid calling 'Append' by directly modifying the content
+			.LowerBound( *indexPulses, std::less<Time::T>() );
 		// - normalization
-		const Time::N iModifStart=logTimes.iNext;
-		Time::N iTime=iModifStart;
-		const Time::CSharedArray buffer( logTimes.GetCapacity() ); // guaranteed to suffice (for it sufficed before and the # of Times shall be equal or smaller)
-		const PLogTime ptModified=buffer;
-		for( TRev nextIndex=1; nextIndex<indexPulses.length; nextIndex++ ){
-			// . resetting inspection conditions
-			profile.Reset();
-			const TLogTime tNextIndexOrg=GetIndexTime(nextIndex);
-			const Time::N iModifRevStart=iTime;
-			// . alignment of LogicalTimes to inspection window centers
-			Time::N nAlignedCells=0;
-			if (c.fitTimesIntoIwMiddles){
-				// alignment wanted
-				for( ; *this&&logTimes[logTimes.iNext]<tNextIndexOrg; nAlignedCells++ )
-					if (ReadBit())
-							ptModified[iTime++] = tCurrIndexOrg + nAlignedCells*profile.iwTimeDefault;
-			}else
-				// alignment not wanted - just copying the Times in current Revolution
-				while (*this && logTimes[logTimes.iNext]<tNextIndexOrg)
-					ptModified[iTime++]=ReadTime();
-			Time::N iModifRevEnd=iTime;
-			// . shortening/prolonging this revolution to correct number of cells
-			if (c.cellCountPerRevolution){
-				ptModified[iModifRevEnd]=Time::Infinity; // stop-condition
-				if (nAlignedCells>0){ // are we working with time-corrected cells?
-					iModifRevEnd=iModifRevStart;
-					const TLogTime tRevEnd=tCurrIndexOrg+mp.revolutionTime;
-					while (ptModified[iModifRevEnd]<tRevEnd)
-						iModifRevEnd++;
-					nAlignedCells=mp.nCells;
-				}//else
-					//nop (not applicable)
+		const Time::CSharedArray indexPulsesOrg=indexPulses;
+		indexPulses.Fork();
+		const auto &&bits=CreateFullRevBitSequences();
+		Time::T tRightIndexDistance=mp.revolutionTime, *ptEnd=logTimes.end();
+		for( TRev iRev=0; iRev<bits.revs.nFull; iRev++ ){
+			const auto &rev=bits.revs[iRev];
+			const PLogTime ptCorrectedA=ptCorrected;
+			const Time::T tCurrIndex=indexPulses[iRev], dtIndex=tCurrIndex-indexPulsesOrg[iRev];
+			// . jitter elimination
+			if (c.jitter){
+				if (c.nominalIwSize){ // want resize Bits to their Medium nominal ?
+					auto *pBit=rev.begin();
+					auto *const pLast= c.indexTiming // want correct Index distance ?
+						? pBit+std::min( mp.nCells, rev.GetBitCount() )
+						: rev.end();
+					Time::T t=tCurrIndex;
+					while (pBit<pLast){ // eliminate jitter
+						if (pBit++->value)
+							*ptCorrected++=t;
+						t+=mp.cellTime;
+					}
+					indexPulses[iRev+1]= c.indexTiming // force/correct Index distance
+						? tCurrIndex+mp.revolutionTime
+						: t;
+					tRightIndexDistance=0; // next Index position just set, don't do it twice
+				}else // eliminate jitter with regard to current inspection
+					for each( const auto &bit in rev ) // eliminate jitter
+						if (bit.value)
+							*ptCorrected++=bit.time+dtIndex;
+			}else{ // want preserve actual Timing
+				ptCorrected=logTimes.LowerBound( ptCorrected, ptEnd, indexPulsesOrg[iRev+1], std::less<Time::T>() );
+				Time::Offset( ptCorrectedA, ptCorrected, dtIndex );
 			}
-			// . correction of index-to-index time distance
-			if (c.indexTiming) // index-to-index time correction enabled?
-				indexPulses[nextIndex]=indexPulses[nextIndex-1]+mp.revolutionTime;
-			const TLogTime tNextIndexWork =	nAlignedCells>0 // are we working with time-corrected cells?
-											? tCurrIndexOrg+nAlignedCells*profile.iwTimeDefault
-											: tNextIndexOrg;
-			if (tCurrIndexOrg!=indexPulses[nextIndex-1] || tNextIndexWork!=indexPulses[nextIndex])
-				Time::Interpolate(
-					ptModified+iModifRevStart, iModifRevEnd-iModifRevStart,
-					tCurrIndexOrg, tNextIndexWork,
-					indexPulses[nextIndex-1], indexPulses[nextIndex]
-				);
-			// . next Revolution
-			tCurrIndexOrg=tNextIndexOrg;
-			iTime=iModifRevEnd;
+			// . Index distance
+			if (c.indexTiming)
+				if (tRightIndexDistance) // Index distance NOT YET corrected above ?
+					Time::Interpolate( // correct Index distance
+						ptCorrectedA, ptCorrected,
+						tCurrIndex, indexPulsesOrg[iRev+1]+dtIndex,
+						tCurrIndex,
+							indexPulses[iRev+1]=tCurrIndex+tRightIndexDistance // correct next Index position
+					);
 		}
-		// - copying Modified LogicalTimes to the Track
-		const TLogTime dtLast=GetLastIndexTime()-tLastIndexOrg;
-		for( auto i=logTimes.iNext; i<logTimes.length; logTimes[i++]+=dtLast );
-		::memmove( logTimes+iTime, logTimes+logTimes.iNext, (logTimes.length-logTimes.iNext)*sizeof(TLogTime) ); // Times after last Index
-		::memcpy( logTimes+iModifStart, ptModified+iModifStart, (iTime-iModifStart)*sizeof(TLogTime) ); // Times in full Revolutions
-		logTimes.length+=iTime-logTimes.iNext;
-		SetCurrentTime(0); // setting valid state
+		// - ignoring what's past the last Index
+		const PCLogTime ptPast=logTimes.LowerBound( ptCorrected, ptEnd, indexPulsesOrg[bits.revs.nFull], std::less<Time::T>() );
+		const auto nBytes=(INT_PTR)ptEnd-(INT_PTR)ptPast;
+		Time::Offset(
+			ptCorrected,
+			ptEnd = PLogTime( (PBYTE)::memcpy(ptCorrected,ptPast,nBytes)+nBytes ),
+			indexPulses[bits.revs.nFull]-indexPulsesOrg[bits.revs.nFull]
+		);
+		logTimes.length=ptEnd-logTimes.begin();
 		// - successfully normalized
 		#ifdef _DEBUG
 			VerifyChronology();
 		#endif
+		SetCurrentTime(0); // setting valid state
 		return ERROR_SUCCESS;
 	}
 
