@@ -170,7 +170,7 @@ namespace Memory
 
 		template<typename V,class Predicate>
 		T *LowerBound(T *pFrom,T *pTo,const V &v,Predicate p) const{
-			return std::lower_bound( begin(), end(), v, p );
+			return std::lower_bound( pFrom, pTo, v, p );
 		}
 
 		template<typename V,class Predicate>
