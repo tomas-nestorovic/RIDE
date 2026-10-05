@@ -121,7 +121,7 @@ namespace Memory
 		inline T &Second() const{ return operator[](N(1)); } // 'ASSERT(length>=2)' not included for MDOS2 to not complain
 		inline T &Last() const{ ASSERT(length>0); return operator[](N(length-1)); }
 	#ifdef RELEASE_MFC42
-		inline CSharedPodArray &Fork(){ return CopyBeforeWrite(); return *this; }
+		inline CSharedPodArray &Fork(){ CopyBeforeWrite(); return *this; }
 	#else
 		CSharedPodArray &Fork(){
 			CSharedPodArray tmp( GetCapacity(), (const T *)operator LPCTSTR() );

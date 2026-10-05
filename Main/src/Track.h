@@ -137,7 +137,7 @@ namespace Track
 		void ClearAllMetaData();
 		bool WriteData(TLogTime idEndTime,const TProfile &idEndProfile,Event::TData &peData,TFdcStatus sr);
 		TStdWinError Normalize(const Medium::TProperties &mp);
-		TStdWinError Apply(const Medium::TProperties &mp,const TCorrections &c);
+		TStdWinError Apply(const Medium::TProperties &mp,TCorrections c);
 		CReaderWriter &Reverse();
 		BYTE __cdecl ShowModal(const Time::CSharedColorIntervalArray &regions,UINT messageBoxButtons,bool initAllFeaturesOn,TLogTime tScrollTo,LPCTSTR format,...) const;
 		void __cdecl ShowModal(LPCTSTR format,...) const;

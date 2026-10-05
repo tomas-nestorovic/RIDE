@@ -19,8 +19,8 @@ namespace Time
 	}
 
 	void CSharedArrayEx::Offset(T dt){
-		for each( T &t in Fork() )
-			t+=dt;
+		const P p=Fork();
+		Time::Offset( p, p+length, dt );
 	}
 
 

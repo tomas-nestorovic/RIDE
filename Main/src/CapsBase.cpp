@@ -1631,14 +1631,15 @@ EnableDlgItem(ID_TRACK,false);
 			if (c.indexTiming)
 				p+=::wsprintf( p, _T("revolution time, ") );
 			if (c.nominalIwSize)
-				p+=::wsprintf( p, _T("bit count, ") );
+				p+=::wsprintf( p, _T("bit size, ") );
 			if (c.jitter)
-				p+=::wsprintf( p, _T("bit positions, ") );
+				p+=::wsprintf( p, _T("bit position, ") );
 			if (c.offsetIndices)
 				p+=::wsprintf( p, _T("indices offset %d us, "), c.indexOffsetMicroseconds );
 			if (p>buf+1) // more than just the opening '{' bracket?
 				p-=2; // drop tail comma
 		}
-		::lstrcpy( p, _T("}") );
+		static_assert( 2*sizeof(TCHAR)==sizeof(WORD), "append '}' below via 'lstrcpy'" );
+		*(PWORD)p='}';
 		SetAt( _T("corrections"), buf );
 	}

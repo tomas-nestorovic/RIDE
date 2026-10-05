@@ -71,7 +71,7 @@ namespace Track
 
 
 
-	TStdWinError CReaderWriter::Apply(const Medium::TProperties &mp,const TCorrections &c){
+	TStdWinError CReaderWriter::Apply(const Medium::TProperties &mp,TCorrections c){
 		// True <=> all Revolutions of this Track successfully normalized using specified parameters, otherwise False
 return ERROR_SUCCESS; // temporarily suspended
 		SetMedium(mp); // assert everything correctly set up
@@ -110,7 +110,7 @@ return ERROR_SUCCESS; // temporarily suspended
 			const auto &rev=bits.revs[iRev];
 			const PLogTime ptCorrectedA=ptCorrected;
 			const Time::T tCurrIndex=indexPulses[iRev], dtIndex=tCurrIndex-indexPulsesOrg[iRev];
-			// . jitter elimination
+			// . jitter suppression
 			if (c.jitter){
 				if (c.nominalIwSize){ // want resize Bits to their Medium nominal ?
 					auto *pBit=rev.begin();
@@ -118,7 +118,7 @@ return ERROR_SUCCESS; // temporarily suspended
 						? pBit+std::min( mp.nCells, rev.GetBitCount() )
 						: rev.end();
 					Time::T t=tCurrIndex;
-					while (pBit<pLast){ // eliminate jitter
+					while (pBit<pLast){ // suppress jitter
 						if (pBit++->value)
 							*ptCorrected++=t;
 						t+=mp.cellTime;
@@ -127,8 +127,8 @@ return ERROR_SUCCESS; // temporarily suspended
 						? tCurrIndex+mp.revolutionTime
 						: t;
 					tRightIndexDistance=0; // next Index position just set, don't do it twice
-				}else // eliminate jitter with regard to current inspection
-					for each( const auto &bit in rev ) // eliminate jitter
+				}else // suppress jitter with regard to current inspection
+					for each( const auto &bit in rev ) // suppress jitter
 						if (bit.value)
 							*ptCorrected++=bit.time+dtIndex;
 			}else{ // want preserve actual Timing
