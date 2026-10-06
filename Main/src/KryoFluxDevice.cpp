@@ -306,7 +306,7 @@
 		}
 	}
 
-	DWORD CKryoFluxDevice::Read(PVOID buffer,DWORD nBytesFree) const{
+	Memory::N CKryoFluxDevice::Read(PVOID buffer,Memory::N nBytesFree) const{
 		// reads a chunk of data received from a KryoFlux device; returns the number of Bytes received
 		if (!*this) // not connected
 			return 0;
@@ -352,7 +352,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	DWORD CKryoFluxDevice::Write(LPCVOID buffer,DWORD nBytes) const{
+	Memory::N CKryoFluxDevice::Write(LPCVOID buffer,Memory::N nBytes) const{
 		// writes a chunk of data to a KryoFlux device; returns the number of Bytes accepted by the device
 		if (!*this) // not connected
 			return 0;
@@ -373,10 +373,10 @@
 		}
 	}
 
-	TStdWinError CKryoFluxDevice::WriteFull(LPCVOID buffer,DWORD nBytes) const{
+	TStdWinError CKryoFluxDevice::WriteFull(LPCVOID buffer,Memory::N nBytes) const{
 		// blocks caller until all requested Bytes are written to the device; returns Windows standard i/o error
 		for( PCBYTE p=(PCBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Write( p, nBytes )){
+			if (const auto n=Write( p, nBytes )){
 				p+=n;
 				if (p-(PCBYTE)buffer>=nBytes)
 					break;

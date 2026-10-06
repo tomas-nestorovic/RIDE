@@ -195,7 +195,8 @@ namespace Memory
 
 
 
-	typedef CSharedPodArray<BYTE,int,32768> CSharedBytes;
+	typedef INT_PTR N;
+	typedef CSharedPodArray<BYTE,N,32768> CSharedBytes;
 
 	class CSharedBytesEx:public CSharedBytes{
 	public:
@@ -212,6 +213,8 @@ namespace Memory
 		N AppendRepeated(BYTE value,N count);
 		N AppendFormatted(LPCSTR format,...);
 	};
+
+	static_assert( sizeof(CSharedBytesEx)==sizeof(CSharedBytes), "can't cast result of 'CSharedBytes::GetEmpty()' to 'CSharedBytesEx'" );
 
 
 

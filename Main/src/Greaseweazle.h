@@ -94,10 +94,10 @@
 		TStdWinError Connect();
 		void Disconnect();
 		LPCTSTR FormatFirmwareInfo(PTCHAR buf) const;
-		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
-		TStdWinError ReadFull(PVOID buffer,DWORD nBytes) const;
-		DWORD Write(LPCVOID buffer,DWORD nBytes) const;
-		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
+		Memory::N Read(PVOID buffer,Memory::N nBytesFree) const;
+		TStdWinError ReadFull(PVOID buffer,Memory::N nBytes) const;
+		Memory::N Write(LPCVOID buffer,Memory::N nBytes) const;
+		TStdWinError WriteFull(LPCVOID buffer,Memory::N nBytes) const;
 		TStdWinError SendRequest(TRequest req,LPCVOID params,BYTE paramsLength) const;
 		CTrackReaderWriter GwV4StreamToTrack(const Memory::CSharedBytes &stream) const;
 		Memory::CSharedBytes TrackToGwV4Stream(CTrackReader tr) const;

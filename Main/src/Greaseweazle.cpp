@@ -189,7 +189,7 @@
 		}
 	}
 
-	DWORD CGreaseweazleV4::Read(PVOID buffer,DWORD nBytesFree) const{
+	Memory::N CGreaseweazleV4::Read(PVOID buffer,Memory::N nBytesFree) const{
 		// reads a chunk of data received from the Device; returns the number of Bytes received
 		if (!*this || !nBytesFree) // not connected or nothing wanted
 			return 0;
@@ -208,7 +208,7 @@
 				// . read those waiting Bytes (taking into account Buffer free capacity
 				return	::ReadFile(
 							hDevice,
-							(PBYTE)buffer+1, std::min(nBytesFree-1,cs.cbInQue), // mind the first Byte we've been waiting for above!
+							(PBYTE)buffer+1, std::min((DWORD)nBytesFree-1,cs.cbInQue), // mind the first Byte we've been waiting for above!
 							&nBytesTransferred, nullptr
 						)!=FALSE
 						? nBytesTransferred+1 // plus the first Byte we've been waiting for above
@@ -221,10 +221,10 @@
 		}
 	}
 
-	TStdWinError CGreaseweazleV4::ReadFull(PVOID buffer,DWORD nBytes) const{
+	TStdWinError CGreaseweazleV4::ReadFull(PVOID buffer,Memory::N nBytes) const{
 		// blocks caller until all requested Bytes are read from the Device; returns Windows standard i/o error
 		for( PBYTE p=(PBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Read( p, nBytes )){
+			if (const auto n=Read( p, nBytes )){
 				p+=n;
 				if (p-(PBYTE)buffer>=nBytes)
 					break;
@@ -239,7 +239,7 @@
 		return ERROR_SUCCESS;
 	}
 
-	DWORD CGreaseweazleV4::Write(LPCVOID buffer,DWORD nBytes) const{
+	Memory::N CGreaseweazleV4::Write(LPCVOID buffer,Memory::N nBytes) const{
 		// writes a chunk of data to a Greaseweazle Device; returns the number of Bytes accepted by the Device
 		if (!*this) // not connected
 			return 0;
@@ -260,10 +260,10 @@
 		}
 	}
 
-	TStdWinError CGreaseweazleV4::WriteFull(LPCVOID buffer,DWORD nBytes) const{
+	TStdWinError CGreaseweazleV4::WriteFull(LPCVOID buffer,Memory::N nBytes) const{
 		// blocks caller until all requested Bytes are written to the Device; returns Windows standard i/o error
 		for( PCBYTE p=(PCBYTE)buffer; nBytes>0; )
-			if (const DWORD n=Write( p, nBytes )){
+			if (const auto n=Write( p, nBytes )){
 				p+=n;
 				if (p-(PCBYTE)buffer>=nBytes)
 					break;

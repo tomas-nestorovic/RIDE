@@ -87,10 +87,10 @@
 		Memory::CSharedBytes TrackToKfw1(CTrackReader tr) const;
 		TStdWinError SendRequest(TRequest req,WORD index=0,WORD value=0) const;
 	    int GetLastRequestResult() const;
-		DWORD Read(PVOID buffer,DWORD nBytesFree) const;
+		Memory::N Read(PVOID buffer,Memory::N nBytesFree) const;
 		TStdWinError Read(Memory::CSharedBytes &outBuffer,const Memory::CSharedBytes::TView &until) const;
-		DWORD Write(LPCVOID buffer,DWORD nBytes) const;
-		TStdWinError WriteFull(LPCVOID buffer,DWORD nBytes) const;
+		Memory::N Write(LPCVOID buffer,Memory::N nBytes) const;
+		TStdWinError WriteFull(LPCVOID buffer,Memory::N nBytes) const;
 		TStdWinError SetMotorOn(bool on=true) const;
 		TStdWinError SeekTo(TCylinder cyl) const;
 		TStdWinError SelectHead(THead head) const;
