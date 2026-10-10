@@ -91,31 +91,6 @@
 
 	#define TRACK_BYTES_MAX	USHRT_MAX
 
-	CHFE::CTrackBytes::CTrackBytes(WORD count)
-		// ctor
-		: Memory::CSharedBytes( Utils::RoundUpToMuls<int>(count,sizeof(TTrackData)) )
-		, count(count) {
-		ASSERT( count>0 ); // call Invalidate() to indicate "no Bytes"
-	}
-
-	void CHFE::CTrackBytes::Invalidate(){
-		// disposes all Bytes, rendering this object unusable
-		reset(), count=0;
-	}
-
-	void CHFE::CTrackBytes::ReverseBitsInEachByte() const{
-		// reverses the order of bits in each Byte
-		for each( BYTE &r in *this )
-			r=Utils::GetReversedByte(r);
-	}
-
-
-
-
-
-
-
-
 	#define INI_SECTION		_T("HxC2k1")
 
 	CHFE::CHFE()
@@ -312,26 +287,23 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	CHFE::CTrackBytes CHFE::ReadTrackBytes(TCylinder cyl,THead head) const{
+	Memory::CSharedBytes CHFE::ReadTrackBytes(TCylinder cyl,THead head) const{
 		// reads from File and returns raw data of specified Track
 		f.Seek(  cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock) + head*sizeof(TTrackData),  CFile::begin  );
-		CTrackBytes result( cylInfos[cyl].nBytesLength/2 );
-		PBYTE pLast=result;
+		Memory::CSharedBytesEx result( TRACK_BYTES_MAX, true );
 		for( auto nCylBlocks=Utils::RoundDivUp(cylInfos[cyl].nBytesLength,(WORD)sizeof(TCylinderBlock)); nCylBlocks-->0; ){
-			const auto nBytesRead=f.Read( pLast, sizeof(TTrackData) );
-			if (nBytesRead!=sizeof(TTrackData)){
-				result.Invalidate();
-				break;
-			}
-			f.Seek( sizeof(TTrackData), CFile::current ); // skip unwanted Head
-			pLast+=nBytesRead;
+			if (f.Read( result.AppendUninit(sizeof(TTrackData)), sizeof(TTrackData) )==sizeof(TTrackData)) // read successfully ?
+				f.Seek( sizeof(TTrackData), CFile::current ); // skip unwanted Head
+			else
+				return Memory::CSharedBytes::GetEmpty();
 		}
-		return result;
+		result.length=cylInfos[cyl].nBytesLength/2;
+		return result.ReverseBitsInEachByte();
 	}
 
-	CHFE::CTrackBytes CHFE::TrackToBytes(CInternalTrack &rit) const{
+	Memory::CSharedBytes CHFE::TrackToBytes(CInternalTrack &rit) const{
 		// converts specified InternalTrack to HFE-encoded Bytes
-		CTrackBytes result(TRACK_BYTES_MAX);
+		Memory::CSharedBytesEx result(TRACK_BYTES_MAX);
 		rit.FlushSectorBuffers();
 		PBYTE p=result;
 		CTrackReader tr=rit;
@@ -339,18 +311,16 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 				const char nBitsRead=tr.ReadBits8(*p);
 				*p++<<=(CHAR_BIT-nBitsRead);
 			}
-		result.TrimTo( p-result );
-		result.ReverseBitsInEachByte();
-		return result;
+		result.length=p-result;
+		return result.ReverseBitsInEachByte();
 	}
 
-	CCapsBase::PInternalTrack CHFE::BytesToTrack(const CTrackBytes &bytes) const{
+	CCapsBase::PInternalTrack CHFE::BytesToTrack(const Memory::CSharedBytes &bytes) const{
 		// converts specified HFE-encoded Bytes to InternalTrack
 		if (!bytes)
 			return nullptr;
-		bytes.ReverseBitsInEachByte();
 		if (header.IsVersion3()){
-			CTrackReaderWriter trw( bytes.GetCount()*CHAR_BIT, params.fluxDecoder, params.resetFluxDecoderOnIndex );
+			CTrackReaderWriter trw( bytes.length*CHAR_BIT, params.fluxDecoder, params.resetFluxDecoderOnIndex );
 			PCBYTE p=bytes,const pLast=bytes.end();
 			TLogTime tCell=header.GetCellTime();
 			TLogTime tCurr=0;
@@ -400,7 +370,7 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		}else{
 			CapsTrackInfoT2 cti={};
 				cti.trackbuf=bytes;
-				cti.tracklen=bytes.GetCount();
+				cti.tracklen=bytes.length;
 			return CInternalTrack::CreateFrom( *this, &cti, 1, 0 );
 		}
 	}
@@ -449,25 +419,18 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 			fTarget.SetLength( nRequiredBytesHeaderAndCylInfos );
 		// - saving
 		auto sub=ap.CreateSubactionProgress( ARRAYSIZE(cylInfos), ARRAYSIZE(cylInfos) );
-		static const class CInvalidTrackBytes sealed:public CTrackBytes{
-		public:
-			CInvalidTrackBytes()
-				: CTrackBytes(1){
-				Invalidate();
-			}
-		} InvalidTrackBytes;
 		for( TCylinder cyl=0; cyl<ARRAYSIZE(cylInfos); sub.UpdateProgress(++cyl) ){
 			if (!AnyTrackModified(cyl)) // not Modified or not even read Cylinder?
 				continue;
 			const PInternalTrack pitHead0=GetInternalTrackSafe(cyl,0), pitHead1=GetInternalTrackSafe(cyl,1);
-			const CTrackBytes head0=pitHead0!=nullptr // Track 0 exists?
-									? TrackToBytes( *pitHead0 )
-									: InvalidTrackBytes;
-			const CTrackBytes head1=pitHead1!=nullptr // Track 1 exists?
-									? TrackToBytes( *pitHead1 )
-									: InvalidTrackBytes;
-			const auto nBytesLongerTrack=std::max( head0.GetCount(), head1.GetCount() );
-			ASSERT( nBytesLongerTrack<USHRT_MAX/2 );
+			const auto head0 =	pitHead0!=nullptr // Track 0 exists?
+								? TrackToBytes( *pitHead0 )
+								: Memory::CSharedBytes::GetEmpty();
+			const auto head1 =	pitHead1!=nullptr // Track 1 exists?
+								? TrackToBytes( *pitHead1 )
+								: Memory::CSharedBytes::GetEmpty();
+			const auto nBytesLongerTrack=std::max( head0.length, head1.length );
+			ASSERT( nBytesLongerTrack<TRACK_BYTES_MAX/2 );
 			auto nBytesCylinder=Utils::RoundUpToMuls( nBytesLongerTrack*2, (int)sizeof(TCylinderBlock) );
 			DWORD fPosition=Utils::RoundUpToMuls<DWORD>( fTarget.GetLength(), sizeof(TBlock) ); // assumption (Cylinder doesn't fit in anywhere between existing Track and must be appended to the Image)
 			for( auto it=contentLayout.begin(); it!=contentLayout.end(); it++ )

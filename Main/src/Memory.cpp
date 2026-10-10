@@ -20,4 +20,11 @@ namespace Memory
 		return Append( tmp, n+1 ); // incl. terminal Null char
 	}
 
+	CSharedBytesEx &CSharedBytesEx::ReverseBitsInEachByte(){
+		// reverses the order of bits in each Byte
+		for each( BYTE &r in *this )
+			r=Utils::GetReversedByte(r);
+		return *this;
+	}
+
 }

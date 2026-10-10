@@ -86,19 +86,6 @@
 			inline bool IsValid() const{ return nBlocksOffset>=2 && nBytesLength!=0; }
 		} cylInfos[84];
 
-		class CTrackBytes:public Memory::CSharedBytes{
-			WORD count;
-		public:
-			CTrackBytes(WORD count);
-
-			inline operator PBYTE() const{ return begin(); }
-			inline WORD GetCount() const{ return count; }
-			inline PBYTE end() const{ return begin()+count; }
-			inline void TrimTo(WORD newCount){ count=newCount; }
-			void Invalidate();
-			void ReverseBitsInEachByte() const;
-		};
-
 		enum TOpCode:BYTE{
 			NOP			=0xf0,
 			SETINDEX,
@@ -110,9 +97,9 @@
 
 		mutable CFile f;
 
-		CTrackBytes ReadTrackBytes(TCylinder cyl,THead head) const;
-		CTrackBytes TrackToBytes(CInternalTrack &rit) const;
-		PInternalTrack BytesToTrack(const CTrackBytes &bytes) const;
+		Memory::CSharedBytes ReadTrackBytes(TCylinder cyl,THead head) const;
+		Memory::CSharedBytes TrackToBytes(CInternalTrack &rit) const;
+		PInternalTrack BytesToTrack(const Memory::CSharedBytes &bytes) const;
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;

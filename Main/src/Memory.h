@@ -212,6 +212,7 @@ namespace Memory
 
 		N AppendRepeated(BYTE value,N count);
 		N AppendFormatted(LPCSTR format,...);
+		CSharedBytesEx &ReverseBitsInEachByte();
 	};
 
 	static_assert( sizeof(CSharedBytesEx)==sizeof(CSharedBytes), "can't cast result of 'CSharedBytes::GetEmpty()' to 'CSharedBytesEx'" );
