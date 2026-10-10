@@ -97,9 +97,8 @@
 
 		mutable CFile f;
 
-		Memory::CSharedBytes ReadTrackBytes(TCylinder cyl,THead head) const;
 		Memory::CSharedBytes TrackToBytes(CInternalTrack &rit) const;
-		PInternalTrack BytesToTrack(const Memory::CSharedBytes &bytes) const;
+		PInternalTrack FileBytesToTrack(TCylinder cyl,THead head) const;
 		TStdWinError SaveAllModifiedTracks(LPCTSTR lpszPathName,CActionProgress &ap) override;
 	public:
 		static const TProperties Properties;

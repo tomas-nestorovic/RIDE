@@ -178,10 +178,10 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		if (!cylInfos[cyl].IsValid()) // maybe an error during Image creation?
 			return Track::Invalid;
 		if (!internalTracks[cyl][0])
-			internalTracks[cyl][0]=BytesToTrack( ReadTrackBytes(cyl,0) );
+			internalTracks[cyl][0]=FileBytesToTrack(cyl,0);
 		if (!internalTracks[cyl][1])
 			if (!params.flippyDisk) // flippy disks not known to be represented backwards in *.HFE, hence always fail if this flag is set
-				internalTracks[cyl][1]=BytesToTrack( ReadTrackBytes(cyl,1) );
+				internalTracks[cyl][1]=FileBytesToTrack(cyl,1);
 		const PInternalTrack &rit=internalTracks[cyl][head];
 		return	rit ? *rit : Track::Invalid;
 	}
@@ -287,20 +287,6 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return ERROR_SUCCESS;
 	}
 
-	Memory::CSharedBytes CHFE::ReadTrackBytes(TCylinder cyl,THead head) const{
-		// reads from File and returns raw data of specified Track
-		f.Seek(  cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock) + head*sizeof(TTrackData),  CFile::begin  );
-		Memory::CSharedBytesEx result( TRACK_BYTES_MAX, true );
-		for( auto nCylBlocks=Utils::RoundDivUp(cylInfos[cyl].nBytesLength,(WORD)sizeof(TCylinderBlock)); nCylBlocks-->0; ){
-			if (f.Read( result.AppendUninit(sizeof(TTrackData)), sizeof(TTrackData) )==sizeof(TTrackData)) // read successfully ?
-				f.Seek( sizeof(TTrackData), CFile::current ); // skip unwanted Head
-			else
-				return Memory::CSharedBytes::GetEmpty();
-		}
-		result.length=cylInfos[cyl].nBytesLength/2;
-		return result.ReverseBitsInEachByte();
-	}
-
 	Memory::CSharedBytes CHFE::TrackToBytes(CInternalTrack &rit) const{
 		// converts specified InternalTrack to HFE-encoded Bytes
 		Memory::CSharedBytesEx result(TRACK_BYTES_MAX);
@@ -315,10 +301,21 @@ formatError: ::SetLastError(ERROR_BAD_FORMAT);
 		return result.ReverseBitsInEachByte();
 	}
 
-	CCapsBase::PInternalTrack CHFE::BytesToTrack(const Memory::CSharedBytes &bytes) const{
+	CCapsBase::PInternalTrack CHFE::FileBytesToTrack(TCylinder cyl,THead head) const{
 		// converts specified HFE-encoded Bytes to InternalTrack
+		// - extract Bytes from file
+		f.Seek(  cylInfos[cyl].nBlocksOffset*sizeof(TCylinderBlock) + head*sizeof(TTrackData),  CFile::begin  );
+		Memory::CSharedBytesEx bytes( TRACK_BYTES_MAX, true );
+		for( auto nCylBlocks=Utils::RoundDivUp(cylInfos[cyl].nBytesLength,(WORD)sizeof(TCylinderBlock)); nCylBlocks-->0; ){
+			if (f.Read( bytes.AppendUninit(sizeof(TTrackData)), sizeof(TTrackData) )==sizeof(TTrackData)) // read successfully ?
+				f.Seek( sizeof(TTrackData), CFile::current ); // skip unwanted Head
+			else
+				return nullptr;
+		}
+		bytes.ReverseBitsInEachByte().length=cylInfos[cyl].nBytesLength/2;
 		if (!bytes)
 			return nullptr;
+		// - convert Bytes to Track
 		if (header.IsVersion3()){
 			CTrackReaderWriter trw( bytes.length*CHAR_BIT, params.fluxDecoder, params.resetFluxDecoderOnIndex );
 			PCBYTE p=bytes,const pLast=bytes.end();
