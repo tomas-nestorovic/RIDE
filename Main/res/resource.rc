@@ -1813,12 +1813,14 @@ BEGIN
     CONTROL         "",ID_MEDIUM,"SysLink",WS_BORDER,71,70,125,13
     PUSHBUTTON      "",ID_RECOVER,199,70,19,13
     CONTROL         "Fl&ippy disk (<a>see FAQ</a>)",ID_SIDE,"Button",BS_AUTOCHECKBOX | 
-                    WS_DISABLED | WS_TABSTOP,71,87,147,10
-    RTEXT           "Warn",ID_INFORMATION,37,102,24,16,NOT WS_GROUP
+                    WS_DISABLED | WS_TABSTOP,71,87,78,10
+    RTEXT           "W",ID_INFORMATION,37,102,24,16,NOT WS_GROUP
     CONTROL         "&40-track drive",ID_DRIVE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,71,99,147,10
-    CONTROL         "&Double track distance (<a>see Track 1 IDs</a>)",ID_40D80,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,71,111,147,10
+                    WS_TABSTOP,71,99,78,10
+    CONTROL         "&Double track distance",ID_40D80,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,71,111,86,10
+    CONTROL         "<a>see Track 1 IDs</a>",ID_IDFIELD,"SysLink",WS_TABSTOP,
+                    170,104,53,11
     LTEXT           "Pre-compensation:",IDC_STATIC,7,124,60,8
     LTEXT           "W",ID_INSTRUCTION,71,125,18,16,NOT WS_VISIBLE | NOT 
                     WS_GROUP
@@ -1832,9 +1834,9 @@ BEGIN
                     71,168,65,10
     CONTROL         "Only &known sectors if DOS recognized",ID_READABLE,
                     "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | 
-                    WS_TABSTOP,71,179,78,18
+                    WS_TABSTOP,71,179,86,18
     CONTROL         "Never",ID_ZERO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,
-                    71,202,78,10
+                    71,202,86,10
     CONTROL         "&Each",ID_CYLINDER_N,"Button",BS_AUTORADIOBUTTON,71,214,
                     31,10
     EDITTEXT        ID_NUMBER,103,214,16,12,ES_RIGHT | ES_AUTOHSCROLL | 

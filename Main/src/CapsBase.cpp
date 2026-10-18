@@ -1448,6 +1448,7 @@ EnableDlgItem(ID_TRACK,false);
 						__super::OnPaint();
 						if (IsDlgItemShown(ID_INFORMATION))
 							WrapDlgItemsByOpeningCurlyBracket( ID_DRIVE, ID_40D80 );
+						WrapDlgItemsByClosingCurlyBracketWithText( ID_DRIVE, ID_40D80, nullptr, 0 );
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_NONE, ID_READABLE, _T("on read error"), 0 );
 						WrapDlgItemsByClosingCurlyBracketWithText( ID_ZERO, ID_CYLINDER_N, _T("when writing"), 0 );
 						return 0;
@@ -1529,7 +1530,7 @@ EnableDlgItem(ID_TRACK,false);
 							case ID_SIDE:
 								Utils::NavigateToFaqInDefaultBrowser( _T("flippyDisk") );
 								break;
-							case ID_40D80:{
+							case ID_IDFIELD:{
 								const Utils::CVarTempReset<bool> dts0( rcb.params.doubleTrackStep, false );
 								const Utils::CVarTempReset<Medium::TType> ft0( rcb.floppyType, currentMediumType );
 								const CTrackTempReset rit( rcb.internalTracks[1][0] );
