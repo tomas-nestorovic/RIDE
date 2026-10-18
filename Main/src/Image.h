@@ -93,7 +93,7 @@
 			void AddRevision(int major,int minor=-1);
 			void AddFirmware(LPCTSTR value);
 			void AddMediumIsForced(bool isForced);
-			void AddMediumIsFlippy(bool isFlippy,bool userForced);
+			void AddMediumIsFlippy(bool isFlippy);
 			void AddDecaHexa(LPCTSTR name,int value);
 			void AddId(int value);
 			void AddAuto(LPCTSTR name);

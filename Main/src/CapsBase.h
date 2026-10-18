@@ -126,8 +126,8 @@
 			bool verifyWrittenTracks, verifyBadSectors;
 			// volatile (current session only)
 			bool userForcedMedium;
-			bool flippyDisk, userForcedFlippyDisk;
-			bool doubleTrackStep, userForcedDoubleTrackStep;
+			bool flippyDisk;
+			bool doubleTrackStep;
 
 			TParams(LPCTSTR iniSectionName);
 			~TParams();

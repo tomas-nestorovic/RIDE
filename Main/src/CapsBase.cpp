@@ -1178,8 +1178,8 @@ invalidTrack:
 		, verifyBadSectors( app.GetProfileBool(iniSectionName,INI_VERIFY_BAD_SECTORS,true) )
 		// - volatile (current session only)
 		, userForcedMedium(false)
-		, flippyDisk(false) , userForcedFlippyDisk(false)
-		, doubleTrackStep(false) , userForcedDoubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
+		, flippyDisk(false)
+		, doubleTrackStep(false) { // True once the ID_40D80 button in Settings dialog is pressed
 	}
 
 	CCapsBase::TParams::~TParams(){
@@ -1208,17 +1208,6 @@ invalidTrack:
 			CCapsBase &rcb;
 			Medium::TType currentMediumType;
 			CPrecompensation tmpPrecomp;
-			TCHAR flippyDiskTextOrg[40],doubleTrackDistanceTextOrg[80];
-
-			bool IsFlippyDiskForcedByUser() const{
-				// True <=> user has manually overrode FlippyDisk setting, otherwise False
-				return ::lstrlen(flippyDiskTextOrg)!=GetDlgItemTextLength(ID_SIDE);
-			}
-
-			bool IsDoubleTrackDistanceForcedByUser() const{
-				// True <=> user has manually overrode DoubleTrackDistance setting, otherwise False
-				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
-			}
 
 			bool HasAnyHeadSufficientSectorsLike(TCylinder cyl,TCylinder cylLike) const{
 				for( THead head=ARRAYSIZE(*rcb.internalTracks); head-->0; ){ // begin with Head 1
@@ -1360,12 +1349,8 @@ EnableDlgItem(ID_TRACK,false);
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
 				SetDlgItemSingleCharUsingFont( ID_RECOVER, 0xf071, Utils::CRideFont::Webdings120 );
 				ConvertDlgCheckboxToHyperlink( ID_SIDE );
-				GetDlgItemText( ID_SIDE,   flippyDiskTextOrg );
-				if (CheckDlgItem(ID_SIDE,rcb.params.flippyDisk) && rcb.params.userForcedFlippyDisk)
-					SendMessage( WM_COMMAND, ID_SIDE );
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg );
-				if (rcb.params.userForcedDoubleTrackStep)
-					SendMessage( WM_COMMAND, ID_40D80 );
+				CheckDlgItem( ID_SIDE, rcb.params.flippyDisk );
+				SendMessage( WM_COMMAND, ID_40D80 );
 				CheckAndEnableDlgItem( ID_40D80,
 					rcb.params.doubleTrackStep,
 					!CheckDlgItem( ID_DRIVE, rcb.params.fortyTrackDrive )
@@ -1484,16 +1469,10 @@ EnableDlgItem(ID_TRACK,false);
 								// refreshing information on (inserted) floppy
 								if (initialEditing){ // if no Tracks are yet formatted, then resetting the flag that user has overridden these settings
 									CheckDlgItem( ID_DRIVE, CheckDlgItem(ID_SIDE,false) );
-									SetDlgItemText( ID_SIDE, flippyDiskTextOrg );
-									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg );
 									if (rcb.properties->IsRealDevice())
 										rcb.Reset(); // reset connection (e.g. COM port) to real Devices only, given 'Reset' doesn't implicitly dispose all Tracks for them
 								}
 								RefreshMediumInformation();
-								break;
-							case ID_SIDE:
-								// flippy disk setting changed manually
-								SetDlgItemFormattedText( ID_SIDE, _T("%s (user forced)"), flippyDiskTextOrg );
 								break;
 							case ID_DRIVE:
 								// drive physical track range changed manually
@@ -1501,14 +1480,6 @@ EnableDlgItem(ID_TRACK,false);
 								//fallthrough
 							case ID_40D80:
 								// track distance changed manually
-								if (wParam==ID_40D80){
-									TCHAR tmp[80];
-									::lstrcpy(
-										_tcsrchr( ::lstrcpy(tmp,doubleTrackDistanceTextOrg), '(' ),
-										_T("(user forced)")
-									);
-									SetDlgItemText( ID_40D80, tmp );
-								}
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised # of Tracks either on Medium's or Drive's side, so no need to continue displaying the warning
 								Invalidate(); // get also rid of the curly bracket
 								break;
@@ -1530,10 +1501,8 @@ EnableDlgItem(ID_TRACK,false);
 							case IDOK:
 								// attempting to confirm the Dialog
 								params.flippyDisk=IsDlgItemChecked(ID_SIDE);
-								params.userForcedFlippyDisk=IsFlippyDiskForcedByUser();
 								params.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
 								params.doubleTrackStep=IsDlgItemChecked(ID_40D80);
-								params.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								break;
 						}
 						break;
@@ -1606,9 +1575,9 @@ EnableDlgItem(ID_TRACK,false);
 		if (isRealDevice)
 			rOut.AddRevolutionCount( PrecisionToFullRevolutionCount() );
 		rOut.AddMediumIsForced(userForcedMedium);
-		rOut.AddMediumIsFlippy( flippyDisk, userForcedFlippyDisk );
+		rOut.AddMediumIsFlippy( flippyDisk );
 		rOut.Add40TrackDrive(fortyTrackDrive);
-		rOut.AddDoubleTrackStep( doubleTrackStep, userForcedDoubleTrackStep );
+		rOut.AddDoubleTrackStep( doubleTrackStep, false );
 		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
 		rOut.AddTrackCorrections(corrections);
 	}

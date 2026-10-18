@@ -142,8 +142,8 @@ namespace Sector
 		Add( _T("user-forced medium"), isForced );
 	}
 
-	void CImage::CSettings::AddMediumIsFlippy(bool isFlippy,bool userForced){
-		Add( _T("medium flippy"), isFlippy, userForced );
+	void CImage::CSettings::AddMediumIsFlippy(bool isFlippy){
+		Add( _T("medium flippy"), isFlippy );
 	}
 
 	void CImage::CSettings::AddDecaHexa(LPCTSTR name,int value){
