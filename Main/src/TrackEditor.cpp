@@ -231,7 +231,7 @@ using namespace Charting;
 								EXCLUSIVELY_LOCK(p.params);
 								if ( continuePainting=p.params.id==id )
 									g.PerpLineAndText(
-										tr.GetIndexTime(i), INDEX_HEIGHT, -INDEX_HEIGHT,
+										tr.GetIndexTime(i), 0, -INDEX_HEIGHT,
 										_T("Index %d"), i
 									);
 							}
