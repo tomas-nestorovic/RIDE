@@ -282,9 +282,6 @@
     <ClInclude Include="src\Side.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
-    <ClInclude Include="src\Format.h">
-      <Filter>Header Files\Dos\Foundation</Filter>
-    </ClInclude>
     <ClInclude Include="src\Cylinder.h">
       <Filter>Header Files\Image\Foundation</Filter>
     </ClInclude>
@@ -583,9 +580,6 @@
     </ClCompile>
     <ClCompile Include="src\Side.cpp">
       <Filter>Source Files\Image\Foundation</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Format.cpp">
-      <Filter>Source Files\Dos\Foundation</Filter>
     </ClCompile>
     <ClCompile Include="src\Cylinder.cpp">
       <Filter>Source Files\Image\Foundation</Filter>

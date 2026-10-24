@@ -1578,7 +1578,7 @@ EnableDlgItem(ID_TRACK,false);
 		rOut.AddMediumIsForced(userForcedMedium);
 		rOut.AddMediumIsFlippy( flippyDisk );
 		rOut.Add40TrackDrive(fortyTrackDrive);
-		rOut.AddDoubleTrackStep( doubleTrackStep, false );
+		rOut.AddDoubleTrackStep( doubleTrackStep );
 		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
 		rOut.AddTrackCorrections(corrections);
 	}
