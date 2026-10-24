@@ -104,7 +104,7 @@
 			void AddSides(const Side::CMap &sides);
 			void AddSectorSize(Sector::L nBytes);
 			void Add40TrackDrive(bool value);
-			void AddDoubleTrackStep(bool isDouble,bool userForced);
+			void AddDoubleTrackStep(bool isDouble);
 			void AddBaudRate(int baudRate);
 			void AddTrackCorrections(const Track::TCorrections &c);
 		};

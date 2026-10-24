@@ -288,7 +288,6 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		, fortyTrackDrive(false)
 		, calibrated(false) , position(0)
 		, doubleTrackStep(false)
-		, userForcedDoubleTrackStep(false) // True once the ID_40D80 button in Settings dialog is pressed
 		, preferRelativeSeeking(false) {
 	}
 
@@ -312,7 +311,7 @@ terminateWithError:			fdd->UnformatInternalTrack(cyl,head); // disposing any new
 		// returns a collection of relevant settings for this Image
 		profile.EnumSettings(rOut);
 		rOut.Add40TrackDrive(fortyTrackDrive);
-		rOut.AddDoubleTrackStep( doubleTrackStep, userForcedDoubleTrackStep );
+		rOut.AddDoubleTrackStep( doubleTrackStep );
 		rOut.Add( _T("relative seek"), preferRelativeSeeking );
 		//TODO: calibrationAfterError (calibrationAfterErrorOnlyForKnownSectors)
 	}
@@ -1507,12 +1506,6 @@ Utils::Information(buf);}
 		class CSettingDialog sealed:public Utils::CRideDialog{
 			const bool initialEditing;
 			CFDD *const fdd;
-			TCHAR doubleTrackDistanceTextOrg[80];
-
-			bool IsDoubleTrackDistanceForcedByUser() const{
-				// True <=> user has manually overridden DoubleTrackDistance setting, otherwise False
-				return ::lstrlen(doubleTrackDistanceTextOrg)!=GetDlgItemTextLength(ID_40D80);
-			}
 
 			void RefreshMediumInformation(){
 				// detects a floppy in the Drive and attempts to recognize its Type
@@ -1576,9 +1569,7 @@ Utils::Information(buf);}
 				static constexpr WORD InitialSettingIds[]={ ID_RECOVER, ID_DRIVE, ID_40D80, 0 };
 				EnableDlgItems( InitialSettingIds, initialEditing );
 				// . if DoubleTrackStep changed manually, adjusting the text of the ID_40D80 checkbox
-				GetDlgItemText( ID_40D80,  doubleTrackDistanceTextOrg );
-				if (fddHead.userForcedDoubleTrackStep)
-					SendMessage( WM_COMMAND, ID_40D80 );
+				SendMessage( WM_COMMAND, ID_40D80 );
 				EnableDlgItem( ID_DRIVE, initialEditing );
 				CheckAndEnableDlgItem( ID_40D80,
 					fddHead.doubleTrackStep,
@@ -1750,8 +1741,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 						switch (wParam){
 							case ID_RECOVER:
 								// refreshing information on (inserted) floppy
-								if (initialEditing) // if no Tracks are yet formatted ...
-									SetDlgItemText( ID_40D80, doubleTrackDistanceTextOrg ); // ... then resetting the flag that user has overridden DoubleTrackDistance
 								RefreshMediumInformation();
 								break;
 							case ID_DRIVE:
@@ -1760,8 +1749,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 								//fallthrough
 							case ID_40D80:
 								// track distance changed manually
-								if (wParam==ID_40D80)
-									SetDlgItemFormattedText( ID_40D80, _T("%s (user forced)"), doubleTrackDistanceTextOrg );
 								ShowDlgItem( ID_INFORMATION, false ); // user manually revised # of Tracks either on Medium's or Drive's side, so no need to continue displaying the warning
 								Invalidate(); // get also rid of the curly bracket
 								break;
@@ -1780,7 +1767,6 @@ autodetermineLatencies:		// automatic determination of write latency values
 								// attempting to confirm the Dialog
 								fddHead.fortyTrackDrive=IsDlgItemChecked(ID_DRIVE);
 								fddHead.doubleTrackStep=IsDlgItemChecked(ID_40D80);
-								fddHead.userForcedDoubleTrackStep=IsDoubleTrackDistanceForcedByUser();
 								TCHAR iniSection[16];
 								GetFddProfileName( iniSection, fdd->GetDriveLetter(), fdd->floppyType );
 								if (!app.GetProfileBool( iniSection, INI_LATENCY_DETERMINED ))

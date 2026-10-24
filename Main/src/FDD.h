@@ -78,7 +78,7 @@
 			TSupportedDriver driver;
 			bool fortyTrackDrive;
 			bool mutable calibrated, preferRelativeSeeking;
-			bool doubleTrackStep, userForcedDoubleTrackStep;
+			bool doubleTrackStep;
 			TCylinder mutable position;
 			struct TProfile sealed{
 				TLogTime controllerLatency,oneByteLatency,gap3Latency; // in nanoseconds

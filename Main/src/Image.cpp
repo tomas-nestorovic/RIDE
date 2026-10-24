@@ -193,8 +193,8 @@ namespace Sector
 		Add( _T("40-track drive"), value );
 	}
 
-	void CImage::CSettings::AddDoubleTrackStep(bool isDouble,bool userForced){
-		Add( _T("double track distance"), isDouble, userForced );
+	void CImage::CSettings::AddDoubleTrackStep(bool isDouble){
+		Add( _T("double track distance"), isDouble );
 	}
 
 	void CImage::CSettings::AddBaudRate(int baudRate){
