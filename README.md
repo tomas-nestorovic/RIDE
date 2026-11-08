@@ -4,6 +4,7 @@
 - Yes, it can _directly_ work with Greaseweazle (no Python needed).
 - Yes, it can access internal floppy drives on your PC.
 - Yes, this Windows XP application is confirmed to work in Linux via Wine (see [this FAQ](http://nestorovic.eu/ride/html/faq_linux.html)).
+- No, I don't use AI as a tool for programming – not a single line since this project started in 2014 has been written or advised by the AI.
 
 # Introduction (aka. "Why and What For")
 It all started in Spring of 2014 when I, for a reason which I no longer remember, wanted to access 3.5" floppies of an 8-bit ZX Spectrum computer clone (branded _Didaktik_) on a modern PC. I already knew that this was possible as I saw (and worked with) several PC-designed special utilities to create images of floppies of Atari ST, CP/M, etc. The utilities had poor interfaces (if any) and very limited possibilities on how to manipulate files (they were rather dump tools instead of disk explorers). I knew there existed the [OmniFlop](http://www.shlock.co.uk/Utils/OmniFlop) tool for… well, I don't know – I never managed to run it due to strange (yet free) licencing and the author not responding to my e-mail requests to get a licence. But as far as I know, it should be another pure dump tool. I knew there existed the [SamDisk](http://simonowen.com/samdisk) tool which I worked with until then as it offered soft-grained possibilities on creating images of floppies, including the _heavily copy-protected ones_!
@@ -70,10 +71,12 @@ Here I'd like to pinpoint some highlights that RIDE can offer for your retro-com
 - It is portable, has minimal system requirements, and doesn't depend on third-party libraries – Windows native libraries is all that you need (my oldest testing environment is thus a 1990's desktop with MMX processor, 80 MB RAM, and running Windows XP).
 - It [can run in Linux](https://nestorovic.eu/ride/html/faq_linux.html).
 
-# Compilation and Running (no installation needed, ever!)
-RIDE needs Visual Studio 2010 or higher to compile, and Windows XP or higher to run. After cloning the repository, simply click _Build → Build Solution_ while having selected either the _Debug_ or _Release_ configuration, and that's it.
+# What Happened to the Source Code?
+This application has pioneered advanced data recovery of corrupt floppies and general low-level access to various devices. It has found its audience among enthusiasts, collectors, archivists, as well as curious newcomers to the realm. Since I started this project in 2014, I didn't expect it would grow that big and that I still would work on it in 2026. And foremost that I still would enjoy working on it! As of current 2026, twelve years of (sometimes exhaustive) research have been put in this application and the source code been given for free in the hope that it will be useful as a complete (and similarly exhaustive) study material of the full cycle from abstract file in the user interface down to concrete spot on the magnetic surface.
 
-The third _Release MFC 4.2_ configuration is virtually for my purposes only – I use it to create new public releases here on GitHub. To compile using this configuration, you need to have installed the _Windows SDK_ (that contains all the sources and libraries of the legacy MFC 4.2 platform), plus properly set paths. However, the burden associated with compiling under the _Release MFC 4.2_ configuration is not worth it when there's the _Release_ configuration, so I won't elaborate the details.
+The advent of AI programming bots has, however, put halt to this idea. Becoming more compliant with each new version, they give the ability to "program" even to individuals with no previous knowledge of programming and/or technical background. To prevent RIDE from serving as a basis for such uninformed attempts to decades old floppies, RIDE has temporarily become a closed-source project. I plan to open the code again once the bots have improved substantially (my own experimentations, again as of 2026, show we regrettably are not there yet). Until then, RIDE is still free to anyone and is still portable without third-party dependencies – just as was the first version in 2014.
+
+What do you thing about this step? PM me and let me know your opinion.
 
 # Frequently Asked Questions
 Here is just a list of the _really_ frequent ones. The full list can be accessed through _Help → FAQ_ or [here on-line](http://nestorovic.eu/ride/html/faq.html).
